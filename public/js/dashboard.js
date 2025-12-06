@@ -531,12 +531,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 : `<div class="server-stats bot-not-present">
                     <p><i class="fas fa-exclamation-triangle"></i> <strong>Bot não está no servidor</strong></p>
                     <p>Adicione o bot ao servidor para começar a usar os recursos</p>
-                    <a href="https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}" 
-                       class="btn primary-btn small-btn" 
-                       target="_blank"
-                       style="margin-top: 0.5rem; display: inline-block;">
-                        <i class="fas fa-plus"></i> Adicionar Bot ao Servidor
-                    </a>
                 </div>`;
             
             serverCard.innerHTML = `

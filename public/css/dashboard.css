@@ -2060,6 +2060,12 @@ html, body {
     flex-direction: row;
 }
 
+/* Override for server config page */
+.dashboard-container:has(.server-config-page) {
+    flex-direction: column;
+    padding: 2rem;
+}
+
 .dashboard-sidebar {
     width: 280px;
     height: 100vh;
@@ -2182,7 +2188,7 @@ html, body {
 .server-config-page {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 2rem;
+    width: 100%;
 }
 
 .config-header {
