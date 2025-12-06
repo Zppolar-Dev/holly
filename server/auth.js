@@ -146,6 +146,35 @@ function logout(req, res) {
     return res.status(200).json({ message: 'Logout realizado com sucesso' });
 }
 
+// Badge system
+const OWNER_ID = '909204567042981978';
+
+function getUserBadges(userId) {
+    const badges = [];
+    
+    // Owner badge
+    if (userId === OWNER_ID) {
+        badges.push({
+            id: 'owner',
+            name: 'Owner',
+            icon: '👑',
+            color: '#FFD700',
+            description: 'Dono do bot'
+        });
+    }
+    
+    // Premium badge (placeholder - não implementado ainda)
+    // badges.push({
+    //     id: 'premium',
+    //     name: 'Premium',
+    //     icon: '💎',
+    //     color: '#9B59B6',
+    //     description: 'Membro Premium'
+    // });
+    
+    return badges;
+}
+
 async function getUserData(req, res) {
     try {
         const token = await getValidAccessToken(req.user.user_id);
@@ -157,7 +186,14 @@ async function getUserData(req, res) {
             headers: { Authorization: `Bearer ${token}` }
         });
 
-        return res.json({ ...userRes.data, plan: 'free' });
+        const userId = userRes.data.id;
+        const badges = getUserBadges(userId);
+
+        return res.json({ 
+            ...userRes.data, 
+            plan: 'free',
+            badges: badges
+        });
     } catch (err) {
         console.error('Erro ao buscar usuário:', err.message);
         return res.status(500).json({ error: 'Erro ao buscar usuário' });

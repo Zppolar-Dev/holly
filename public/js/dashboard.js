@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function updateUserUI() {
         if (!STATE.user) return;
 
-        const { id, username, discriminator, avatar, plan } = STATE.user;
+        const { id, username, discriminator, avatar, plan, badges = [] } = STATE.user;
         const avatarUrl = avatar 
             ? `https://cdn.discordapp.com/avatars/${id}/${avatar}.png?size=256`
             : CONFIG.DEFAULT_AVATAR;
@@ -389,6 +389,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.userPlan.className = `plan-badge ${plan}`;
         }
 
+        // Atualizar badges
+        updateUserBadges(badges);
+
         // Atualizar status
         updateUserStatus('online');
 
@@ -398,6 +401,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.loginBtn.onclick = logout;
             UI.loginBtn.setAttribute('aria-label', 'Sair da conta');
         }
+    }
+
+    // Atualizar badges do usuário
+    function updateUserBadges(badges) {
+        const badgesContainer = document.getElementById('userBadges');
+        if (!badgesContainer) return;
+
+        if (!badges || badges.length === 0) {
+            badgesContainer.innerHTML = '';
+            return;
+        }
+
+        badgesContainer.innerHTML = badges.map(badge => `
+            <div class="user-badge" 
+                 style="background: linear-gradient(135deg, ${badge.color}15, ${badge.color}25); border: 1px solid ${badge.color}40;"
+                 title="${badge.description || badge.name}">
+                <span class="badge-icon">${badge.icon}</span>
+                <span class="badge-name">${badge.name}</span>
+            </div>
+        `).join('');
     }
 
     // Atualizar status do usuário (mantido)

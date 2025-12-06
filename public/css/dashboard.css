@@ -472,6 +472,45 @@ textarea:focus-visible {
     transition: all var(--transition-speed) ease;
 }
 
+.user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.user-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all var(--transition-speed) ease;
+    cursor: help;
+    backdrop-filter: blur(10px);
+}
+
+.user-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.badge-icon {
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.badge-name {
+    color: var(--text-color);
+    font-weight: 600;
+}
+}
+
 .plan-badge.free {
     background-color: rgba(224, 224, 224, 0.3);
     color: var(--text-color);
