@@ -87,16 +87,55 @@ app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, async (req,
 app.get('/api/server/:guildId/bot-present', discordAuth.authenticateToken, async (req, res) => {
     const { guildId } = req.params;
     try {
+        let present = false;
+        
+        // First, try to check via bot client
         if (botClient && botClient.guilds) {
             const guild = botClient.guilds.cache.get(guildId);
-            res.json({ present: !!guild });
-        } else {
-            // If bot not available, assume not present
-            res.json({ present: false });
+            present = !!guild;
         }
+        
+        // If not found via bot client, check dataStore (if bot has config, it's likely present)
+        if (!present) {
+            try {
+                const config = await dataStore.getServerConfig(guildId);
+                // If server has config in dataStore, assume bot is present
+                // This handles cases where bot is in server but cache hasn't updated
+                if (config) {
+                    // More lenient check: if config exists, bot was/is there
+                    // Check for any sign of bot activity or custom config
+                    const hasActivity = config.stats.commandsExecuted > 0 || 
+                                      config.prefix !== '!' || 
+                                      (config.stats.uniqueUsers && (config.stats.uniqueUsers.size > 0 || (Array.isArray(config.stats.uniqueUsers) && config.stats.uniqueUsers.length > 0)));
+                    
+                    // If bot client is not available, trust dataStore completely
+                    if (!botClient || !botClient.guilds) {
+                        present = true; // If we can't verify via bot, trust dataStore
+                    } else if (hasActivity) {
+                        present = true; // Has activity, definitely present
+                    } else {
+                        // Config exists but no activity - still assume present if config exists
+                        // (bot might have been added but no commands used yet)
+                        present = true;
+                    }
+                }
+            } catch (err) {
+                // If error getting config, assume not present
+                console.log(`Servidor ${guildId} não encontrado no dataStore:`, err.message);
+            }
+        }
+        
+        res.json({ present });
     } catch (error) {
         console.error('Erro ao verificar presença do bot:', error);
-        res.json({ present: false });
+        // On error, try dataStore as fallback
+        try {
+            const config = await dataStore.getServerConfig(guildId);
+            const present = !!(config && (config.stats.commandsExecuted > 0 || config.prefix !== '!'));
+            res.json({ present });
+        } catch (err) {
+            res.json({ present: false });
+        }
     }
 });
 

@@ -21,6 +21,12 @@ function authenticateToken(req, res, next) {
         req.user = payload;
         return next();
     } catch (err) {
+        // If token expired, try to refresh if refresh token exists
+        if (err.name === 'TokenExpiredError') {
+            // Clear expired token
+            res.clearCookie('holly_token');
+            return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
+        }
         return res.status(403).json({ error: 'Token inválido ou expirado' });
     }
 }
@@ -40,7 +46,7 @@ async function callback(req, res) {
     try {
         const { code } = req.query;
         if (!code) {
-            return res.redirect(`${FRONTEND_URL}/dashboard.html?error=no_code`);
+            return res.redirect(`${FRONTEND_URL}/dashboard?error=no_code`);
         }
 
         const tokenResponse = await axios.post(
@@ -68,19 +74,19 @@ async function callback(req, res) {
             expires_at: Date.now() + expires_in * 1000
         });
 
-        const jwtToken = jwt.sign({ user_id: userId }, JWT_SECRET, { expiresIn: '7d' });
+        const jwtToken = jwt.sign({ user_id: userId, username: userRes.data.username }, JWT_SECRET, { expiresIn: '30d' });
 
         res.cookie('holly_token', jwtToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
-            maxAge: 7 * 24 * 60 * 60 * 1000
+            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 dias
         });
 
-        return res.redirect(`${FRONTEND_URL}/dashboard.html`);
+        return res.redirect(`${FRONTEND_URL}/dashboard`);
     } catch (err) {
         console.error('Erro no callback:', err.response?.data || err.message);
-        return res.redirect(`${FRONTEND_URL}/dashboard.html?error=auth_failed`);
+        return res.redirect(`${FRONTEND_URL}/dashboard?error=auth_failed`);
     }
 }
 

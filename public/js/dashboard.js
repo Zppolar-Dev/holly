@@ -537,8 +537,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                         }
                     } else {
                         // Invite bot to server
-                        const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
-                        window.open(inviteUrl, '_blank');
+                        const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
+                        console.log('🔗 Abrindo link de convite:', inviteUrl);
+                        // Open in new window/tab for better UX
+                        const inviteWindow = window.open(inviteUrl, '_blank', 'noopener,noreferrer');
+                        if (!inviteWindow) {
+                            // If popup blocked, fallback to redirect
+                            window.location.href = inviteUrl;
+                        }
                     }
                 }, true);
             }
