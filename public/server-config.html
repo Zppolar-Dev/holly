@@ -117,9 +117,14 @@
                     </div>
                     <div id="notify-join-config" style="display: none;">
                         <div class="form-group">
-                            <label for="notify-join-channel">Canal de Notificação</label>
+                            <label for="notify-join-channel">
+                                Canal de Notificação
+                                <button type="button" class="btn-icon" id="refresh-channels" title="Atualizar lista de canais">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </label>
                             <select id="notify-join-channel" class="form-input">
-                                <option value="">Selecione um canal...</option>
+                                <option value="">Carregando canais...</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -127,16 +132,17 @@
                             <textarea 
                                 id="notify-join-message" 
                                 class="form-input" 
-                                rows="3"
-                                placeholder="Bem-vindo @nome ao servidor! Entrou em @hora"
+                                rows="4"
+                                placeholder="Welcome {user} to the server! Joined at {time}"
                             ></textarea>
                             <small>
-                                <strong>Variáveis disponíveis:</strong><br>
-                                <code>@nome</code> - Nome do usuário (menção)<br>
-                                <code>@hora</code> - Hora de entrada (HH:MM)<br>
-                                <code>@data</code> - Data de entrada (DD/MM/AAAA)<br>
-                                <code>@servidor</code> - Nome do servidor<br>
-                                <code>@membros</code> - Total de membros
+                                <strong>Available variables (must be inside {}):</strong><br>
+                                <code>{user}</code> - User mention<br>
+                                <code>{username}</code> - Username (no mention)<br>
+                                <code>{time}</code> - Join time (HH:MM)<br>
+                                <code>{date}</code> - Join date (DD/MM/YYYY)<br>
+                                <code>{server}</code> - Server name<br>
+                                <code>{members}</code> - Total members count
                             </small>
                         </div>
                     </div>
@@ -154,9 +160,14 @@
                     </div>
                     <div id="notify-leave-config" style="display: none;">
                         <div class="form-group">
-                            <label for="notify-leave-channel">Canal de Notificação</label>
+                            <label for="notify-leave-channel">
+                                Canal de Notificação
+                                <button type="button" class="btn-icon" id="refresh-channels-leave" title="Atualizar lista de canais">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </label>
                             <select id="notify-leave-channel" class="form-input">
-                                <option value="">Selecione um canal...</option>
+                                <option value="">Carregando canais...</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -164,16 +175,17 @@
                             <textarea 
                                 id="notify-leave-message" 
                                 class="form-input" 
-                                rows="3"
-                                placeholder="@nome saiu do servidor em @hora"
+                                rows="4"
+                                placeholder="{username} left the server at {time}"
                             ></textarea>
                             <small>
-                                <strong>Variáveis disponíveis:</strong><br>
-                                <code>@nome</code> - Nome do usuário<br>
-                                <code>@hora</code> - Hora de saída (HH:MM)<br>
-                                <code>@data</code> - Data de saída (DD/MM/AAAA)<br>
-                                <code>@servidor</code> - Nome do servidor<br>
-                                <code>@membros</code> - Total de membros
+                                <strong>Available variables (must be inside {}):</strong><br>
+                                <code>{user}</code> - User mention<br>
+                                <code>{username}</code> - Username (no mention)<br>
+                                <code>{time}</code> - Leave time (HH:MM)<br>
+                                <code>{date}</code> - Leave date (DD/MM/YYYY)<br>
+                                <code>{server}</code> - Server name<br>
+                                <code>{members}</code> - Total members count
                             </small>
                         </div>
                     </div>

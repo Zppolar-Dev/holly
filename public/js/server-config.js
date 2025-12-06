@@ -91,19 +91,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Load guild channels
-    async function loadGuildChannels() {
+    async function loadGuildChannels(showLoading = true) {
         try {
+            if (showLoading) {
+                const joinSelect = UI.notifyJoinChannel;
+                const leaveSelect = UI.notifyLeaveChannel;
+                if (joinSelect) joinSelect.innerHTML = '<option value="">Carregando canais...</option>';
+                if (leaveSelect) leaveSelect.innerHTML = '<option value="">Carregando canais...</option>';
+            }
+
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/channels`, {
                 credentials: 'include'
             });
 
             if (res.ok) {
                 const channels = await res.json();
-                return channels.filter(ch => ch.type === 0); // Only text channels
+                const textChannels = channels.filter(ch => ch.type === 0); // Only text channels
+                populateChannels(textChannels);
+                return textChannels;
+            } else {
+                const joinSelect = UI.notifyJoinChannel;
+                const leaveSelect = UI.notifyLeaveChannel;
+                if (joinSelect) joinSelect.innerHTML = '<option value="">Erro ao carregar canais</option>';
+                if (leaveSelect) leaveSelect.innerHTML = '<option value="">Erro ao carregar canais</option>';
             }
             return [];
         } catch (error) {
             console.error('Erro ao carregar canais:', error);
+            const joinSelect = UI.notifyJoinChannel;
+            const leaveSelect = UI.notifyLeaveChannel;
+            if (joinSelect) joinSelect.innerHTML = '<option value="">Erro ao carregar canais</option>';
+            if (leaveSelect) leaveSelect.innerHTML = '<option value="">Erro ao carregar canais</option>';
             return [];
         }
     }
@@ -160,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.notifyJoinChannel.value = notifications.memberJoin?.channelId || '';
         }
         if (UI.notifyJoinMessage) {
-            UI.notifyJoinMessage.value = notifications.memberJoin?.message || 'Bem-vindo @nome ao servidor! Entrou em @hora';
+            UI.notifyJoinMessage.value = notifications.memberJoin?.message || 'Welcome {user} to the server! Joined at {time}';
         }
 
         // Leave notifications
@@ -172,7 +190,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.notifyLeaveChannel.value = notifications.memberLeave?.channelId || '';
         }
         if (UI.notifyLeaveMessage) {
-            UI.notifyLeaveMessage.value = notifications.memberLeave?.message || '@nome saiu do servidor em @hora';
+            UI.notifyLeaveMessage.value = notifications.memberLeave?.message || '{username} left the server at {time}';
         }
 
         // Modules
@@ -377,6 +395,32 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
+        // Refresh channels buttons
+        const refreshBtn = document.getElementById('refresh-channels');
+        const refreshBtnLeave = document.getElementById('refresh-channels-leave');
+        
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', async () => {
+                refreshBtn.disabled = true;
+                refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                await loadGuildChannels(true);
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                showNotification('✅ Canais atualizados!', 'success');
+            });
+        }
+
+        if (refreshBtnLeave) {
+            refreshBtnLeave.addEventListener('click', async () => {
+                refreshBtnLeave.disabled = true;
+                refreshBtnLeave.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                await loadGuildChannels(true);
+                refreshBtnLeave.disabled = false;
+                refreshBtnLeave.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                showNotification('✅ Canais atualizados!', 'success');
+            });
+        }
+
         // Save button
         if (UI.saveBtn) {
             UI.saveBtn.addEventListener('click', saveConfig);
@@ -397,18 +441,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const isAuthenticated = await checkAuth();
         if (!isAuthenticated) return;
 
-        const [config, channels, serverInfo] = await Promise.all([
+        const [config, serverInfo] = await Promise.all([
             loadServerConfig(),
-            loadGuildChannels(),
             loadServerInfo()
         ]);
 
+        // Load channels after config is loaded
+        await loadGuildChannels(true);
+
         if (config) {
             populateForm(config);
-        }
-
-        if (channels) {
-            populateChannels(channels);
         }
 
         setupEventListeners();
