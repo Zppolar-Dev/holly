@@ -156,12 +156,12 @@ function getUserBadges(userId) {
     if (userId === OWNER_ID) {
         badges.push({
             id: 'owner',
-            name: 'Partnered Server Owner',
+            name: 'Owner',
             // URL da badge do Discord - pode precisar ser ajustada
             // Alternativas: usar imagem local ou URL do Discord CDN
-            imageUrl: 'https://cdn.discordapp.com/attachments/0/0/partnered-server-owner.png',
+            imageUrl: '"C:\Users\s2sta\OneDrive\Web Pages\Holly\public\images\badges\partnered-server-owner.png"',
             fallbackIcon: '👑',
-            description: 'Partnered Server Owner'
+            description: 'Owner'
         });
     }
     
