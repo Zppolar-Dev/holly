@@ -415,9 +415,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         badgesContainer.innerHTML = badges.map(badge => {
             // Se tiver imageUrl, usa imagem, senão usa ícone fallback
+            // Removido title para evitar tooltip padrão do navegador
             if (badge.imageUrl) {
                 return `
-                    <div class="discord-badge" title="${badge.description || badge.name}">
+                    <div class="discord-badge">
                         <img src="${badge.imageUrl}" alt="${badge.name}" class="badge-image" 
                              onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='inline');">
                         ${badge.fallbackIcon ? `<span class="badge-icon" style="display:none;">${badge.fallbackIcon}</span>` : ''}
@@ -426,7 +427,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 `;
             } else if (badge.icon || badge.fallbackIcon) {
                 return `
-                    <div class="discord-badge" title="${badge.description || badge.name}">
+                    <div class="discord-badge">
                         <span class="badge-icon">${badge.icon || badge.fallbackIcon || ''}</span>
                         <span class="badge-tooltip">${badge.description || badge.name}</span>
                     </div>

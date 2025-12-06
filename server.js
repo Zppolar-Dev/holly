@@ -89,40 +89,39 @@ app.get('/api/server/:guildId/bot-present', discordAuth.authenticateToken, async
     try {
         let present = false;
         
-        // Method 1: Check via bot client (most reliable)
+        // Method 1: Check via bot client (most reliable - check cache first)
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild) {
-                present = true;
+                // Bot is definitely in the server
                 return res.json({ present: true });
             }
         }
         
-        // Method 2: Check dataStore - if config exists, bot was/is there
+        // Method 2: Check dataStore - if config exists with activity, bot is/was there
         try {
             const config = await dataStore.getServerConfig(guildId);
             if (config) {
-                // If config exists, bot has been in the server at some point
-                // Check if there's any activity to be more certain
+                // Check for signs of bot activity
                 const hasActivity = config.stats.commandsExecuted > 0 || 
                                   config.prefix !== '!' ||
                                   (config.stats.uniqueUsers && 
                                    ((config.stats.uniqueUsers instanceof Set && config.stats.uniqueUsers.size > 0) ||
                                     (Array.isArray(config.stats.uniqueUsers) && config.stats.uniqueUsers.length > 0)));
                 
-                // If bot client is not available, trust dataStore
+                // If bot client is not available, trust dataStore if has activity
                 if (!botClient || !botClient.guilds) {
-                    present = true;
+                    present = hasActivity; // Only trust if has activity
                 } else {
                     // Bot client available but guild not in cache
-                    // If has activity, definitely present
-                    // If no activity but config exists, still likely present (just added)
-                    present = hasActivity || true; // Assume present if config exists
+                    // If has activity, bot was definitely there (might have left recently)
+                    // If no activity, assume bot is not in server (config might be from old data)
+                    present = hasActivity;
                 }
             }
         } catch (err) {
             // No config found - bot definitely not in server
-            console.log(`Servidor ${guildId} não encontrado no dataStore`);
+            console.log(`Servidor ${guildId} não encontrado no dataStore:`, err.message);
             present = false;
         }
         

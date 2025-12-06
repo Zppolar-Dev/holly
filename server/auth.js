@@ -159,7 +159,7 @@ function getUserBadges(userId) {
             name: 'Owner',
             // URL da badge do Discord - pode precisar ser ajustada
             // Alternativas: usar imagem local ou URL do Discord CDN
-            imageUrl: '"C:\Users\s2sta\OneDrive\Web Pages\Holly\public\images\badges\partnered-server-owner.png"',
+            imageUrl: '/images/badges/partnered-server-owner.png',
             fallbackIcon: '👑',
             description: 'Owner'
         });
