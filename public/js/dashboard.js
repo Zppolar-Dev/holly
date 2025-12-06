@@ -482,14 +482,19 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const manageBtn = serverCard.querySelector('.manage-btn');
             if (manageBtn) {
-                manageBtn.addEventListener('click', (e) => {
+                manageBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    manageServer(guild.id, guild.name);
+                    e.preventDefault();
+                    console.log('Botão Configurar clicado para:', guild.name, guild.id);
+                    await manageServer(guild.id, guild.name);
                 });
             }
 
-            serverCard.addEventListener('click', () => {
-                viewServerDetails(guild.id);
+            serverCard.addEventListener('click', (e) => {
+                // Don't trigger if clicking the button
+                if (!e.target.closest('.manage-btn')) {
+                    viewServerDetails(guild.id);
+                }
             });
         });
     }
@@ -889,42 +894,61 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Gerenciar servidor (com modal de configuração)
     async function manageServer(guildId, guildName) {
+        console.log('manageServer chamado:', guildId, guildName);
         try {
+            showNotification('Carregando configurações...', 'info');
+            
             // Fetch server configuration
             const configRes = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/config`, { 
-                credentials: 'include' 
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
             
             if (!configRes.ok) {
-                throw new Error('Erro ao carregar configuração');
+                const errorData = await configRes.json().catch(() => ({}));
+                throw new Error(errorData.error || `Erro ${configRes.status}: ${configRes.statusText}`);
             }
             
             const config = await configRes.json();
+            console.log('Configuração carregada:', config);
             
             // Create and show configuration modal
             showServerConfigModal(guildId, guildName, config);
         } catch (error) {
             console.error('Erro ao carregar configuração:', error);
-            showNotification('Erro ao carregar configuração do servidor', 'error');
+            showNotification(`Erro ao carregar configuração: ${error.message}`, 'error');
         }
     }
 
     // Mostrar modal de configuração do servidor
     function showServerConfigModal(guildId, guildName, config) {
+        console.log('showServerConfigModal chamado:', guildId, guildName, config);
+        
         // Remove existing modal if any
         const existingModal = document.querySelector('.modal');
-        if (existingModal) existingModal.remove();
+        if (existingModal) {
+            existingModal.remove();
+        }
         
         const modal = document.createElement('div');
-        modal.className = 'modal active';
+        modal.className = 'modal';
+        modal.id = 'server-config-modal';
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-labelledby', 'modal-title');
         modal.setAttribute('aria-modal', 'true');
         
         const stats = config.stats || {};
-        const uniqueUsersCount = typeof stats.uniqueUsers === 'number' 
-            ? stats.uniqueUsers 
-            : (stats.uniqueUsers?.size || 0);
+        // Handle uniqueUsers - can be number (from API) or Set (from config)
+        let uniqueUsersCount = 0;
+        if (typeof stats.uniqueUsers === 'number') {
+            uniqueUsersCount = stats.uniqueUsers;
+        } else if (stats.uniqueUsers?.size !== undefined) {
+            uniqueUsersCount = stats.uniqueUsers.size;
+        } else {
+            uniqueUsersCount = 0;
+        }
         
         modal.innerHTML = `
             <div class="modal-content">
@@ -1054,6 +1078,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         document.body.appendChild(modal);
         
+        // Force reflow and add active class
+        setTimeout(() => {
+            modal.classList.add('active');
+        }, 10);
+        
         // Focus trap
         const firstFocusable = modal.querySelector('#server-prefix');
         const lastFocusable = modal.querySelector('#save-server-config');
@@ -1061,21 +1090,33 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Close modal handlers
         const closeModal = () => {
             modal.classList.remove('active');
-            setTimeout(() => modal.remove(), 300);
+            setTimeout(() => {
+                modal.remove();
+                document.removeEventListener('keydown', handleEsc);
+            }, 300);
         };
         
-        modal.querySelector('.close-modal').addEventListener('click', closeModal);
-        modal.querySelector('#cancel-config').addEventListener('click', closeModal);
+        const closeBtn = modal.querySelector('.close-modal');
+        const cancelBtn = modal.querySelector('#cancel-config');
+        
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closeModal);
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', closeModal);
+        }
         
         modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal();
+            if (e.target === modal) {
+                closeModal();
+            }
         });
         
         // ESC key to close
         const handleEsc = (e) => {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
                 closeModal();
-                document.removeEventListener('keydown', handleEsc);
             }
         };
         document.addEventListener('keydown', handleEsc);

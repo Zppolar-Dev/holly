@@ -51,7 +51,26 @@ function loadData() {
             // Convert Set arrays back to Sets
             Object.keys(parsed).forEach(guildId => {
                 if (parsed[guildId].stats?.uniqueUsers) {
-                    parsed[guildId].stats.uniqueUsers = new Set(parsed[guildId].stats.uniqueUsers);
+                    // Handle different formats: array, object, or already Set
+                    const uniqueUsers = parsed[guildId].stats.uniqueUsers;
+                    if (Array.isArray(uniqueUsers)) {
+                        parsed[guildId].stats.uniqueUsers = new Set(uniqueUsers);
+                    } else if (typeof uniqueUsers === 'object' && uniqueUsers !== null) {
+                        // If it's an object (empty {} or with keys), convert to array first
+                        const keys = Object.keys(uniqueUsers);
+                        parsed[guildId].stats.uniqueUsers = keys.length > 0 
+                            ? new Set(keys) 
+                            : new Set();
+                    } else {
+                        parsed[guildId].stats.uniqueUsers = new Set();
+                    }
+                } else {
+                    // Initialize if missing
+                    if (!parsed[guildId].stats) {
+                        parsed[guildId].stats = { ...defaultConfig.stats, uniqueUsers: new Set() };
+                    } else {
+                        parsed[guildId].stats.uniqueUsers = new Set();
+                    }
                 }
             });
             

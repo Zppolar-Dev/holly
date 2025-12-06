@@ -12,7 +12,7 @@
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
@@ -33,7 +33,7 @@
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
@@ -50,15 +50,15 @@
       "music": false
     },
     "stats": {
-      "commandsExecuted": 0,
+      "commandsExecuted": 1,
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
-      "lastCommandTime": null,
+      "lastCommandTime": "2025-12-06T00:52:37.434Z",
       "uniqueUsers": {}
     }
   },
@@ -75,7 +75,7 @@
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
@@ -96,7 +96,7 @@
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
@@ -117,7 +117,7 @@
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 0,
+        "utility": 1,
         "music": 0,
         "other": 0
       },
