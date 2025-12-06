@@ -482,11 +482,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             const manageBtn = serverCard.querySelector('.manage-btn');
             if (manageBtn) {
-                manageBtn.addEventListener('click', async (e) => {
+                // Remove any existing listeners
+                const newManageBtn = manageBtn.cloneNode(true);
+                manageBtn.parentNode.replaceChild(newManageBtn, manageBtn);
+                
+                newManageBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     e.preventDefault();
-                    console.log('Botão Configurar clicado para:', guild.name, guild.id);
-                    await manageServer(guild.id, guild.name);
+                    e.stopImmediatePropagation();
+                    
+                    console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
+                    
+                    // Disable button temporarily
+                    newManageBtn.disabled = true;
+                    newManageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                    
+                    try {
+                        await manageServer(guild.id, guild.name);
+                    } catch (error) {
+                        console.error('Erro ao abrir configuração:', error);
+                        showNotification('Erro ao abrir configurações do servidor', 'error');
+                    } finally {
+                        // Re-enable button
+                        newManageBtn.disabled = false;
+                        newManageBtn.innerHTML = '<i class="fas fa-cog"></i> Configurar';
+                    }
                 });
             }
 
@@ -894,41 +914,65 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Gerenciar servidor (com modal de configuração)
     async function manageServer(guildId, guildName) {
-        console.log('manageServer chamado:', guildId, guildName);
+        console.log('🔧 manageServer chamado:', guildId, guildName);
+        
+        if (!guildId || !guildName) {
+            console.error('❌ guildId ou guildName não fornecido');
+            showNotification('Erro: ID do servidor não encontrado', 'error');
+            return;
+        }
+        
         try {
-            showNotification('Carregando configurações...', 'info');
+            console.log('📡 Fazendo requisição para:', `${CONFIG.API_BASE_URL}/api/server/${guildId}/config`);
             
             // Fetch server configuration
             const configRes = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/config`, { 
+                method: 'GET',
                 credentials: 'include',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 }
             });
             
+            console.log('📥 Resposta recebida:', configRes.status, configRes.statusText);
+            
             if (!configRes.ok) {
-                const errorData = await configRes.json().catch(() => ({}));
-                throw new Error(errorData.error || `Erro ${configRes.status}: ${configRes.statusText}`);
+                let errorMessage = `Erro ${configRes.status}`;
+                try {
+                    const errorData = await configRes.json();
+                    errorMessage = errorData.error || errorMessage;
+                } catch (e) {
+                    errorMessage = configRes.statusText || errorMessage;
+                }
+                throw new Error(errorMessage);
             }
             
             const config = await configRes.json();
-            console.log('Configuração carregada:', config);
+            console.log('✅ Configuração carregada:', config);
             
             // Create and show configuration modal
             showServerConfigModal(guildId, guildName, config);
         } catch (error) {
-            console.error('Erro ao carregar configuração:', error);
+            console.error('❌ Erro ao carregar configuração:', error);
             showNotification(`Erro ao carregar configuração: ${error.message}`, 'error');
         }
     }
 
     // Mostrar modal de configuração do servidor
     function showServerConfigModal(guildId, guildName, config) {
-        console.log('showServerConfigModal chamado:', guildId, guildName, config);
+        console.log('🎨 showServerConfigModal chamado:', guildId, guildName, config);
+        
+        if (!guildId || !guildName || !config) {
+            console.error('❌ Parâmetros inválidos para modal');
+            showNotification('Erro: Dados inválidos para abrir configurações', 'error');
+            return;
+        }
         
         // Remove existing modal if any
-        const existingModal = document.querySelector('.modal');
+        const existingModal = document.querySelector('.modal, #server-config-modal');
         if (existingModal) {
+            console.log('🗑️ Removendo modal existente');
             existingModal.remove();
         }
         
@@ -938,6 +982,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         modal.setAttribute('role', 'dialog');
         modal.setAttribute('aria-labelledby', 'modal-title');
         modal.setAttribute('aria-modal', 'true');
+        modal.style.display = 'flex';
         
         const stats = config.stats || {};
         // Handle uniqueUsers - can be number (from API) or Set (from config)
@@ -1077,11 +1122,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         `;
         
         document.body.appendChild(modal);
+        console.log('✅ Modal adicionado ao DOM');
         
         // Force reflow and add active class
-        setTimeout(() => {
-            modal.classList.add('active');
-        }, 10);
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                modal.classList.add('active');
+                console.log('✅ Modal ativado com classe active');
+            });
+        });
         
         // Focus trap
         const firstFocusable = modal.querySelector('#server-prefix');
