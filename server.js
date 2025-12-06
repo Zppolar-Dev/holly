@@ -239,19 +239,26 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, async (r
         }
 
         // Fallback: try with user token
-        const token = await discordAuth.getValidAccessToken(req.user.user_id);
-        if (token) {
-            const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            const textChannels = channelsRes.data.filter(ch => ch.type === 0);
-            return res.json(textChannels);
+        try {
+            const token = await discordAuth.getValidAccessToken(req.user.user_id);
+            if (token) {
+                const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const textChannels = channelsRes.data.filter(ch => ch.type === 0);
+                return res.json(textChannels);
+            }
+        } catch (tokenError) {
+            console.error('Erro ao buscar canais com token do usuário:', tokenError.message);
+            // Continue to return empty array
         }
 
+        // If bot is not in server or token failed, return empty array
         res.json([]);
     } catch (error) {
-        console.error('Erro ao buscar canais:', error);
-        res.status(500).json({ error: 'Erro ao buscar canais' });
+        console.error('Erro ao buscar canais:', error.message);
+        // Return empty array instead of error to allow page to load
+        res.json([]);
     }
 });
 

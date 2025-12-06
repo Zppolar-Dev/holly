@@ -2293,22 +2293,29 @@ html, body {
     align-items: center;
     gap: 1rem;
     cursor: pointer;
+    position: relative;
+    padding: 0.5rem 0;
 }
 
 .toggle-switch input[type="checkbox"] {
-    display: none;
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
 }
 
-.slider {
+.toggle-switch > span:first-of-type {
     position: relative;
     width: 50px;
     height: 26px;
     background: var(--border-color);
     border-radius: 26px;
     transition: background var(--transition-speed);
+    flex-shrink: 0;
 }
 
-.slider:before {
+.toggle-switch > span:first-of-type:before {
     content: '';
     position: absolute;
     width: 20px;
@@ -2318,14 +2325,21 @@ html, body {
     top: 3px;
     left: 3px;
     transition: transform var(--transition-speed);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.toggle-switch input[type="checkbox"]:checked + .slider {
+.toggle-switch input[type="checkbox"]:checked + span:first-of-type {
     background: var(--primary-color);
 }
 
-.toggle-switch input[type="checkbox"]:checked + .slider:before {
+.toggle-switch input[type="checkbox"]:checked + span:first-of-type:before {
     transform: translateX(24px);
+}
+
+.toggle-switch > span:last-of-type {
+    flex: 1;
+    color: var(--text-color);
+    font-weight: 500;
 }
 
 .config-actions {

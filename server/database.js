@@ -158,16 +158,37 @@ async function getServerConfig(guildId) {
         }
 
         const row = result.rows[0];
+        const stats = row.stats || {};
+        
+        // Handle uniqueUsers - ensure it's always a Set
+        let uniqueUsers = new Set();
+        if (stats.uniqueUsers) {
+            if (Array.isArray(stats.uniqueUsers)) {
+                uniqueUsers = new Set(stats.uniqueUsers);
+            } else if (typeof stats.uniqueUsers === 'object' && stats.uniqueUsers !== null) {
+                // If it's an object, try to convert to array
+                try {
+                    uniqueUsers = new Set(Object.values(stats.uniqueUsers));
+                } catch (e) {
+                    uniqueUsers = new Set();
+                }
+            }
+        }
+        
         return {
             prefix: row.prefix,
-            nickname: row.stats?.nickname || null,
+            nickname: stats.nickname || null,
             botPresent: row.bot_present || false,
             lastSeen: row.last_seen ? row.last_seen.toISOString() : null,
+            notifications: stats.notifications || {
+                memberJoin: { enabled: false, channelId: null, message: '' },
+                memberLeave: { enabled: false, channelId: null, message: '' }
+            },
             modules: row.modules,
             stats: {
-                ...row.stats,
-                nickname: row.stats?.nickname || null,
-                uniqueUsers: new Set(row.stats.uniqueUsers || [])
+                ...stats,
+                nickname: stats.nickname || null,
+                uniqueUsers: uniqueUsers
             }
         };
     } catch (error) {
