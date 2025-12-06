@@ -530,9 +530,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <p><i class="fas fa-chart-line"></i> Comandos: <strong>${stats.commandsExecuted || 0}</strong></p>
                     <p><i class="fas fa-users"></i> Usuários únicos: <strong>${stats.uniqueUsers || 0}</strong></p>
                 </div>`
-                : `<div class="server-stats">
-                    <p><i class="fas fa-info-circle"></i> Bot não está no servidor</p>
-                    <p><i class="fas fa-arrow-right"></i> Clique em "Convidar" para adicionar</p>
+                : `<div class="server-stats invite-prompt">
+                    <div class="invite-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <p class="invite-title">Bot não está no servidor</p>
+                    <p class="invite-description">Adicione a Holly para começar a usar todos os recursos</p>
                 </div>`;
             
             serverCard.innerHTML = `
@@ -575,13 +578,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                     } else {
                         // Invite bot to server
                         const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
-                        console.log('🔗 Abrindo link de convite:', inviteUrl);
-                        // Open in new window/tab for better UX
-                        const inviteWindow = window.open(inviteUrl, '_blank', 'noopener,noreferrer');
-                        if (!inviteWindow) {
-                            // If popup blocked, fallback to redirect
-                            window.location.href = inviteUrl;
-                        }
+                        console.log('🔗 Convidando bot para o servidor:', guild.name, guild.id);
+                        console.log('🔗 URL de convite:', inviteUrl);
+                        
+                        // Disable button temporarily
+                        actionBtn.disabled = true;
+                        const originalHTML = actionBtn.innerHTML;
+                        actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecionando...';
+                        
+                        // Redirect directly to Discord OAuth (most reliable method)
+                        window.location.href = inviteUrl;
                     }
                 }, true);
             }
