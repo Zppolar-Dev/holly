@@ -87,8 +87,25 @@ loadData();
 // Get server configuration
 function getServerConfig(guildId) {
     if (!serverData[guildId]) {
-        serverData[guildId] = JSON.parse(JSON.stringify(defaultConfig));
+        // Deep clone default config and ensure Set is properly initialized
+        serverData[guildId] = {
+            prefix: defaultConfig.prefix,
+            modules: { ...defaultConfig.modules },
+            stats: {
+                ...defaultConfig.stats,
+                uniqueUsers: new Set()
+            }
+        };
         saveData();
+    } else {
+        // Ensure uniqueUsers is a Set (fix for existing data loaded from JSON)
+        if (!(serverData[guildId].stats?.uniqueUsers instanceof Set)) {
+            if (Array.isArray(serverData[guildId].stats.uniqueUsers)) {
+                serverData[guildId].stats.uniqueUsers = new Set(serverData[guildId].stats.uniqueUsers);
+            } else {
+                serverData[guildId].stats.uniqueUsers = new Set();
+            }
+        }
     }
     return serverData[guildId];
 }
