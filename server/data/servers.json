@@ -42,7 +42,7 @@
     }
   },
   "1074842431020863609": {
-    "prefix": "?",
+    "prefix": "!",
     "modules": {
       "moderation": true,
       "fun": true,
@@ -50,15 +50,15 @@
       "music": false
     },
     "stats": {
-      "commandsExecuted": 3,
+      "commandsExecuted": 11,
       "commandsByCategory": {
         "moderation": 0,
         "fun": 0,
-        "utility": 3,
+        "utility": 11,
         "music": 0,
         "other": 0
       },
-      "lastCommandTime": "2025-12-06T01:12:42.382Z",
+      "lastCommandTime": "2025-12-06T01:23:51.974Z",
       "uniqueUsers": {}
     }
   },

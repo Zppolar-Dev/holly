@@ -480,13 +480,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             UI.serversGrid.appendChild(serverCard);
 
+            // Add click handler to the button FIRST (before card click)
             const manageBtn = serverCard.querySelector('.manage-btn');
             if (manageBtn) {
-                // Remove any existing listeners
-                const newManageBtn = manageBtn.cloneNode(true);
-                manageBtn.parentNode.replaceChild(newManageBtn, manageBtn);
-                
-                newManageBtn.addEventListener('click', async (e) => {
+                manageBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     e.stopImmediatePropagation();
@@ -494,8 +491,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
                     
                     // Disable button temporarily
-                    newManageBtn.disabled = true;
-                    newManageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                    manageBtn.disabled = true;
+                    const originalHTML = manageBtn.innerHTML;
+                    manageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
                     
                     try {
                         await manageServer(guild.id, guild.name);
@@ -504,17 +502,22 @@ document.addEventListener('DOMContentLoaded', async function() {
                         showNotification('Erro ao abrir configurações do servidor', 'error');
                     } finally {
                         // Re-enable button
-                        newManageBtn.disabled = false;
-                        newManageBtn.innerHTML = '<i class="fas fa-cog"></i> Configurar';
+                        manageBtn.disabled = false;
+                        manageBtn.innerHTML = originalHTML;
                     }
-                });
+                }, true); // Use capture phase to ensure it fires first
             }
 
-            serverCard.addEventListener('click', (e) => {
-                // Don't trigger if clicking the button
-                if (!e.target.closest('.manage-btn')) {
-                    viewServerDetails(guild.id);
+            // Add click handler to card (only if not clicking button)
+            serverCard.addEventListener('click', async (e) => {
+                // Don't trigger if clicking the button or any element inside it
+                if (e.target.closest('.manage-btn') || e.target.classList.contains('manage-btn')) {
+                    return;
                 }
+                
+                console.log('📋 Card clicado, abrindo configurações do servidor:', guild.id);
+                // Open configuration modal when clicking the card
+                await manageServer(guild.id, guild.name);
             });
         });
     }
@@ -1248,9 +1251,19 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Visualizar detalhes do servidor
-    function viewServerDetails(guildId) {
-        // Could open a detailed view or navigate to server-specific page
-        console.log(`Visualizando detalhes do servidor ${guildId}`);
+    async function viewServerDetails(guildId) {
+        // Open configuration modal instead of just logging
+        console.log(`📋 Abrindo configurações do servidor ${guildId}`);
+        
+        // Find the guild name from STATE
+        const guild = STATE.guilds?.find(g => g.id === guildId);
+        if (guild) {
+            // Open configuration modal
+            await manageServer(guildId, guild.name);
+        } else {
+            console.warn('Servidor não encontrado no estado:', guildId);
+            showNotification('Servidor não encontrado', 'error');
+        }
     }
 
     // Inicializar a aplicação
