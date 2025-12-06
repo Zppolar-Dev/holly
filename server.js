@@ -89,34 +89,45 @@ app.get('/api/server/:guildId/bot-present', discordAuth.authenticateToken, async
     try {
         let present = false;
         
-        // Method 1: Check via bot client (most reliable - check cache first)
+        // Method 1: Check via bot client cache (most reliable - real-time)
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild) {
-                // Bot is definitely in the server
+                // Bot is definitely in the server - update dataStore to reflect this
+                await dataStore.markBotPresent(guildId, true);
                 return res.json({ present: true });
             }
         }
         
-        // Method 2: Check dataStore - if config exists with activity, bot is/was there
+        // Method 2: Check dataStore botPresent flag (set by bot when joining/leaving)
         try {
             const config = await dataStore.getServerConfig(guildId);
             if (config) {
-                // Check for signs of bot activity
-                const hasActivity = config.stats.commandsExecuted > 0 || 
-                                  config.prefix !== '!' ||
-                                  (config.stats.uniqueUsers && 
-                                   ((config.stats.uniqueUsers instanceof Set && config.stats.uniqueUsers.size > 0) ||
-                                    (Array.isArray(config.stats.uniqueUsers) && config.stats.uniqueUsers.length > 0)));
-                
-                // If bot client is not available, trust dataStore if has activity
-                if (!botClient || !botClient.guilds) {
-                    present = hasActivity; // Only trust if has activity
+                // Check botPresent flag first (most reliable indicator)
+                if (config.botPresent === true) {
+                    // Check if lastSeen is recent (within last 5 minutes) to ensure it's current
+                    if (config.lastSeen) {
+                        const lastSeen = new Date(config.lastSeen);
+                        const now = new Date();
+                        const minutesSinceLastSeen = (now - lastSeen) / (1000 * 60);
+                        
+                        // If last seen more than 5 minutes ago, verify via bot client
+                        if (minutesSinceLastSeen > 5 && botClient && botClient.guilds) {
+                            // Double-check with bot client
+                            const guild = botClient.guilds.cache.get(guildId);
+                            present = !!guild;
+                            // Update flag if different
+                            if (present !== config.botPresent) {
+                                await dataStore.markBotPresent(guildId, present);
+                            }
+                        } else {
+                            present = true;
+                        }
+                    } else {
+                        present = true; // No lastSeen timestamp, but marked as present
+                    }
                 } else {
-                    // Bot client available but guild not in cache
-                    // If has activity, bot was definitely there (might have left recently)
-                    // If no activity, assume bot is not in server (config might be from old data)
-                    present = hasActivity;
+                    present = false; // Explicitly marked as not present
                 }
             }
         } catch (err) {

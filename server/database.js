@@ -101,11 +101,28 @@ async function initializeDatabase() {
             CREATE TABLE IF NOT EXISTS servers (
                 guild_id VARCHAR(20) PRIMARY KEY,
                 prefix VARCHAR(5) DEFAULT '!',
+                bot_present BOOLEAN DEFAULT false,
+                last_seen TIMESTAMP,
                 modules JSONB DEFAULT '{"moderation": true, "fun": true, "utility": true, "music": false}'::jsonb,
                 stats JSONB DEFAULT '{"commandsExecuted": 0, "commandsByCategory": {"moderation": 0, "fun": 0, "utility": 0, "music": 0, "other": 0}, "lastCommandTime": null, "uniqueUsers": []}'::jsonb,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
+        `);
+        
+        // Add bot_present and last_seen columns if they don't exist (for existing databases)
+        await pool.query(`
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                              WHERE table_name='servers' AND column_name='bot_present') THEN
+                    ALTER TABLE servers ADD COLUMN bot_present BOOLEAN DEFAULT false;
+                END IF;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                              WHERE table_name='servers' AND column_name='last_seen') THEN
+                    ALTER TABLE servers ADD COLUMN last_seen TIMESTAMP;
+                END IF;
+            END $$;
         `);
 
         // Create index for faster queries
@@ -143,6 +160,8 @@ async function getServerConfig(guildId) {
         const row = result.rows[0];
         return {
             prefix: row.prefix,
+            botPresent: row.bot_present || false,
+            lastSeen: row.last_seen ? row.last_seen.toISOString() : null,
             modules: row.modules,
             stats: {
                 ...row.stats,
@@ -181,14 +200,16 @@ async function createDefaultConfig(guildId) {
 
     try {
         await pool.query(
-            `INSERT INTO servers (guild_id, prefix, modules, stats)
-             VALUES ($1, $2, $3, $4)
+            `INSERT INTO servers (guild_id, prefix, bot_present, last_seen, modules, stats)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (guild_id) DO NOTHING`,
-            [guildId, defaultConfig.prefix, JSON.stringify(defaultConfig.modules), JSON.stringify(defaultConfig.stats)]
+            [guildId, defaultConfig.prefix, false, null, JSON.stringify(defaultConfig.modules), JSON.stringify(defaultConfig.stats)]
         );
 
         return {
             ...defaultConfig,
+            botPresent: false,
+            lastSeen: null,
             stats: {
                 ...defaultConfig.stats,
                 uniqueUsers: new Set()

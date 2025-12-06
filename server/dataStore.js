@@ -46,6 +46,8 @@ if (!fs.existsSync(dataDir)) {
 // Default server configuration
 const defaultConfig = {
     prefix: '!',
+    botPresent: false, // Track if bot is currently in server
+    lastSeen: null, // Last time bot was seen in server
     modules: {
         moderation: true,
         fun: true,
@@ -206,6 +208,34 @@ async function setServerPrefix(guildId, prefix) {
     return config;
 }
 
+// Mark bot as present in server
+async function markBotPresent(guildId, present = true) {
+    if (useDatabase && db) {
+        // Update bot_present field in database
+        try {
+            // Access pool from database module
+            const dbModule = require('./database');
+            if (dbModule && dbModule.pool) {
+                await dbModule.pool.query(
+                    'UPDATE servers SET bot_present = $1, last_seen = NOW(), updated_at = CURRENT_TIMESTAMP WHERE guild_id = $2',
+                    [present, guildId]
+                );
+            }
+        } catch (err) {
+            console.error('Erro ao marcar bot como presente no banco:', err);
+            // Fallback to file-based
+        }
+    }
+    
+    // File-based fallback (always update for consistency)
+    const config = await getServerConfig(guildId);
+    config.botPresent = present;
+    config.lastSeen = new Date().toISOString();
+    saveData();
+    
+    console.log(`📌 Bot ${present ? 'marcado como presente' : 'marcado como ausente'} no servidor ${guildId}`);
+}
+
 // Track command execution
 async function trackCommand(guildId, commandName, category, userId) {
     if (useDatabase && db) {
@@ -216,6 +246,10 @@ async function trackCommand(guildId, commandName, category, userId) {
     const config = await getServerConfig(guildId);
     config.stats.commandsExecuted++;
     config.stats.lastCommandTime = new Date().toISOString();
+    
+    // Also mark bot as present when command is executed
+    config.botPresent = true;
+    config.lastSeen = new Date().toISOString();
     
     if (category && config.stats.commandsByCategory[category] !== undefined) {
         config.stats.commandsByCategory[category]++;
@@ -292,6 +326,7 @@ module.exports = {
     getServerStats,
     getAllServers,
     setModuleStatus,
+    markBotPresent,
     loadData,
     saveData,
     getDataFilePath: getDataFilePathExport
