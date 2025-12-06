@@ -72,29 +72,35 @@ app.get('/api/stats', discordAuth.authenticateToken, (req, res) => {
 });
 
 // Get server-specific stats
-app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, (req, res) => {
+app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, async (req, res) => {
     const { guildId } = req.params;
-    // Reload data from file to ensure we have the latest
-    dataStore.loadData();
-    const stats = dataStore.getServerStats(guildId);
-    res.json(stats);
+    try {
+        const stats = await dataStore.getServerStats(guildId);
+        res.json(stats);
+    } catch (error) {
+        console.error('Erro ao buscar estatísticas:', error);
+        res.status(500).json({ error: 'Erro ao buscar estatísticas' });
+    }
 });
 
 // Get server configuration
-app.get('/api/server/:guildId/config', discordAuth.authenticateToken, (req, res) => {
+app.get('/api/server/:guildId/config', discordAuth.authenticateToken, async (req, res) => {
     const { guildId } = req.params;
-    // Reload data from file to ensure we have the latest
-    dataStore.loadData();
-    const config = dataStore.getServerConfig(guildId);
-    // Convert Set to array for JSON response
-    const response = {
-        ...config,
-        stats: {
-            ...config.stats,
-            uniqueUsers: config.stats.uniqueUsers.size
-        }
-    };
-    res.json(response);
+    try {
+        const config = await dataStore.getServerConfig(guildId);
+        // Convert Set to array for JSON response
+        const response = {
+            ...config,
+            stats: {
+                ...config.stats,
+                uniqueUsers: config.stats.uniqueUsers.size || (config.stats.uniqueUsers instanceof Set ? config.stats.uniqueUsers.size : 0)
+            }
+        };
+        res.json(response);
+    } catch (error) {
+        console.error('Erro ao buscar configuração:', error);
+        res.status(500).json({ error: 'Erro ao buscar configuração' });
+    }
 });
 
 // Update server prefix
@@ -106,24 +112,19 @@ app.post('/api/server/:guildId/prefix', discordAuth.authenticateToken, async (re
         return res.status(400).json({ error: 'Prefix inválido (máximo 5 caracteres)' });
     }
     
-    const config = dataStore.setServerPrefix(guildId, prefix);
-    
-    // Notify bot if connected locally
-    if (botClient && typeof botClient.updateServerPrefix === 'function') {
-        botClient.updateServerPrefix(guildId, prefix);
-    }
-    
-    // If running in production, try to sync with bot via API
-    if (process.env.NODE_ENV === 'production' && process.env.BOT_API_URL) {
-        try {
-            const apiSync = require('./server/api-sync');
-            await apiSync.syncToBot(guildId, { prefix });
-        } catch (error) {
-            console.warn('Erro ao sincronizar com bot:', error.message);
+    try {
+        const config = await dataStore.setServerPrefix(guildId, prefix);
+        
+        // Notify bot if connected locally
+        if (botClient && typeof botClient.updateServerPrefix === 'function') {
+            await botClient.updateServerPrefix(guildId, prefix);
         }
+        
+        res.json({ success: true, prefix: config.prefix });
+    } catch (error) {
+        console.error('Erro ao atualizar prefixo:', error);
+        res.status(500).json({ error: 'Erro ao atualizar prefixo' });
     }
-    
-    res.json({ success: true, prefix: config.prefix });
 });
 
 // Update module status

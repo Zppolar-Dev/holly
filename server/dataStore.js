@@ -1,11 +1,31 @@
 /**
  * Shared Data Store
  * Stores server configurations and statistics
- * Can be replaced with a database later
+ * Uses PostgreSQL database when available, falls back to JSON file
  */
 
 const fs = require('fs');
 const path = require('path');
+
+// Try to use database, fallback to file
+let useDatabase = false;
+let db = null;
+
+try {
+    // Check if DATABASE_URL or DB variables are set
+    if (process.env.DATABASE_URL || process.env.DB_HOST) {
+        db = require('./database');
+        useDatabase = true;
+        console.log('📊 Módulo de banco de dados carregado');
+        console.log('   Testando conexão...');
+    } else {
+        console.log('ℹ️  Variáveis de banco de dados não configuradas');
+        console.log('   Usando arquivo JSON como armazenamento');
+    }
+} catch (error) {
+    console.warn('⚠️  Erro ao carregar módulo de banco de dados:', error.message);
+    console.warn('   Usando arquivo JSON como fallback');
+}
 
 // Get data file path from environment or use default
 const getDataFilePath = () => {
@@ -110,10 +130,37 @@ function saveData() {
 }
 
 // Initialize
-loadData();
+if (useDatabase && db) {
+    // Initialize database tables (async, but don't block)
+    db.initializeDatabase().then(success => {
+        if (success) {
+            console.log('✅ Banco de dados PostgreSQL inicializado e pronto');
+        } else {
+            console.log('⚠️  Falha ao inicializar banco de dados');
+            console.log('⚠️  Usando fallback para arquivo JSON');
+            useDatabase = false;
+            loadData();
+        }
+    }).catch(err => {
+        console.error('❌ Erro ao inicializar banco de dados:', err.message);
+        if (err.code) {
+            console.error(`   Código do erro: ${err.code}`);
+        }
+        console.log('⚠️  Usando fallback para arquivo JSON');
+        useDatabase = false;
+        loadData();
+    });
+} else {
+    loadData();
+}
 
 // Get server configuration
-function getServerConfig(guildId) {
+async function getServerConfig(guildId) {
+    if (useDatabase && db) {
+        return await db.getServerConfig(guildId);
+    }
+    
+    // File-based fallback
     if (!serverData[guildId]) {
         // Deep clone default config and ensure Set is properly initialized
         serverData[guildId] = {
@@ -147,16 +194,26 @@ function updateServerConfig(guildId, updates) {
 }
 
 // Update server prefix
-function setServerPrefix(guildId, prefix) {
-    const config = getServerConfig(guildId);
+async function setServerPrefix(guildId, prefix) {
+    if (useDatabase && db) {
+        return await db.setServerPrefix(guildId, prefix);
+    }
+    
+    // File-based fallback
+    const config = await getServerConfig(guildId);
     config.prefix = prefix;
     saveData();
     return config;
 }
 
 // Track command execution
-function trackCommand(guildId, commandName, category, userId) {
-    const config = getServerConfig(guildId);
+async function trackCommand(guildId, commandName, category, userId) {
+    if (useDatabase && db) {
+        return await db.trackCommand(guildId, commandName, category, userId);
+    }
+    
+    // File-based fallback
+    const config = await getServerConfig(guildId);
     config.stats.commandsExecuted++;
     config.stats.lastCommandTime = new Date().toISOString();
     
@@ -174,8 +231,13 @@ function trackCommand(guildId, commandName, category, userId) {
 }
 
 // Get server statistics
-function getServerStats(guildId) {
-    const config = getServerConfig(guildId);
+async function getServerStats(guildId) {
+    if (useDatabase && db) {
+        return await db.getServerStats(guildId);
+    }
+    
+    // File-based fallback
+    const config = await getServerConfig(guildId);
     return {
         prefix: config.prefix,
         commandsExecuted: config.stats.commandsExecuted,
@@ -187,16 +249,29 @@ function getServerStats(guildId) {
 }
 
 // Get all servers data
-function getAllServers() {
-    return Object.keys(serverData).map(guildId => ({
-        guildId,
-        ...getServerStats(guildId)
-    }));
+async function getAllServers() {
+    if (useDatabase && db) {
+        return await db.getAllServers();
+    }
+    
+    // File-based fallback
+    const guildIds = Object.keys(serverData);
+    const servers = [];
+    for (const guildId of guildIds) {
+        const stats = await getServerStats(guildId);
+        servers.push({ guildId, ...stats });
+    }
+    return servers;
 }
 
 // Update module status
-function setModuleStatus(guildId, moduleName, enabled) {
-    const config = getServerConfig(guildId);
+async function setModuleStatus(guildId, moduleName, enabled) {
+    if (useDatabase && db) {
+        return await db.setModuleStatus(guildId, moduleName, enabled);
+    }
+    
+    // File-based fallback
+    const config = await getServerConfig(guildId);
     if (config.modules[moduleName] !== undefined) {
         config.modules[moduleName] = enabled;
         saveData();
@@ -204,8 +279,8 @@ function setModuleStatus(guildId, moduleName, enabled) {
     return config;
 }
 
-// Export data file path getter
-function getDataFilePath() {
+// Export data file path getter (wrapper function)
+function getDataFilePathExport() {
     return DATA_FILE;
 }
 
@@ -219,6 +294,6 @@ module.exports = {
     setModuleStatus,
     loadData,
     saveData,
-    getDataFilePath
+    getDataFilePath: getDataFilePathExport
 };
 
