@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Página não encontrada • Holly</title>
+    <meta http-equiv="refresh" content="5; url=index.html">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">
+            <img src="images/holly.gif" alt="Logo Holly" class="logo" width="40" height="40" loading="lazy">
+            <span>Holly</span>
+        </a>
+
+        <ul class="navbar-links" id="navbarLinks">
+            <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="pages/commands.html"><i class="fas fa-terminal"></i> Comandos</a></li>
+            <li><a href="pages/terms.html"><i class="fas fa-file-contract"></i> Termos</a></li>
+            <li><a href="pages/privacy.html"><i class="fas fa-lock"></i> Privacidade</a></li>
+        </ul>
+
+        <div class="navbar-actions">
+            <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                <i class="fas fa-plus"></i> Adicionar
+            </a>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <main class="error-page">
+        <h1>Ops! 404</h1>
+        <p>A página que você tentou acessar não existe ou foi movida recentemente. Em instantes você voltará para a home.</p>
+        <a href="index.html" class="btn primary-btn">
+            <i class="fas fa-home"></i> Ir para a página inicial
+        </a>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="images/holly.gif" alt="Logo Holly" class="logo" width="50" height="50" loading="lazy">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="pages/commands.html">Comandos</a></li>
+                    <li><a href="pages/privacy.html">Privacidade</a></li>
+                    <li><a href="pages/terms.html">Termos</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="https://twitter.com" class="social-icon twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://github.com" class="social-icon github"><i class="fab fa-github"></i></a>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2025</span> Holly. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <a href="#" class="back-to-top" id="backToTop" aria-label="Voltar ao topo">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <script src="js/main.js" defer></script>
+</body>
+</html>

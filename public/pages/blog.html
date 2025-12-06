@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog & Atualizações • Holly</title>
+    <meta name="description" content="Leia novidades sobre o desenvolvimento da Holly, estudos de caso e dicas para administradores.">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="navbar-brand">
+            <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="40" height="40" loading="lazy">
+            <span>Holly</span>
+        </a>
+
+        <ul class="navbar-links" id="navbarLinks">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="../dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="commands.html"><i class="fas fa-terminal"></i> Comandos</a></li>
+            <li><a href="premium.html"><i class="fas fa-gem"></i> Premium</a></li>
+            <li><a href="docs.html"><i class="fas fa-book"></i> Docs</a></li>
+            <li><a href="blog.html" class="active"><i class="fas fa-newspaper"></i> Blog</a></li>
+        </ul>
+
+        <div class="navbar-actions">
+            <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                <i class="fas fa-plus"></i> Adicionar
+            </a>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <header class="page-hero">
+        <div class="container">
+            <div class="page-hero-content">
+                <span class="page-pill"><i class="fas fa-sparkles"></i> Release notes</span>
+                <h1>Histórias e bastidores da Holly.</h1>
+                <p>Descubra como construímos novas features, o que aprendemos com grandes comunidades e quais experimentos estão chegando.</p>
+            </div>
+            <div class="page-hero-media">
+                <div class="page-media-stack">
+                    <img src="../images/holly.gif" alt="Blog" loading="lazy">
+                    <img src="../images/holly.gif" alt="Blog" loading="lazy" style="opacity:0.7">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <div class="container">
+            <section class="blog-grid">
+                <article class="blog-card">
+                    <span class="blog-meta"><i class="fas fa-calendar"></i> 28 Nov 2025 • Atualização 2.6</span>
+                    <h3>Dashboard recebeu alertas inteligentes</h3>
+                    <p>Agora os administradores são avisados sobre quedas de engajamento com insights acionáveis diretamente no painel.</p>
+                    <a href="#" class="secondary-btn small-btn">Ler mais</a>
+                </article>
+                <article class="blog-card">
+                    <span class="blog-meta"><i class="fas fa-calendar"></i> 10 Out 2025 • Estudo de caso</span>
+                    <h3>Como a Comunidade Pixel triplicou a retenção</h3>
+                    <p>Automatizações de onboarding e rotas visuais para novos membros renderam +65% de mensagens nos primeiros 7 dias.</p>
+                    <a href="#" class="secondary-btn small-btn">Ver detalhes</a>
+                </article>
+                <article class="blog-card">
+                    <span class="blog-meta"><i class="fas fa-calendar"></i> 18 Set 2025 • Roadmap</span>
+                    <h3>O futuro das integrações</h3>
+                    <p>Estamos abrindo o beta da Holly Connect, camada que permite ligar CRMs, planilhas e bots parceiros sem código.</p>
+                    <a href="#" class="secondary-btn small-btn">Participar</a>
+                </article>
+            </section>
+
+            <section class="glass-card">
+                <h2>Assine novidades</h2>
+                <form class="info-grid">
+                    <label class="info-card" style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <span><i class="fas fa-envelope"></i> Email profissional</span>
+                        <input type="email" placeholder="voce@servidor.com" style="padding:0.75rem;border-radius:var(--border-radius);border:1px solid var(--border-color);">
+                    </label>
+                    <label class="info-card" style="display:flex;flex-direction:column;gap:0.5rem;">
+                        <span><i class="fas fa-server"></i> Nome do servidor</span>
+                        <input type="text" placeholder="Comunidade Holly" style="padding:0.75rem;border-radius:var(--border-radius);border:1px solid var(--border-color);">
+                    </label>
+                </form>
+                <button class="btn primary-btn" style="margin-top:var(--space-md);">
+                    <i class="fas fa-paper-plane"></i> Receber novidades
+                </button>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="50" height="50" loading="lazy">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="../dashboard.html">Dashboard</a></li>
+                    <li><a href="commands.html">Comandos</a></li>
+                    <li><a href="premium.html">Premium</a></li>
+                    <li><a href="docs.html">Documentação</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links">
+                <h3>Recursos</h3>
+                <ul>
+                    <li><a href="../index.html#features">Recursos</a></li>
+                    <li><a href="status.html">Status</a></li>
+                    <li><a href="blog.html" class="active">Blog</a></li>
+                    <li><a href="privacy.html">Privacidade</a></li>
+                    <li><a href="terms.html">Termos</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="https://twitter.com" class="social-icon twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://github.com" class="social-icon github"><i class="fab fa-github"></i></a>
+                    <a href="https://youtube.com" class="social-icon youtube"><i class="fab fa-youtube"></i></a>
+                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2025</span> Holly. Todos os direitos reservados.</p>
+            <div class="footer-lang">
+                <i class="fas fa-globe"></i>
+                <select id="language-selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="es-ES">Español</option>
+                </select>
+            </div>
+        </div>
+    </footer>
+
+    <a href="#" class="back-to-top" id="backToTop" aria-label="Voltar ao topo">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <script src="../js/main.js" defer></script>
+</body>
+</html>
+

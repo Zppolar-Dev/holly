@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Holly - O bot mais completo para seu servidor Discord. Moderação, diversão, utilidades e muito mais!">
+    <meta name="keywords" content="discord bot, holly, moderação, bot, discord, entretenimento">
+    <meta name="author" content="Seu Nome">
+    <meta property="og:title" content="Holly - Seu Assistente de Discord">
+    <meta property="og:description" content="Holly traz diversão, moderação e utilidades para seu servidor com um toque especial!">
+    <meta property="og:image" content="https://seusite.com/images/holly-social.jpg">
+    <meta property="og:url" content="https://seusite.com">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <title>Holly - O Bot Mais Completo para Seu Discord</title>
+    
+    <!-- Preload de recursos importantes -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" as="style">
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" as="style">
+    <link rel="preload" href="css/style.css" as="style">
+    <link rel="preload" href="images/holly.gif" as="image">
+    
+    <!-- Favicon e ícones -->
+    <link rel="icon" href="images/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="images/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="manifest" href="site.webmanifest">
+    
+    <!-- Fontes e estilos -->
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- CSS inline crítico -->
+    <style>
+        :root {
+            --primary-color: #8a4fff;
+            --primary-light: #b18aff;
+            --primary-dark: #5f27cd;
+            --secondary-color: #ff9ff3;
+            --accent-color: #7effdb;
+            --text-color: #333;
+            --text-light: #666;
+            --text-lighter: #999;
+            --bg-color: #f9f3ff;
+            --card-bg: #fff;
+            --navbar-bg: #fff;
+            --border-color: #f0e6ff;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #3498db;
+        }
+        
+        [data-theme="dark"] {
+            --primary-color: #9c6aff;
+            --primary-light: #7c4dff;
+            --primary-dark: #6a1b9a;
+            --secondary-color: #ff79b0;
+            --accent-color: #7effdb;
+            --text-color: #f5f5f5;
+            --text-light: #d5d5d5;
+            --text-lighter: #b5b5b5;
+            --bg-color: #1a1a2e;
+            --card-bg: #16213e;
+            --navbar-bg: #0f3460;
+            --border-color: #2d3748;
+        }
+        
+        /* Estilos críticos para o conteúdo acima do fold */
+        body {
+            font-family: 'Nunito', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background-color: var(--navbar-bg);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .hero {
+            padding: 8rem 2rem 4rem;
+            display: flex;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, var(--bg-color) 0%, rgba(138,79,255,0.05) 100%);
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegação -->
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">
+            <img src="images/holly.gif" alt="Logo Holly" class="logo" width="40" height="40" loading="lazy">
+            <span>Holly</span>
+        </a>
+        
+        <ul class="navbar-links" id="navbarLinks">
+            <li><a href="index.html" class="active"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="pages/commands.html"><i class="fas fa-terminal"></i> Comandos</a></li>
+            <li><a href="pages/premium.html"><i class="fas fa-gem"></i> Premium</a></li>
+            <li><a href="pages/docs.html"><i class="fas fa-book"></i> Docs</a></li>
+            <li><a href="pages/status.html"><i class="fas fa-signal"></i> Status</a></li>
+            <li><a href="pages/blog.html"><i class="fas fa-newspaper"></i> Blog</a></li>
+            <li><a href="pages/terms.html"><i class="fas fa-file-contract"></i> Termos</a></li>
+            <li><a href="pages/privacy.html"><i class="fas fa-lock"></i> Privacidade</a></li>
+        </ul>
+        
+        <div class="navbar-actions">
+            <div class="theme-toggle" id="themeToggle">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </div>
+            <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                <i class="fas fa-plus"></i> Me Adicione!
+            </a>
+        </div>
+        
+        <div class="hamburger" id="hamburger">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- Seção Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Transforme seu servidor Discord com a <span class="text-gradient">Holly</span></h1>
+            <p class="hero-description">O bot mais completo para moderação, diversão e utilidades. Com mais de <strong>100 comandos</strong> e <strong>integrações poderosas</strong>, a Holly leva sua comunidade para o próximo nível.</p>
+            
+            <div class="hero-buttons">
+                <a href="dashboard.html" class="btn primary-btn">
+                    <i class="fas fa-cog"></i> Configurar Bot
+                </a>
+                <a href="https://discord.gg/ErYYeWwQ7A" class="btn secondary-btn">
+                    <i class="fas fa-users"></i> Servidor de Suporte
+                </a>
+            </div>
+            
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <div class="stat-number" id="serverCount">2500+</div>
+                    <div class="stat-label">Servidores</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="userCount">1M+</div>
+                    <div class="stat-label">Usuários</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="commandCount">100+</div>
+                    <div class="stat-label">Comandos</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hero-image">
+            <img src="images/holly.gif" alt="Holly" class="floating" width="400" height="400" loading="lazy">
+        </div>
+    </section>
+
+    <!-- Seção de Recursos -->
+    <section class="features" id="features">
+        <div class="section-header">
+            <h2>Recursos <span class="text-gradient">Poderosos</span></h2>
+            <p class="subtitle">Tudo que você precisa para gerenciar e divertir sua comunidade</p>
+        </div>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-robot"></i>
+                </div>
+                <h3>Comandos Inteligentes</h3>
+                <p>Interaja com comandos úteis para moderar e divertir seus membros!</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Respostas personalizadas</li>
+                    <li><i class="fas fa-check"></i> Sistemas de level e XP</li>
+                    <li><i class="fas fa-check"></i> Comandos de utilidade</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Interação</span>
+                    <span class="tag">Diversão</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <h3>Moderação Eficiente</h3>
+                <p>Mantenha seu servidor seguro com ferramentas de moderação poderosas.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Automoderação avançada</li>
+                    <li><i class="fas fa-check"></i> Sistema de advertências</li>
+                    <li><i class="fas fa-check"></i> Logs detalhados</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Segurança</span>
+                    <span class="tag">Automod</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-gamepad"></i>
+                </div>
+                <h3>Minigames</h3>
+                <p>Jogos simples e divertidos para passar o tempo com seus amigos.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Sistema de economia</li>
+                    <li><i class="fas fa-check"></i> Jogos multiplayer</li>
+                    <li><i class="fas fa-check"></i> Recompensas diárias</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Entretenimento</span>
+                    <span class="tag">Interação</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-music"></i>
+                </div>
+                <h3>Música de Alta Qualidade</h3>
+                <p>Reproduza músicas do YouTube, Spotify e mais diretamente no Discord.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Playlists personalizadas</li>
+                    <li><i class="fas fa-check"></i> Controle colaborativo</li>
+                    <li><i class="fas fa-check"></i> Sem lag ou atrasos</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Música</span>
+                    <span class="tag">Entretenimento</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h3>Estatísticas Detalhadas</h3>
+                <p>Acompanhe o crescimento e atividade do seu servidor em tempo real.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Gráficos interativos</li>
+                    <li><i class="fas fa-check"></i> Relatórios semanais</li>
+                    <li><i class="fas fa-check"></i> Insights valiosos</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Analytics</span>
+                    <span class="tag">Relatórios</span>
+                </div>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-bolt"></i>
+                </div>
+                <h3>Personalização Total</h3>
+                <p>Configure cada aspecto do bot para atender às necessidades do seu servidor.</p>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Painel web intuitivo</li>
+                    <li><i class="fas fa-check"></i> Comandos customizáveis</li>
+                    <li><i class="fas fa-check"></i> Integrações flexíveis</li>
+                </ul>
+                <div class="tech-tags">
+                    <span class="tag">Customização</span>
+                    <span class="tag">Controle</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Demonstração -->
+    <section class="demo">
+        <div class="demo-content">
+            <h2>Veja a Holly <span class="text-gradient">em Ação</span></h2>
+            <p>Experimente o poder da Holly em seu servidor ou assista a uma demonstração dos principais recursos.</p>
+            
+            <div class="demo-buttons">
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-play"></i> Ver Demonstração
+                </a>
+                <a href="https://discord.gg/ErYYeWwQ7A" class="btn secondary-btn">
+                    <i class="fas fa-question-circle"></i> Como Funciona?
+                </a>
+            </div>
+        </div>
+        
+        <div class="demo-video">
+            <div class="video-placeholder">
+                <i class="fas fa-play-circle"></i>
+                <img src="images/demo-thumbnail.jpg" alt="Demonstração da Holly" loading="lazy">
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Depoimentos -->
+    <section class="testimonials">
+        <div class="section-header">
+            <h2>O que estão <span class="text-gradient">Dizendo</span></h2>
+            <p class="subtitle">Feedback de servidores que usam a Holly</p>
+        </div>
+        
+        <div class="testimonials-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <img src="images/testimonial1.jpg" alt="Usuário" loading="lazy">
+                    <div class="user-info">
+                        <h4>Lucas Silva</h4>
+                        <p>Dono - Comunidade Gamers</p>
+                    </div>
+                </div>
+                <div class="testimonial-content">
+                    <p>"A Holly revolucionou nosso servidor! As ferramentas de moderação reduziram nosso trabalho em 80% e os membros adoram os jogos."</p>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <img src="images/testimonial2.jpg" alt="Usuário" loading="lazy">
+                    <div class="user-info">
+                        <h4>Ana Oliveira</h4>
+                        <p>Moderadora - Artistas Digitais</p>
+                    </div>
+                </div>
+                <div class="testimonial-content">
+                    <p>"O sistema de logs e a automoderação são incríveis. Conseguimos manter nossa comunidade segura sem esforço."</p>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="testimonial-card">
+                <div class="testimonial-header">
+                    <img src="images/testimonial3.jpg" alt="Usuário" loading="lazy">
+                    <div class="user-info">
+                        <h4>Ricardo Santos</h4>
+                        <p>Admin - Programação Brasil</p>
+                    </div>
+                </div>
+                <div class="testimonial-content">
+                    <p>"A Holly tem tudo que precisamos em um único bot. Substituiu 3 outros bots que estávamos usando antes."</p>
+                    <div class="rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção CTA -->
+    <section class="cta">
+        <div class="cta-content">
+            <h2>Pronto para <span class="text-gradient">Transformar</span> seu Servidor?</h2>
+            <p>Adicione a Holly ao seu Discord agora mesmo e comece a aproveitar todos os recursos em minutos.</p>
+            
+            <div class="cta-buttons">
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn large-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+                <a href="dashboard.html" class="btn secondary-btn large-btn">
+                    <i class="fas fa-cog"></i> Configurar Agora
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="images/holly.gif" alt="Logo Holly" class="logo" width="50" height="50" loading="lazy">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+            
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="pages/commands.html">Comandos</a></li>
+                    <li><a href="pages/terms.html">Termos</a></li>
+                    <li><a href="pages/privacy.html">Privacidade</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-links">
+                <h3>Recursos</h3>
+                <ul>
+                    <li><a href="#features">Recursos</a></li>
+                    <li><a href="pages/premium.html">Premium</a></li>
+                    <li><a href="pages/docs.html">Documentação</a></li>
+                    <li><a href="pages/status.html">Status</a></li>
+                    <li><a href="pages/blog.html">Blog</a></li>
+                </ul>
+            </div>
+            
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" class="social-icon twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="social-icon github"><i class="fab fa-github"></i></a>
+                    <a href="#" class="social-icon youtube"><i class="fab fa-youtube"></i></a>
+                </div>
+                
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+            </div>
+        </div>
+        
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2023</span> Holly. Todos os direitos reservados.</p>
+            <div class="footer-lang">
+                <i class="fas fa-globe"></i>
+                <select id="language-selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="es-ES">Español</option>
+                </select>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botão de voltar ao topo -->
+    <a href="#" class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <!-- Scripts -->
+    <script src="js/main.js" defer></script>
+    
+    <!-- Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'GA_MEASUREMENT_ID');
+        
+        // Inicialização do tema
+        document.documentElement.setAttribute('data-theme', 
+            localStorage.getItem('holly_theme') || 'light');
+    </script>
+</body>
+</html>

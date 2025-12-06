@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação • Holly</title>
+    <meta name="description" content="Guias rápidos e exemplos para configurar a Holly em minutos.">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="navbar-brand">
+            <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="40" height="40" loading="lazy">
+            <span>Holly</span>
+        </a>
+
+        <ul class="navbar-links" id="navbarLinks">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="../dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="commands.html"><i class="fas fa-terminal"></i> Comandos</a></li>
+            <li><a href="premium.html"><i class="fas fa-gem"></i> Premium</a></li>
+            <li><a href="docs.html" class="active"><i class="fas fa-book"></i> Docs</a></li>
+            <li><a href="status.html"><i class="fas fa-signal"></i> Status</a></li>
+        </ul>
+
+        <div class="navbar-actions">
+            <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                <i class="fas fa-plus"></i> Adicionar
+            </a>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <header class="page-hero">
+        <div class="container">
+            <div class="page-hero-content">
+                <span class="page-pill"><i class="fas fa-book-open"></i> Documentação viva</span>
+                <h1>Guias modernos para times apressados.</h1>
+                <p>Aprenda a integrar a Holly no Discord, automatizar fluxos e publicar comandos customizados sem complicações.</p>
+                <div class="hero-meta">
+                    <div class="meta-card">
+                        <small>Tempo de leitura</small>
+                        <span>7 minutos</span>
+                    </div>
+                    <div class="meta-card">
+                        <small>Exemplos</small>
+                        <span>+30 snippets</span>
+                    </div>
+                    <div class="meta-card">
+                        <small>SDKs</small>
+                        <span>JS • Python</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-hero-media">
+                <div class="page-media-stack">
+                    <img src="../images/holly.gif" alt="Docs preview" loading="lazy">
+                    <img src="../images/holly.gif" alt="Docs preview" loading="lazy" style="opacity:0.7">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <div class="container">
+            <section class="glass-card">
+                <h2>Comece em 3 passos</h2>
+                <div class="timeline">
+                    <div class="timeline-step">
+                        <strong>1. Convide e autentique</strong>
+                        <p>Use o botão “Adicionar ao Discord” e escolha o servidor que deseja gerenciar.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong>2. Configure no painel</strong>
+                        <p>Defina prefixos, cargos autorizados e módulos ativos.</p>
+                    </div>
+                    <div class="timeline-step">
+                        <strong>3. Publique automações</strong>
+                        <p>Utilize as receitas prontas ou crie workflows personalizados.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="documents-grid">
+                <article class="doc-card">
+                    <i class="fas fa-plug"></i>
+                    <h3>Integrações</h3>
+                    <p>Conecte APIs externas via webhooks assíncronos.</p>
+                    <ul class="doc-list">
+                        <li><i class="fas fa-check"></i> GitHub Actions</li>
+                        <li><i class="fas fa-check"></i> Google Sheets</li>
+                        <li><i class="fas fa-check"></i> Webhooks personalizados</li>
+                    </ul>
+                </article>
+                <article class="doc-card">
+                    <i class="fas fa-code"></i>
+                    <h3>SDK JavaScript</h3>
+                    <p>Monitore eventos e publique comandos customizados usando TypeScript.</p>
+                    <code class="command-syntax">npm install @holly/sdk</code>
+                </article>
+                <article class="doc-card">
+                    <i class="fas fa-lock"></i>
+                    <h3>Segurança</h3>
+                    <p>Assine requisições com HMAC e valide o webhook antes de processar.</p>
+                    <ul class="doc-list">
+                        <li><i class="fas fa-shield-alt"></i> TLS obrigatório</li>
+                        <li><i class="fas fa-key"></i> Rotação de tokens</li>
+                    </ul>
+                </article>
+            </section>
+
+            <section class="glass-card">
+                <h2>Snippet rápido</h2>
+                <pre class="command-syntax" style="display:block; white-space:pre-wrap;">
+import { Holly } from '@holly/sdk';
+
+const holly = new Holly({ token: process.env.HOLLY_TOKEN });
+
+holly.on('command:received', (ctx) => {
+    if (ctx.command === 'ping') {
+        ctx.reply('🏓 Pong! Latência: ' + ctx.latency + 'ms');
+    }
+});
+
+holly.listen();
+                </pre>
+            </section>
+
+            <section class="glass-card">
+                <h2>Precisa de algo específico?</h2>
+                <div class="secondary-nav">
+                    <a href="https://discord.gg/ErYYeWwQ7A" target="_blank" rel="noopener"><i class="fab fa-discord"></i> Suporte</a>
+                    <a href="mailto:dev@holly.bot"><i class="fas fa-envelope"></i> dev@holly.bot</a>
+                    <a href="https://status.holly.bot"><i class="fas fa-signal"></i> Status API</a>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="50" height="50" loading="lazy">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="../dashboard.html">Dashboard</a></li>
+                    <li><a href="commands.html">Comandos</a></li>
+                    <li><a href="premium.html">Premium</a></li>
+                    <li><a href="docs.html" class="active">Documentação</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links">
+                <h3>Recursos</h3>
+                <ul>
+                    <li><a href="../index.html#features">Recursos</a></li>
+                    <li><a href="status.html">Status</a></li>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="privacy.html">Privacidade</a></li>
+                    <li><a href="terms.html">Termos</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="https://twitter.com" class="social-icon twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://github.com" class="social-icon github"><i class="fab fa-github"></i></a>
+                    <a href="https://youtube.com" class="social-icon youtube"><i class="fab fa-youtube"></i></a>
+                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2025</span> Holly. Todos os direitos reservados.</p>
+            <div class="footer-lang">
+                <i class="fas fa-globe"></i>
+                <select id="language-selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="es-ES">Español</option>
+                </select>
+            </div>
+        </div>
+    </footer>
+
+    <a href="#" class="back-to-top" id="backToTop" aria-label="Voltar ao topo">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <script src="../js/main.js" defer></script>
+</body>
+</html>
+

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comandos • Holly</title>
+    <meta name="description" content="Explore os comandos de moderação, diversão e utilidade disponíveis no bot Holly.">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="../index.html" class="navbar-brand">
+            <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="40" height="40" loading="lazy">
+            <span>Holly</span>
+        </a>
+
+        <ul class="navbar-links" id="navbarLinks">
+            <li><a href="../index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="../dashboard.html"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+            <li><a href="commands.html" class="active"><i class="fas fa-terminal"></i> Comandos</a></li>
+            <li><a href="premium.html"><i class="fas fa-gem"></i> Premium</a></li>
+            <li><a href="docs.html"><i class="fas fa-book"></i> Docs</a></li>
+            <li><a href="status.html"><i class="fas fa-signal"></i> Status</a></li>
+        </ul>
+
+        <div class="navbar-actions">
+            <button class="theme-toggle" id="themeToggle" aria-label="Alternar tema">
+                <i class="fas fa-moon" id="themeIcon"></i>
+            </button>
+            <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                <i class="fas fa-plus"></i> Adicionar
+            </a>
+        </div>
+
+        <button class="hamburger" id="hamburger" aria-label="Abrir menu">
+            <i class="fas fa-bars"></i>
+        </button>
+    </nav>
+
+    <header class="page-hero">
+        <div class="container">
+            <div class="page-hero-content">
+                <span class="page-pill"><i class="fas fa-gamepad"></i> +100 comandos ativos</span>
+                <h1>Controle absoluto em poucos cliques.</h1>
+                <p>Da moderação inteligente aos minigames cooperativos, a Holly entrega tudo pronto para ser usado imediatamente.</p>
+                <div class="hero-meta">
+                    <div class="meta-card">
+                        <small>Moderação</small>
+                        <span>28 comandos</span>
+                    </div>
+                    <div class="meta-card">
+                        <small>Diversão</small>
+                        <span>35 comandos</span>
+                    </div>
+                    <div class="meta-card">
+                        <small>Utilidades</small>
+                        <span>42 comandos</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-hero-media">
+                <div class="page-media-stack">
+                    <img src="../images/holly.gif" alt="Preview Holly" loading="lazy">
+                    <img src="../images/holly.gif" alt="Preview Holly" loading="lazy" style="opacity:0.7">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-content">
+        <div class="container">
+            <section class="glass-card">
+                <h2>Categorias principais</h2>
+                <p>Use o prefixo configurado no painel (padrão: <strong>!</strong>) ou adote comandos slash.</p>
+                <div class="secondary-nav">
+                    <a href="#moderation" class="active"><i class="fas fa-shield-alt"></i> Moderação</a>
+                    <a href="#utility"><i class="fas fa-toolbox"></i> Utilidades</a>
+                    <a href="#fun"><i class="fas fa-gamepad"></i> Diversão</a>
+                    <a href="#music"><i class="fas fa-music"></i> Música</a>
+                </div>
+            </section>
+
+            <section id="moderation" class="legal-section">
+                <h2>Moderação</h2>
+                <div class="commands-grid">
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /ban [user]</div>
+                        <h3>ban</h3>
+                        <p>Remove membros com registro automático e motivo opcional.</p>
+                        <div class="command-meta">
+                            <span><i class="fas fa-clock"></i> instantâneo</span>
+                            <span><i class="fas fa-lock"></i> Moderação</span>
+                        </div>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /slowmode [tempo]</div>
+                        <h3>slowmode</h3>
+                        <p>Define limite de envio por canal, ótimo para anúncios.</p>
+                        <div class="command-meta">
+                            <span><i class="fas fa-clock"></i> 2s</span>
+                            <span><i class="fas fa-user-shield"></i> Staff</span>
+                        </div>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> !clean 50</div>
+                        <h3>clean</h3>
+                        <p>Apaga mensagens em lote com filtros por usuário ou bot.</p>
+                        <div class="command-meta">
+                            <span><i class="fas fa-clock"></i> 1s</span>
+                            <span><i class="fas fa-robot"></i> Automação</span>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section id="utility" class="legal-section">
+                <h2>Utilidades</h2>
+                <div class="commands-grid">
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /serverinfo</div>
+                        <h3>serverinfo</h3>
+                        <p>Mostra níveis, cargos principais e boost activity do servidor.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /reminder</div>
+                        <h3>reminder</h3>
+                        <p>Crie lembretes pessoais ou compartilhados via painel.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> !poll</div>
+                        <h3>poll</h3>
+                        <p>Gera enquetes com interface visual e contagem automática.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="fun" class="legal-section">
+                <h2>Diversão & Economia</h2>
+                <div class="commands-grid">
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /daily</div>
+                        <h3>daily</h3>
+                        <p>Recompensas diárias com streaks crescentes, prontos para lojas.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /rank</div>
+                        <h3>rank</h3>
+                        <p>Exibe ranking XP com banners personalizados.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> !casino</div>
+                        <h3>casino</h3>
+                        <p>Minigames com taxa configurável para o servidor.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section id="music" class="legal-section">
+                <h2>Música</h2>
+                <div class="commands-grid">
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /play [url]</div>
+                        <h3>play</h3>
+                        <p>Fila inteligente com suporte a Spotify, YT e SoundCloud.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /queue</div>
+                        <h3>queue</h3>
+                        <p>Gerencie a ordem das músicas com reações rápidas.</p>
+                    </article>
+                    <article class="command-card">
+                        <div class="command-syntax"><i class="fas fa-terminal"></i> /filters</div>
+                        <h3>filters</h3>
+                        <p>Bass boost, nightcore, 8D e presets personalizáveis.</p>
+                    </article>
+                </div>
+            </section>
+
+            <section class="glass-card">
+                <h2>Dicas rápidas</h2>
+                <ul class="doc-list">
+                    <li><i class="fas fa-star"></i> Todos os comandos slash ficam disponíveis automaticamente; prefixos tradicionais seguem configuráveis.</li>
+                    <li><i class="fas fa-user-gear"></i> Use o dashboard para ocultar comandos por cargo ou canal.</li>
+                    <li><i class="fas fa-file-export"></i> Exportações em CSV facilitam a auditoria de uso em grandes comunidades.</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="../images/holly.gif" alt="Logo Holly" class="logo" width="50" height="50" loading="lazy">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="../index.html">Home</a></li>
+                    <li><a href="../dashboard.html">Dashboard</a></li>
+                    <li><a href="commands.html" class="active">Comandos</a></li>
+                    <li><a href="premium.html">Premium</a></li>
+                    <li><a href="docs.html">Documentação</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links">
+                <h3>Recursos</h3>
+                <ul>
+                    <li><a href="../index.html#features">Recursos</a></li>
+                    <li><a href="status.html">Status</a></li>
+                    <li><a href="blog.html">Blog</a></li>
+                    <li><a href="privacy.html">Privacidade</a></li>
+                    <li><a href="terms.html">Termos</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="social-icon discord"><i class="fab fa-discord"></i></a>
+                    <a href="https://twitter.com" class="social-icon twitter"><i class="fab fa-x-twitter"></i></a>
+                    <a href="https://github.com" class="social-icon github"><i class="fab fa-github"></i></a>
+                    <a href="https://youtube.com" class="social-icon youtube"><i class="fab fa-youtube"></i></a>
+                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2025</span> Holly. Todos os direitos reservados.</p>
+            <div class="footer-lang">
+                <i class="fas fa-globe"></i>
+                <select id="language-selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="es-ES">Español</option>
+                </select>
+            </div>
+        </div>
+    </footer>
+
+    <a href="#" class="back-to-top" id="backToTop" aria-label="Voltar ao topo">
+        <i class="fas fa-arrow-up"></i>
+    </a>
+
+    <script src="../js/main.js" defer></script>
+</body>
+</html>
+

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Holly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <img src="images/holly.gif" alt="Loading">
+            <p>Carregando Dashboard...</p>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="index.html" class="navbar-brand">
+                <img src="images/holly.gif" alt="Logo Holly" class="logo">
+                <span>Holly</span>
+            </a>
+            
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="navbar-links">
+                    <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="dashboard.html" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="pages/commands.html"><i class="fas fa-terminal"></i> Comandos</a></li>
+                    <li><a href="pages/premium.html"><i class="fas fa-gem"></i> Premium</a></li>
+                    <li><a href="pages/docs.html"><i class="fas fa-book"></i> Docs</a></li>
+                    <li><a href="pages/status.html"><i class="fas fa-signal"></i> Status</a></li>
+                    <li><a href="pages/blog.html"><i class="fas fa-newspaper"></i> Blog</a></li>
+                    <li><a href="pages/privacy.html"><i class="fas fa-lock"></i> Privacidade</a></li>
+                    <li><a href="pages/terms.html"><i class="fas fa-file-contract"></i> Termos</a></li>
+                </ul>
+                
+                <div class="navbar-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <div class="user-dropdown" id="userDropdown">
+                        <button class="dropdown-toggle">
+                            <img id="nav-user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User">
+                            <span id="nav-username">Entrar</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="#" id="login-btn"><i class="fab fa-discord"></i> Login com Discord</a>
+                            <a href="#"><i class="fas fa-cog"></i> Configurações</a>
+                            <a href="#"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="dashboard-sidebar" id="dashboardSidebar">
+            <div class="sidebar-header">
+                <h3>Painel de Controle</h3>
+                <button class="close-sidebar" id="closeSidebar">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="user-info">
+                <div class="avatar-container">
+                    <img id="user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Avatar" class="profile-pic">
+                    <div class="badge"><i class="fas fa-crown"></i></div>
+                </div>
+                <h3 id="username">Não Logado</h3>
+                <p id="user-discriminator">#0000</p>
+                <div class="user-status">
+                    <span class="status-dot offline"></span>
+                    <span class="status-text">Offline</span>
+                </div>
+                <div class="user-plan">
+                    <span class="plan-badge free">Free</span>
+                </div>
+            </div>
+            
+            <div class="search-box">
+                <input type="text" placeholder="Pesquisar no painel...">
+                <i class="fas fa-search"></i>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="#" class="active">
+                        <i class="fas fa-home"></i>
+                        <span>Visão Geral</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-cog"></i>
+                        <span>Configurações</span>
+                        <span class="menu-badge">3</span>
+                    </a>
+                </li>
+                <li class="menu-divider">Servidores</li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-server"></i>
+                        <span>Meus Servidores</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Comandos</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-robot"></i>
+                        <span>Automações</span>
+                        <span class="menu-badge new">Novo</span>
+                    </a>
+                </li>
+                <li class="menu-divider">Analytics</li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Estatísticas</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-bell"></i>
+                        <span>Notificações</span>
+                        <span class="menu-badge">5</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <i class="fas fa-headset"></i>
+                        <span>Suporte</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <div class="server-status">
+                    <span class="status-indicator online"></span>
+                    <span>Status: <strong>Online</strong></span>
+                </div>
+                <div class="version-info">
+                    <span>v2.4.7</span>
+                    <span id="current-time">00:00</span>
+                </div>
+                <button class="btn compact-btn" id="feedbackBtn">
+                    <i class="fas fa-comment-dots"></i> Feedback
+                </button>
+            </div>
+        </div>
+
+        <div class="dashboard-content" id="dashboardContent">
+            <div class="content-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Dashboard</h1>
+                    <div class="breadcrumb">
+                        <span>Home</span>
+                        <i class="fas fa-chevron-right"></i>
+                        <span class="active">Dashboard</span>
+                    </div>
+                </div>
+                <div class="header-right">
+                    <div class="notification-bell">
+                        <i class="fas fa-bell"></i>
+                        <span class="notification-badge">3</span>
+                    </div>
+                    <div class="quick-actions">
+                        <button class="btn primary-btn">
+                            <i class="fas fa-plus"></i> Adicionar Servidor
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status-cards">
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <h3>Servidores</h3>
+                    <div class="stat-number" id="server-count">0</div>
+                    <p>Conectados</p>
+                    <div class="card-progress">
+                        <div class="progress-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-terminal"></i>
+                    </div>
+                    <h3>Comandos</h3>
+                    <div class="stat-number" id="command-count">0</div>
+                    <p>Executados (24h)</p>
+                    <div class="trend up">
+                        <i class="fas fa-arrow-up"></i> 12%
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Uptime</h3>
+                    <div class="stat-number" id="uptime-percent">99.9%</div>
+                    <p>Disponibilidade</p>
+                    <div class="uptime-status">
+                        <span class="status-dot online"></span>
+                        <span>Todos os sistemas operacionais</span>
+                    </div>
+                </div>
+                <div class="dashboard-card">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3>Usuários</h3>
+                    <div class="stat-number" id="user-count">0</div>
+                    <p>Únicos (7d)</p>
+                    <div class="trend down">
+                        <i class="fas fa-arrow-down"></i> 2.5%
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Meus Servidores</h2>
+                    <div class="section-actions">
+                        <div class="search-box">
+                            <input type="text" placeholder="Pesquisar servidores...">
+                            <i class="fas fa-search"></i>
+                        </div>
+                        <button class="btn secondary-btn">
+                            <i class="fas fa-sync-alt"></i> Atualizar
+                        </button>
+                        <button class="btn primary-btn">
+                            <i class="fas fa-plus"></i> Adicionar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="servers-grid" id="serversGrid">
+                    <div class="server-card placeholder">
+                        <div class="server-icon">
+                            <i class="fas fa-sign-in-alt"></i>
+                        </div>
+                        <h3>Faça login</h3>
+                        <p>Conecte-se com Discord para gerenciar seus servidores</p>
+                        <button class="btn primary-btn small-btn">
+                            <i class="fab fa-discord"></i> Login com Discord
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-row">
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Atividade Recente</h2>
+                        <div class="time-filter">
+                            <button class="active">24h</button>
+                            <button>7d</button>
+                            <button>30d</button>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="activityChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="dashboard-section">
+                    <div class="section-header">
+                        <h2>Comandos Populares</h2>
+                        <div class="view-all">
+                            <a href="#">Ver todos <i class="fas fa-arrow-right"></i></a>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <canvas id="commandsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dashboard-section">
+                <div class="section-header">
+                    <h2>Notificações Recentes</h2>
+                    <div class="section-actions">
+                        <button class="btn secondary-btn">
+                            <i class="fas fa-check"></i> Marcar todas como lidas
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="notifications-list">
+                    <div class="notification-item unread">
+                        <div class="notification-icon">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>Atualização disponível</h4>
+                            <p>Nova versão 2.4.8 está disponível com correções de bugs e melhorias de desempenho.</p>
+                            <span class="notification-time">2 horas atrás</span>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>Backup concluído</h4>
+                            <p>O backup das configurações do seu servidor "Comunidade Gamers" foi concluído com sucesso.</p>
+                            <span class="notification-time">Ontem, 14:30</span>
+                        </div>
+                    </div>
+                    <div class="notification-item">
+                        <div class="notification-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="notification-content">
+                            <h4>Alerta de Moderação</h4>
+                            <p>5 mensagens foram automaticamente removidas no servidor "Programação" por conterem links suspeitos.</p>
+                            <span class="notification-time">Ontem, 10:15</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal" id="feedbackModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Enviar Feedback</h3>
+                <button class="close-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="feedbackForm">
+                    <div class="form-group">
+                        <label for="feedbackType">Tipo de Feedback</label>
+                        <select id="feedbackType">
+                            <option value="suggestion">Sugestão</option>
+                            <option value="bug">Reportar Bug</option>
+                            <option value="compliment">Elogio</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="feedbackMessage">Mensagem</label>
+                        <textarea id="feedbackMessage" placeholder="Descreva seu feedback em detalhes..."></textarea>
+                    </div>
+                    <button type="submit" class="btn primary-btn">
+                        <i class="fas fa-paper-plane"></i> Enviar Feedback
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <img src="images/holly.gif" alt="Logo Holly" class="logo">
+                <div>
+                    <span>Holly</span>
+                    <p>O bot mais completo para o seu Discord</p>
+                </div>
+            </div>
+            <div class="footer-links">
+                <h3>Navegação</h3>
+                <ul>
+                    <li><a href="index.html">Home</a></li>
+                    <li><a href="dashboard.html">Dashboard</a></li>
+                    <li><a href="pages/terms.html">Termos</a></li>
+                    <li><a href="pages/privacy.html">Privacidade</a></li>
+                    <li><a href="pages/docs.html">Documentação</a></li>
+                </ul>
+            </div>
+            <div class="footer-links">
+                <h3>Recursos</h3>
+                <ul>
+                    <li><a href="#">Comandos</a></li>
+                    <li><a href="#">Premium</a></li>
+                    <li><a href="#">API</a></li>
+                    <li><a href="#">Status</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-social">
+                <h3>Conecte-se</h3>
+                <div class="social-icons">
+                    <a href="https://discord.gg/ErYYeWwQ7A" class="discord"><i class="fab fa-discord"></i></a>
+                    <a href="#" class="twitter"><i class="fab fa-twitter"></i></a>
+                    <a href="#" class="github"><i class="fab fa-github"></i></a>
+                    <a href="#" class="youtube"><i class="fab fa-youtube"></i></a>
+                </div>
+                <a href="https://discord.com/oauth2/authorize?client_id=1069819161057968218&scope=bot" class="btn primary-btn">
+                    <i class="fas fa-plus"></i> Adicionar ao Discord
+                </a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; <span id="current-year">2023</span> Holly. Todos os direitos reservados.</p>
+            <div class="footer-lang">
+                <i class="fas fa-globe"></i>
+                <select id="language-selector">
+                    <option value="pt-BR">Português (BR)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="es-ES">Español</option>
+                </select>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>

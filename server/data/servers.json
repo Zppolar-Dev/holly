@@ -1,0 +1,128 @@
+{
+  "921754155419332649": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1022651966809190420": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1074842431020863609": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1134219207337324595": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1246964906314436729": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1306373852842037329": {
+    "prefix": "!",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  }
+}
