@@ -6,9 +6,7 @@
 document.addEventListener('DOMContentLoaded', async function() {
     const CONFIG = {
         CLIENT_ID: '1069819161057968218',
-        API_BASE_URL: window.location.origin.includes('localhost') 
-            ? 'http://localhost:3000' 
-            : window.location.origin,
+        API_BASE_URL: window.location.origin,
         THEME_KEY: 'holly_theme'
     };
 
