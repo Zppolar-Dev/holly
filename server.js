@@ -98,7 +98,7 @@ app.get('/api/server/:guildId/config', discordAuth.authenticateToken, (req, res)
 });
 
 // Update server prefix
-app.post('/api/server/:guildId/prefix', discordAuth.authenticateToken, (req, res) => {
+app.post('/api/server/:guildId/prefix', discordAuth.authenticateToken, async (req, res) => {
     const { guildId } = req.params;
     const { prefix } = req.body;
     
@@ -108,9 +108,19 @@ app.post('/api/server/:guildId/prefix', discordAuth.authenticateToken, (req, res
     
     const config = dataStore.setServerPrefix(guildId, prefix);
     
-    // Notify bot if connected
+    // Notify bot if connected locally
     if (botClient && typeof botClient.updateServerPrefix === 'function') {
         botClient.updateServerPrefix(guildId, prefix);
+    }
+    
+    // If running in production, try to sync with bot via API
+    if (process.env.NODE_ENV === 'production' && process.env.BOT_API_URL) {
+        try {
+            const apiSync = require('./server/api-sync');
+            await apiSync.syncToBot(guildId, { prefix });
+        } catch (error) {
+            console.warn('Erro ao sincronizar com bot:', error.message);
+        }
     }
     
     res.json({ success: true, prefix: config.prefix });

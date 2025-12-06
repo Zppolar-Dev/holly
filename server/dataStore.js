@@ -7,7 +7,15 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, 'data', 'servers.json');
+// Get data file path from environment or use default
+const getDataFilePath = () => {
+    if (process.env.DATA_FILE_PATH) {
+        return process.env.DATA_FILE_PATH;
+    }
+    return path.join(__dirname, 'data', 'servers.json');
+};
+
+const DATA_FILE = getDataFilePath();
 
 // Ensure data directory exists
 const dataDir = path.dirname(DATA_FILE);
@@ -196,6 +204,11 @@ function setModuleStatus(guildId, moduleName, enabled) {
     return config;
 }
 
+// Export data file path getter
+function getDataFilePath() {
+    return DATA_FILE;
+}
+
 module.exports = {
     getServerConfig,
     updateServerConfig,
@@ -205,6 +218,7 @@ module.exports = {
     getAllServers,
     setModuleStatus,
     loadData,
-    saveData
+    saveData,
+    getDataFilePath
 };
 
