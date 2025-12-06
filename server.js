@@ -15,8 +15,15 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({ origin: FRONTEND_URL, credentials: true }));
+
+// Servir arquivos estáticos ANTES de qualquer rota dinâmica
+// Isso garante que CSS, JS, imagens sejam servidos corretamente
+app.use(express.static(path.join(__dirname, 'public'), {
+    maxAge: '1d', // Cache por 1 dia
+    etag: true,
+    lastModified: true
+}));
 app.use(
     helmet({
         contentSecurityPolicy: false,
@@ -329,9 +336,20 @@ app.setBotClient = (client) => {
 };
 
 // Rotas estáticas (sem extensão .html)
+// IMPORTANTE: Estas rotas devem vir DEPOIS das rotas de API e ANTES do catch-all
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
-app.get('/server/:guildId', (req, res) => res.sendFile(path.join(__dirname, 'public', 'server-config.html')));
+
+// Rota para página de configuração do servidor (deve vir depois das rotas de API)
+app.get('/server/:guildId', (req, res) => {
+    // Verificar se é uma requisição de arquivo estático (CSS, JS, etc)
+    const requestedPath = req.path;
+    if (requestedPath.match(/\.(css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)$/i)) {
+        // Se for um arquivo estático, não processar como rota dinâmica
+        return res.status(404).send('Not found');
+    }
+    res.sendFile(path.join(__dirname, 'public', 'server-config.html'));
+});
 
 app.listen(PORT, () => {
     console.log(`🌐 Servidor web rodando na porta ${PORT}`);
