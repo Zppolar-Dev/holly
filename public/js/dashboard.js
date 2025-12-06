@@ -442,89 +442,120 @@ document.addEventListener('DOMContentLoaded', async function() {
             animateCounter(UI.serverCount, 0, STATE.guilds.length, 1000);
         }
 
-        // Fetch server stats for all guilds (with cache busting to get fresh data)
-        const serverStatsPromises = STATE.guilds.map(guild => 
-            fetch(`${CONFIG.API_BASE_URL}/api/server/${guild.id}/stats?t=${Date.now()}`, { 
-                credentials: 'include',
-                cache: 'no-cache',
-                headers: {
-                    'Cache-Control': 'no-cache'
-                }
-            })
-                .then(res => res.ok ? res.json() : null)
-                .catch(() => null)
-        );
+        // Fetch server stats and bot presence for all guilds
+        const serverDataPromises = STATE.guilds.map(async guild => {
+            const [statsRes, botPresentRes] = await Promise.all([
+                fetch(`${CONFIG.API_BASE_URL}/api/server/${guild.id}/stats?t=${Date.now()}`, { 
+                    credentials: 'include',
+                    cache: 'no-cache',
+                    headers: {
+                        'Cache-Control': 'no-cache'
+                    }
+                }).then(res => res.ok ? res.json() : null).catch(() => null),
+                fetch(`${CONFIG.API_BASE_URL}/api/server/${guild.id}/bot-present`, { 
+                    credentials: 'include',
+                    cache: 'no-cache'
+                }).then(res => res.ok ? res.json() : null).catch(() => ({ present: false }))
+            ]);
+            
+            return {
+                stats: statsRes || {},
+                botPresent: botPresentRes?.present ?? false
+            };
+        });
 
-        const serverStats = await Promise.all(serverStatsPromises);
+        const serverData = await Promise.all(serverDataPromises);
 
         STATE.guilds.forEach((guild, index) => {
-            const stats = serverStats[index] || {};
+            const { stats, botPresent } = serverData[index] || { stats: {}, botPresent: false };
             const serverCard = document.createElement('div');
             serverCard.className = 'server-card';
             serverCard.dataset.guildId = guild.id;
             serverCard.setAttribute('role', 'button');
-            serverCard.setAttribute('aria-label', `Gerenciar servidor ${guild.name}`);
+            serverCard.setAttribute('aria-label', botPresent ? `Gerenciar servidor ${guild.name}` : `Convidar bot para ${guild.name}`);
             
             const icon = guild.icon 
                 ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`
                 : guild.name.charAt(0);
+            
+            // Show different content based on bot presence
+            const buttonHTML = botPresent 
+                ? `<button class="btn secondary-btn small-btn manage-btn" aria-label="Gerenciar ${guild.name}">
+                    <i class="fas fa-cog"></i> Configurar
+                </button>`
+                : `<button class="btn primary-btn small-btn invite-btn" aria-label="Convidar bot para ${guild.name}">
+                    <i class="fas fa-plus"></i> Convidar
+                </button>`;
+            
+            const statsHTML = botPresent 
+                ? `<div class="server-stats">
+                    <p><i class="fas fa-terminal"></i> Prefixo: <strong>${stats.prefix || '!'}</strong></p>
+                    <p><i class="fas fa-chart-line"></i> Comandos: <strong>${stats.commandsExecuted || 0}</strong></p>
+                    <p><i class="fas fa-users"></i> Usuários únicos: <strong>${stats.uniqueUsers || 0}</strong></p>
+                </div>`
+                : `<div class="server-stats">
+                    <p><i class="fas fa-info-circle"></i> Bot não está no servidor</p>
+                    <p><i class="fas fa-arrow-right"></i> Clique em "Convidar" para adicionar</p>
+                </div>`;
             
             serverCard.innerHTML = `
                 <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem;' : ''}">
                     ${guild.icon ? `<img src="${icon}" alt="${guild.name}" loading="lazy">` : icon}
                 </div>
                 <h3>${guild.name}</h3>
-                <div class="server-stats">
-                    <p><i class="fas fa-terminal"></i> Prefixo: <strong>${stats.prefix || '!'}</strong></p>
-                    <p><i class="fas fa-chart-line"></i> Comandos: <strong>${stats.commandsExecuted || 0}</strong></p>
-                    <p><i class="fas fa-users"></i> Usuários únicos: <strong>${stats.uniqueUsers || 0}</strong></p>
-                </div>
-                <button class="btn secondary-btn small-btn manage-btn" aria-label="Gerenciar ${guild.name}">
-                    <i class="fas fa-cog"></i> Configurar
-                </button>
+                ${statsHTML}
+                ${buttonHTML}
             `;
             
             UI.serversGrid.appendChild(serverCard);
 
-            // Add click handler to the button FIRST (before card click)
-            const manageBtn = serverCard.querySelector('.manage-btn');
-            if (manageBtn) {
-                manageBtn.addEventListener('click', async (e) => {
+            // Add click handler to the button
+            const actionBtn = serverCard.querySelector('.manage-btn, .invite-btn');
+            if (actionBtn) {
+                actionBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     e.preventDefault();
                     e.stopImmediatePropagation();
                     
-                    console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
-                    
-                    // Disable button temporarily
-                    manageBtn.disabled = true;
-                    const originalHTML = manageBtn.innerHTML;
-                    manageBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-                    
-                    try {
-                        await manageServer(guild.id, guild.name);
-                    } catch (error) {
-                        console.error('Erro ao abrir configuração:', error);
-                        showNotification('Erro ao abrir configurações do servidor', 'error');
-                    } finally {
-                        // Re-enable button
-                        manageBtn.disabled = false;
-                        manageBtn.innerHTML = originalHTML;
+                    if (botPresent) {
+                        console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
+                        
+                        // Disable button temporarily
+                        actionBtn.disabled = true;
+                        const originalHTML = actionBtn.innerHTML;
+                        actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
+                        
+                        try {
+                            await manageServer(guild.id, guild.name);
+                        } catch (error) {
+                            console.error('Erro ao abrir configuração:', error);
+                            showNotification('Erro ao abrir configurações do servidor', 'error');
+                        } finally {
+                            // Re-enable button
+                            actionBtn.disabled = false;
+                            actionBtn.innerHTML = originalHTML;
+                        }
+                    } else {
+                        // Invite bot to server
+                        const inviteUrl = `https://discord.com/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
+                        window.open(inviteUrl, '_blank');
                     }
-                }, true); // Use capture phase to ensure it fires first
+                }, true);
             }
 
-            // Add click handler to card (only if not clicking button)
-            serverCard.addEventListener('click', async (e) => {
-                // Don't trigger if clicking the button or any element inside it
-                if (e.target.closest('.manage-btn') || e.target.classList.contains('manage-btn')) {
-                    return;
-                }
-                
-                console.log('📋 Card clicado, abrindo configurações do servidor:', guild.id);
-                // Open configuration modal when clicking the card
-                await manageServer(guild.id, guild.name);
-            });
+            // Add click handler to card (only if bot is present)
+            if (botPresent) {
+                serverCard.addEventListener('click', async (e) => {
+                    // Don't trigger if clicking the button or any element inside it
+                    if (e.target.closest('.manage-btn, .invite-btn') || e.target.classList.contains('manage-btn') || e.target.classList.contains('invite-btn')) {
+                        return;
+                    }
+                    
+                    console.log('📋 Card clicado, abrindo configurações do servidor:', guild.id);
+                    // Open configuration modal when clicking the card
+                    await manageServer(guild.id, guild.name);
+                });
+            }
         });
     }
 
@@ -753,7 +784,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Redireciona apenas se não estiver na página inicial
             if (!window.location.pathname.endsWith('index.html')) {
-                window.location.href = 'index.html';
+                window.location.href = '/';
             }
         } catch (error) {
             console.error('Logout error:', error);

@@ -83,6 +83,23 @@ app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, async (req,
     }
 });
 
+// Check if bot is in server
+app.get('/api/server/:guildId/bot-present', discordAuth.authenticateToken, async (req, res) => {
+    const { guildId } = req.params;
+    try {
+        if (botClient && botClient.guilds) {
+            const guild = botClient.guilds.cache.get(guildId);
+            res.json({ present: !!guild });
+        } else {
+            // If bot not available, assume not present
+            res.json({ present: false });
+        }
+    } catch (error) {
+        console.error('Erro ao verificar presença do bot:', error);
+        res.json({ present: false });
+    }
+});
+
 // Get server configuration
 app.get('/api/server/:guildId/config', discordAuth.authenticateToken, async (req, res) => {
     const { guildId } = req.params;
@@ -174,9 +191,9 @@ app.setBotClient = (client) => {
     console.log('✅ Bot client registrado no servidor web');
 };
 
-// Rotas estáticas
+// Rotas estáticas (sem extensão .html)
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
-app.get('/dashboard.html', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
 
 app.listen(PORT, () => {
     console.log(`🌐 Servidor web rodando na porta ${PORT}`);
