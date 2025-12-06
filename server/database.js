@@ -283,6 +283,30 @@ async function setServerNickname(guildId, nickname) {
     }
 }
 
+// Update server config (for notifications and other complex updates)
+async function updateServerConfig(guildId, config) {
+    try {
+        // Update notifications in stats JSONB
+        if (config.notifications) {
+            const currentConfig = await getServerConfig(guildId);
+            const updatedStats = {
+                ...currentConfig.stats,
+                notifications: config.notifications
+            };
+            
+            await pool.query(
+                'UPDATE servers SET stats = $1, updated_at = CURRENT_TIMESTAMP WHERE guild_id = $2',
+                [JSON.stringify(updatedStats), guildId]
+            );
+        }
+        
+        return await getServerConfig(guildId);
+    } catch (error) {
+        console.error('Erro ao atualizar configuração:', error);
+        throw error;
+    }
+}
+
 // Update module status
 async function setModuleStatus(guildId, moduleName, enabled) {
     try {
