@@ -152,14 +152,16 @@ const OWNER_ID = '909204567042981978';
 function getUserBadges(userId) {
     const badges = [];
     
-    // Owner badge
+    // Owner badge - usando imagem do Discord (Partnered Server Owner)
     if (userId === OWNER_ID) {
         badges.push({
             id: 'owner',
-            name: 'Owner',
-            icon: '👑',
-            color: '#FFD700',
-            description: 'Dono do bot'
+            name: 'Partnered Server Owner',
+            // URL da badge do Discord - pode precisar ser ajustada
+            // Alternativas: usar imagem local ou URL do Discord CDN
+            imageUrl: 'https://cdn.discordapp.com/attachments/0/0/partnered-server-owner.png',
+            fallbackIcon: '👑',
+            description: 'Partnered Server Owner'
         });
     }
     
@@ -167,8 +169,7 @@ function getUserBadges(userId) {
     // badges.push({
     //     id: 'premium',
     //     name: 'Premium',
-    //     icon: '💎',
-    //     color: '#9B59B6',
+    //     imageUrl: 'https://cdn.discordapp.com/badge-icons/premium.png',
     //     description: 'Membro Premium'
     // });
     

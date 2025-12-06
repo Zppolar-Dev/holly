@@ -383,14 +383,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.userDiscriminator.textContent = discriminator ? `#${discriminator}` : '';
         }
 
+        // Atualizar badges (ao lado do nome)
+        updateUserBadges(badges);
+
         // Atualizar plano
         if (UI.userPlan) {
             UI.userPlan.textContent = plan === 'premium' ? 'Premium' : 'Free';
             UI.userPlan.className = `plan-badge ${plan}`;
         }
-
-        // Atualizar badges
-        updateUserBadges(badges);
 
         // Atualizar status
         updateUserStatus('online');
@@ -403,9 +403,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Atualizar badges do usuário
+    // Atualizar badges do usuário (ao lado do nome)
     function updateUserBadges(badges) {
-        const badgesContainer = document.getElementById('userBadges');
+        const badgesContainer = document.getElementById('userBadgesInline');
         if (!badgesContainer) return;
 
         if (!badges || badges.length === 0) {
@@ -413,14 +413,27 @@ document.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        badgesContainer.innerHTML = badges.map(badge => `
-            <div class="user-badge" 
-                 style="background: linear-gradient(135deg, ${badge.color}15, ${badge.color}25); border: 1px solid ${badge.color}40;"
-                 title="${badge.description || badge.name}">
-                <span class="badge-icon">${badge.icon}</span>
-                <span class="badge-name">${badge.name}</span>
-            </div>
-        `).join('');
+        badgesContainer.innerHTML = badges.map(badge => {
+            // Se tiver imageUrl, usa imagem, senão usa ícone fallback
+            if (badge.imageUrl) {
+                return `
+                    <div class="discord-badge" title="${badge.description || badge.name}">
+                        <img src="${badge.imageUrl}" alt="${badge.name}" class="badge-image" 
+                             onerror="this.onerror=null; this.style.display='none'; this.nextElementSibling && (this.nextElementSibling.style.display='inline');">
+                        ${badge.fallbackIcon ? `<span class="badge-icon" style="display:none;">${badge.fallbackIcon}</span>` : ''}
+                        <span class="badge-tooltip">${badge.description || badge.name}</span>
+                    </div>
+                `;
+            } else if (badge.icon || badge.fallbackIcon) {
+                return `
+                    <div class="discord-badge" title="${badge.description || badge.name}">
+                        <span class="badge-icon">${badge.icon || badge.fallbackIcon || ''}</span>
+                        <span class="badge-tooltip">${badge.description || badge.name}</span>
+                    </div>
+                `;
+            }
+            return '';
+        }).join('');
     }
 
     // Atualizar status do usuário (mantido)
