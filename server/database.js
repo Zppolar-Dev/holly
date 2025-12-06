@@ -160,11 +160,13 @@ async function getServerConfig(guildId) {
         const row = result.rows[0];
         return {
             prefix: row.prefix,
+            nickname: row.stats?.nickname || null,
             botPresent: row.bot_present || false,
             lastSeen: row.last_seen ? row.last_seen.toISOString() : null,
             modules: row.modules,
             stats: {
                 ...row.stats,
+                nickname: row.stats?.nickname || null,
                 uniqueUsers: new Set(row.stats.uniqueUsers || [])
             }
         };
@@ -178,6 +180,7 @@ async function getServerConfig(guildId) {
 async function createDefaultConfig(guildId) {
     const defaultConfig = {
         prefix: '!',
+        nickname: null,
         modules: {
             moderation: true,
             fun: true,
@@ -194,10 +197,11 @@ async function createDefaultConfig(guildId) {
                 other: 0
             },
             lastCommandTime: null,
-            uniqueUsers: []
+            uniqueUsers: [],
+            nickname: null
         }
     };
-
+    
     try {
         await pool.query(
             `INSERT INTO servers (guild_id, prefix, bot_present, last_seen, modules, stats)
@@ -231,6 +235,50 @@ async function setServerPrefix(guildId, prefix) {
         return await getServerConfig(guildId);
     } catch (error) {
         console.error('Erro ao atualizar prefixo:', error);
+        throw error;
+    }
+}
+
+// Update server nickname
+async function setServerNickname(guildId, nickname) {
+    try {
+        const config = await getServerConfig(guildId);
+        const nicknameValue = nickname && nickname.trim() ? nickname.trim() : null;
+        
+        // Store nickname in stats JSONB
+        const updatedStats = {
+            ...config.stats,
+            nickname: nicknameValue
+        };
+        
+        await pool.query(
+            'UPDATE servers SET stats = $1, updated_at = CURRENT_TIMESTAMP WHERE guild_id = $2',
+            [JSON.stringify(updatedStats), guildId]
+        );
+        
+        return await getServerConfig(guildId);
+    } catch (error) {
+        console.error('Erro ao atualizar nickname:', error);
+        throw error;
+    }
+}
+
+// Update server nickname
+async function setServerNickname(guildId, nickname) {
+    try {
+        // Store nickname in stats JSONB for now (or add separate column)
+        const config = await getServerConfig(guildId);
+        config.nickname = nickname && nickname.trim() ? nickname.trim() : null;
+        
+        // Update in database - store in stats JSONB
+        await pool.query(
+            'UPDATE servers SET stats = jsonb_set(COALESCE(stats, \'{}\'::jsonb), \'{nickname}\', $1::jsonb), updated_at = CURRENT_TIMESTAMP WHERE guild_id = $2',
+            [JSON.stringify(config.nickname), guildId]
+        );
+        
+        return await getServerConfig(guildId);
+    } catch (error) {
+        console.error('Erro ao atualizar nickname:', error);
         throw error;
     }
 }
@@ -341,6 +389,7 @@ module.exports = {
     initializeDatabase,
     getServerConfig,
     setServerPrefix,
+    setServerNickname,
     setModuleStatus,
     trackCommand,
     getServerStats,

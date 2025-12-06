@@ -187,6 +187,30 @@ app.post('/api/server/:guildId/prefix', discordAuth.authenticateToken, async (re
     }
 });
 
+// Update server nickname
+app.post('/api/server/:guildId/nickname', discordAuth.authenticateToken, async (req, res) => {
+    const { guildId } = req.params;
+    const { nickname } = req.body;
+    
+    if (nickname && nickname.length > 32) {
+        return res.status(400).json({ error: 'Nickname inválido (máximo 32 caracteres)' });
+    }
+    
+    try {
+        const config = await dataStore.setServerNickname(guildId, nickname || '');
+        
+        // Notify bot if connected locally
+        if (botClient && typeof botClient.updateServerNickname === 'function') {
+            await botClient.updateServerNickname(guildId, config.nickname);
+        }
+        
+        res.json({ success: true, nickname: config.nickname });
+    } catch (error) {
+        console.error('Erro ao atualizar nickname:', error);
+        res.status(500).json({ error: 'Erro ao atualizar nickname' });
+    }
+});
+
 // Update module status
 app.post('/api/server/:guildId/module', discordAuth.authenticateToken, (req, res) => {
     const { guildId } = req.params;

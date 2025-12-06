@@ -530,12 +530,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <p><i class="fas fa-chart-line"></i> Comandos: <strong>${stats.commandsExecuted || 0}</strong></p>
                     <p><i class="fas fa-users"></i> Usuários únicos: <strong>${stats.uniqueUsers || 0}</strong></p>
                 </div>`
-                : `<div class="server-stats invite-prompt">
-                    <div class="invite-icon">
-                        <i class="fas fa-robot"></i>
-                    </div>
-                    <p class="invite-title">Bot não está no servidor</p>
-                    <p class="invite-description">Adicione a Holly para começar a usar todos os recursos</p>
+                : `<div class="server-stats">
+                    <p><i class="fas fa-info-circle"></i> Bot não está no servidor</p>
+                    <p><i class="fas fa-arrow-right"></i> Clique em "Convidar" para adicionar</p>
                 </div>`;
             
             serverCard.innerHTML = `
@@ -554,10 +551,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (actionBtn) {
                 actionBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
-                    e.preventDefault();
                     e.stopImmediatePropagation();
                     
                     if (botPresent) {
+                        e.preventDefault();
                         console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
                         
                         // Disable button temporarily
@@ -576,18 +573,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                             actionBtn.innerHTML = originalHTML;
                         }
                     } else {
-                        // Invite bot to server
+                        // Invite bot to server - don't prevent default, just redirect
                         const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
                         console.log('🔗 Convidando bot para o servidor:', guild.name, guild.id);
                         console.log('🔗 URL de convite:', inviteUrl);
                         
-                        // Disable button temporarily
-                        actionBtn.disabled = true;
-                        const originalHTML = actionBtn.innerHTML;
-                        actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecionando...';
-                        
-                        // Redirect directly to Discord OAuth (most reliable method)
+                        // Redirect directly to Discord OAuth
                         window.location.href = inviteUrl;
+                        return false;
                     }
                 }, true);
             }
@@ -1109,6 +1102,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                     </div>
                     
                     <div class="form-group">
+                        <label for="server-nickname">
+                            <i class="fas fa-user-tag"></i> Apelido do Bot
+                        </label>
+                        <input 
+                            type="text" 
+                            id="server-nickname" 
+                            value="${escapeHtml(config.nickname || '')}" 
+                            maxlength="32" 
+                            placeholder="Deixe vazio para usar nome padrão"
+                            class="form-input"
+                        >
+                        <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                    </div>
+                    
+                    <div class="form-group">
                         <label>Módulos Ativados</label>
                         <div class="module-toggle">
                             <label class="toggle-item">
@@ -1263,7 +1271,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const saveBtn = modal.querySelector('#save-server-config');
         saveBtn.addEventListener('click', async () => {
             const prefixInput = modal.querySelector('#server-prefix');
+            const nicknameInput = modal.querySelector('#server-nickname');
             const prefix = prefixInput.value.trim();
+            const nickname = nicknameInput.value.trim();
             
             if (!prefix || prefix.length === 0) {
                 showNotification('O prefixo não pode estar vazio!', 'error');
@@ -1274,6 +1284,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (prefix.length > 5) {
                 showNotification('O prefixo não pode ter mais de 5 caracteres!', 'error');
                 prefixInput.focus();
+                return;
+            }
+            
+            if (nickname.length > 32) {
+                showNotification('O apelido não pode ter mais de 32 caracteres!', 'error');
+                nicknameInput.focus();
                 return;
             }
             
@@ -1298,6 +1314,19 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (!prefixRes.ok) {
                     const error = await prefixRes.json();
                     throw new Error(error.error || 'Erro ao salvar prefixo');
+                }
+                
+                // Save nickname
+                const nicknameRes = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/nickname`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ nickname: nickname || null })
+                });
+                
+                if (!nicknameRes.ok) {
+                    const error = await nicknameRes.json();
+                    throw new Error(error.error || 'Erro ao salvar apelido');
                 }
                 
                 // Save modules

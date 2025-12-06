@@ -1131,63 +1131,6 @@ textarea:focus-visible {
     font-weight: 600;
 }
 
-/* Invite prompt styling */
-.server-stats.invite-prompt {
-    background: linear-gradient(135deg, rgba(138, 79, 255, 0.1), rgba(255, 159, 243, 0.1));
-    border: 2px dashed var(--primary-light);
-    padding: 1.5rem;
-    text-align: center;
-    border-radius: 12px;
-    margin: 1rem 0;
-}
-
-.invite-icon {
-    font-size: 3rem;
-    color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    animation: pulse 2s ease-in-out infinite;
-}
-
-@keyframes pulse {
-    0%, 100% {
-        transform: scale(1);
-        opacity: 1;
-    }
-    50% {
-        transform: scale(1.1);
-        opacity: 0.8;
-    }
-}
-
-.invite-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--primary-color);
-    margin: 0.5rem 0 !important;
-    display: block !important;
-}
-
-.invite-description {
-    font-size: 0.85rem;
-    color: var(--text-light);
-    margin: 0 !important;
-    line-height: 1.4;
-    display: block !important;
-}
-
-.invite-btn {
-    margin-top: 1rem;
-    animation: bounce 2s ease-in-out infinite;
-}
-
-@keyframes bounce {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-5px);
-    }
-}
 
 .module-toggle {
     display: flex;

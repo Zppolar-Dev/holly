@@ -46,6 +46,7 @@ if (!fs.existsSync(dataDir)) {
 // Default server configuration
 const defaultConfig = {
     prefix: '!',
+    nickname: null, // Bot nickname in this server
     botPresent: false, // Track if bot is currently in server
     lastSeen: null, // Last time bot was seen in server
     modules: {
@@ -167,6 +168,9 @@ async function getServerConfig(guildId) {
         // Deep clone default config and ensure Set is properly initialized
         serverData[guildId] = {
             prefix: defaultConfig.prefix,
+            nickname: defaultConfig.nickname,
+            botPresent: defaultConfig.botPresent,
+            lastSeen: defaultConfig.lastSeen,
             modules: { ...defaultConfig.modules },
             stats: {
                 ...defaultConfig.stats,
@@ -204,6 +208,19 @@ async function setServerPrefix(guildId, prefix) {
     // File-based fallback
     const config = await getServerConfig(guildId);
     config.prefix = prefix;
+    saveData();
+    return config;
+}
+
+// Update server nickname
+async function setServerNickname(guildId, nickname) {
+    if (useDatabase && db) {
+        return await db.setServerNickname(guildId, nickname);
+    }
+    
+    // File-based fallback
+    const config = await getServerConfig(guildId);
+    config.nickname = nickname && nickname.trim() ? nickname.trim() : null;
     saveData();
     return config;
 }
@@ -322,6 +339,7 @@ module.exports = {
     getServerConfig,
     updateServerConfig,
     setServerPrefix,
+    setServerNickname,
     trackCommand,
     getServerStats,
     getAllServers,
