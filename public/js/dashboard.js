@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Configurações atualizadas
     const runtimeOrigin = window.location.origin || '';
     const isLocalhost = runtimeOrigin.includes('localhost') || runtimeOrigin.includes('127.0.0.1');
-    const apiBaseFromWindow = window.__HOLLY_API__ || 'https://holly-j4a7.onrender.com';
+    const apiBaseFromWindow = window.__HOLLY_API__ || 'https://dash-holly.com';
     const CONFIG = {
         CLIENT_ID: '1069819161057968218',
         API_BASE_URL: isLocalhost ? 'http://localhost:3000' : apiBaseFromWindow,
