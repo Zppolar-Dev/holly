@@ -74,6 +74,8 @@ app.get('/api/stats', discordAuth.authenticateToken, (req, res) => {
 // Get server-specific stats
 app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, (req, res) => {
     const { guildId } = req.params;
+    // Reload data from file to ensure we have the latest
+    dataStore.loadData();
     const stats = dataStore.getServerStats(guildId);
     res.json(stats);
 });
@@ -81,6 +83,8 @@ app.get('/api/server/:guildId/stats', discordAuth.authenticateToken, (req, res) 
 // Get server configuration
 app.get('/api/server/:guildId/config', discordAuth.authenticateToken, (req, res) => {
     const { guildId } = req.params;
+    // Reload data from file to ensure we have the latest
+    dataStore.loadData();
     const config = dataStore.getServerConfig(guildId);
     // Convert Set to array for JSON response
     const response = {

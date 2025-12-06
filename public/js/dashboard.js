@@ -442,9 +442,15 @@ document.addEventListener('DOMContentLoaded', async function() {
             animateCounter(UI.serverCount, 0, STATE.guilds.length, 1000);
         }
 
-        // Fetch server stats for all guilds
+        // Fetch server stats for all guilds (with cache busting to get fresh data)
         const serverStatsPromises = STATE.guilds.map(guild => 
-            fetch(`${CONFIG.API_BASE_URL}/api/server/${guild.id}/stats`, { credentials: 'include' })
+            fetch(`${CONFIG.API_BASE_URL}/api/server/${guild.id}/stats?t=${Date.now()}`, { 
+                credentials: 'include',
+                cache: 'no-cache',
+                headers: {
+                    'Cache-Control': 'no-cache'
+                }
+            })
                 .then(res => res.ok ? res.json() : null)
                 .catch(() => null)
         );
@@ -1229,7 +1235,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 showNotification('✅ Configurações salvas com sucesso!', 'success');
                 closeModal();
                 
-                // Refresh servers UI
+                // Small delay to ensure data is saved
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // Refresh servers UI to show updated data
                 await updateServersUI();
             } catch (error) {
                 console.error('Erro ao salvar configuração:', error);

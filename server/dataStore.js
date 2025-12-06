@@ -95,6 +95,7 @@ function saveData() {
         });
         
         fs.writeFileSync(DATA_FILE, JSON.stringify(dataToSave, null, 2));
+        console.log(`💾 Dados salvos em ${DATA_FILE}`);
     } catch (error) {
         console.error('Erro ao salvar dados:', error);
     }
