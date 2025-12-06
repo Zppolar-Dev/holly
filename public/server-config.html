@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuração do Servidor - Holly</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <img src="images/holly.gif" alt="Loading">
+            <p>Carregando configurações...</p>
+        </div>
+    </div>
+
+    <nav class="navbar">
+        <div class="navbar-container">
+            <a href="/dashboard" class="navbar-brand">
+                <img src="images/holly.gif" alt="Logo Holly" class="logo">
+                <span>Holly</span>
+            </a>
+            
+            <div class="navbar-menu" id="navbarMenu">
+                <ul class="navbar-links">
+                    <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+                    <li><a href="/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                </ul>
+                
+                <div class="navbar-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-moon" id="themeIcon"></i>
+                    </button>
+                    
+                    <div class="user-dropdown" id="userDropdown">
+                        <button class="dropdown-toggle">
+                            <img id="nav-user-avatar" src="https://cdn.discordapp.com/embed/avatars/0.png" alt="User">
+                            <span id="nav-username">Entrar</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="#" id="login-btn"><i class="fab fa-discord"></i> Login com Discord</a>
+                            <a href="#"><i class="fas fa-cog"></i> Configurações</a>
+                            <a href="#"><i class="fas fa-sign-out-alt"></i> Sair</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="dashboard-container">
+        <div class="server-config-page" id="serverConfigPage">
+            <div class="config-header">
+                <a href="/dashboard" class="back-btn">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+                <h1 id="serverName">Carregando...</h1>
+                <p id="serverId">ID: -</p>
+            </div>
+
+            <div class="config-content">
+                <!-- Prefixo -->
+                <div class="config-section">
+                    <h2><i class="fas fa-terminal"></i> Prefixo dos Comandos</h2>
+                    <div class="form-group">
+                        <label for="server-prefix">Prefixo</label>
+                        <input 
+                            type="text" 
+                            id="server-prefix" 
+                            maxlength="5" 
+                            placeholder="!"
+                            class="form-input"
+                        >
+                        <small>O prefixo usado para comandos de texto (ex: !help, $help)</small>
+                    </div>
+                </div>
+
+                <!-- Apelido do Bot -->
+                <div class="config-section">
+                    <h2><i class="fas fa-user-tag"></i> Apelido do Bot</h2>
+                    <div class="form-group">
+                        <label for="server-nickname">Apelido</label>
+                        <input 
+                            type="text" 
+                            id="server-nickname" 
+                            maxlength="32" 
+                            placeholder="Deixe vazio para usar nome padrão"
+                            class="form-input"
+                        >
+                        <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                    </div>
+                </div>
+
+                <!-- Notificações de Entrada -->
+                <div class="config-section">
+                    <h2><i class="fas fa-user-plus"></i> Notificação de Entrada de Membros</h2>
+                    <div class="form-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notify-join-enabled">
+                            <span class="slider"></span>
+                            <span>Ativar notificações quando um membro entrar</span>
+                        </label>
+                    </div>
+                    <div id="notify-join-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="notify-join-channel">Canal de Notificação</label>
+                            <select id="notify-join-channel" class="form-input">
+                                <option value="">Selecione um canal...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="notify-join-message">Mensagem</label>
+                            <textarea 
+                                id="notify-join-message" 
+                                class="form-input" 
+                                rows="3"
+                                placeholder="Bem-vindo @nome ao servidor! Entrou em @hora"
+                            ></textarea>
+                            <small>
+                                <strong>Variáveis disponíveis:</strong><br>
+                                <code>@nome</code> - Nome do usuário (menção)<br>
+                                <code>@hora</code> - Hora de entrada (HH:MM)<br>
+                                <code>@data</code> - Data de entrada (DD/MM/AAAA)<br>
+                                <code>@servidor</code> - Nome do servidor<br>
+                                <code>@membros</code> - Total de membros
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notificações de Saída -->
+                <div class="config-section">
+                    <h2><i class="fas fa-user-minus"></i> Notificação de Saída de Membros</h2>
+                    <div class="form-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="notify-leave-enabled">
+                            <span class="slider"></span>
+                            <span>Ativar notificações quando um membro sair</span>
+                        </label>
+                    </div>
+                    <div id="notify-leave-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="notify-leave-channel">Canal de Notificação</label>
+                            <select id="notify-leave-channel" class="form-input">
+                                <option value="">Selecione um canal...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="notify-leave-message">Mensagem</label>
+                            <textarea 
+                                id="notify-leave-message" 
+                                class="form-input" 
+                                rows="3"
+                                placeholder="@nome saiu do servidor em @hora"
+                            ></textarea>
+                            <small>
+                                <strong>Variáveis disponíveis:</strong><br>
+                                <code>@nome</code> - Nome do usuário<br>
+                                <code>@hora</code> - Hora de saída (HH:MM)<br>
+                                <code>@data</code> - Data de saída (DD/MM/AAAA)<br>
+                                <code>@servidor</code> - Nome do servidor<br>
+                                <code>@membros</code> - Total de membros
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Módulos -->
+                <div class="config-section">
+                    <h2><i class="fas fa-puzzle-piece"></i> Módulos</h2>
+                    <div class="module-toggle">
+                        <label class="toggle-item">
+                            <input type="checkbox" data-module="moderation">
+                            <span>
+                                <i class="fas fa-shield-alt"></i> 
+                                <strong>Moderação</strong>
+                                <small>Comandos de moderação e segurança</small>
+                            </span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" data-module="fun">
+                            <span>
+                                <i class="fas fa-gamepad"></i> 
+                                <strong>Diversão</strong>
+                                <small>Comandos de entretenimento</small>
+                            </span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" data-module="utility">
+                            <span>
+                                <i class="fas fa-toolbox"></i> 
+                                <strong>Utilidades</strong>
+                                <small>Comandos úteis e informativos</small>
+                            </span>
+                        </label>
+                        <label class="toggle-item">
+                            <input type="checkbox" data-module="music">
+                            <span>
+                                <i class="fas fa-music"></i> 
+                                <strong>Música</strong>
+                                <small>Comandos de música e áudio</small>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Botões de ação -->
+                <div class="config-actions">
+                    <button class="btn secondary-btn" id="cancel-btn">
+                        <i class="fas fa-times"></i> Cancelar
+                    </button>
+                    <button class="btn primary-btn" id="save-btn">
+                        <i class="fas fa-save"></i> Salvar Configurações
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/server-config.js"></script>
+</body>
+</html>
+

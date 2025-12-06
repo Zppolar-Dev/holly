@@ -520,9 +520,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ? `<button class="btn secondary-btn small-btn manage-btn" aria-label="Gerenciar ${guild.name}">
                     <i class="fas fa-cog"></i> Configurar
                 </button>`
-                : `<button class="btn primary-btn small-btn invite-btn" aria-label="Convidar bot para ${guild.name}">
-                    <i class="fas fa-plus"></i> Convidar
-                </button>`;
+                : '';
             
             const statsHTML = botPresent 
                 ? `<div class="server-stats">
@@ -530,9 +528,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <p><i class="fas fa-chart-line"></i> Comandos: <strong>${stats.commandsExecuted || 0}</strong></p>
                     <p><i class="fas fa-users"></i> Usuários únicos: <strong>${stats.uniqueUsers || 0}</strong></p>
                 </div>`
-                : `<div class="server-stats">
-                    <p><i class="fas fa-info-circle"></i> Bot não está no servidor</p>
-                    <p><i class="fas fa-arrow-right"></i> Clique em "Convidar" para adicionar</p>
+                : `<div class="server-stats bot-not-present">
+                    <p><i class="fas fa-exclamation-triangle"></i> <strong>Bot não está no servidor</strong></p>
+                    <p>Adicione o bot ao servidor para começar a usar os recursos</p>
+                    <a href="https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}" 
+                       class="btn primary-btn small-btn" 
+                       target="_blank"
+                       style="margin-top: 0.5rem; display: inline-block;">
+                        <i class="fas fa-plus"></i> Adicionar Bot ao Servidor
+                    </a>
                 </div>`;
             
             serverCard.innerHTML = `
@@ -546,56 +550,32 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             UI.serversGrid.appendChild(serverCard);
 
-            // Add click handler to the button
-            const actionBtn = serverCard.querySelector('.manage-btn, .invite-btn');
-            if (actionBtn) {
-                actionBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    e.stopImmediatePropagation();
-                    
-                    if (botPresent) {
+            // Add click handler to the button (only if bot is present)
+            if (botPresent) {
+                const actionBtn = serverCard.querySelector('.manage-btn');
+                if (actionBtn) {
+                    actionBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        e.stopImmediatePropagation();
                         e.preventDefault();
+                        
                         console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
                         
-                        // Disable button temporarily
-                        actionBtn.disabled = true;
-                        const originalHTML = actionBtn.innerHTML;
-                        actionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Carregando...';
-                        
-                        try {
-                            await manageServer(guild.id, guild.name);
-                        } catch (error) {
-                            console.error('Erro ao abrir configuração:', error);
-                            showNotification('Erro ao abrir configurações do servidor', 'error');
-                        } finally {
-                            // Re-enable button
-                            actionBtn.disabled = false;
-                            actionBtn.innerHTML = originalHTML;
-                        }
-                    } else {
-                        // Invite bot to server - don't prevent default, just redirect
-                        const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8&guild_id=${guild.id}`;
-                        console.log('🔗 Convidando bot para o servidor:', guild.name, guild.id);
-                        console.log('🔗 URL de convite:', inviteUrl);
-                        
-                        // Redirect directly to Discord OAuth
-                        window.location.href = inviteUrl;
-                        return false;
-                    }
-                }, true);
-            }
+                        // Redirect to server config page
+                        window.location.href = `/server/${guild.id}`;
+                    }, true);
+                }
 
-            // Add click handler to card (only if bot is present)
-            if (botPresent) {
+                // Add click handler to card (only if bot is present)
                 serverCard.addEventListener('click', async (e) => {
                     // Don't trigger if clicking the button or any element inside it
-                    if (e.target.closest('.manage-btn, .invite-btn') || e.target.classList.contains('manage-btn') || e.target.classList.contains('invite-btn')) {
+                    if (e.target.closest('.manage-btn') || e.target.classList.contains('manage-btn')) {
                         return;
                     }
                     
                     console.log('📋 Card clicado, abrindo configurações do servidor:', guild.id);
-                    // Open configuration modal when clicking the card
-                    await manageServer(guild.id, guild.name);
+                    // Redirect to server config page
+                    window.location.href = `/server/${guild.id}`;
                 });
             }
         });
@@ -994,51 +974,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         STATE.lastScrollPosition = currentScrollPosition;
     }
 
-    // Gerenciar servidor (com modal de configuração)
+    // Gerenciar servidor (redirect to config page)
     async function manageServer(guildId, guildName) {
-        console.log('🔧 manageServer chamado:', guildId, guildName);
-        
-        if (!guildId || !guildName) {
-            console.error('❌ guildId ou guildName não fornecido');
-            showNotification('Erro: ID do servidor não encontrado', 'error');
-            return;
-        }
-        
-        try {
-            console.log('📡 Fazendo requisição para:', `${CONFIG.API_BASE_URL}/api/server/${guildId}/config`);
-            
-            // Fetch server configuration
-            const configRes = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/config`, { 
-                method: 'GET',
-                credentials: 'include',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
-            });
-            
-            console.log('📥 Resposta recebida:', configRes.status, configRes.statusText);
-            
-            if (!configRes.ok) {
-                let errorMessage = `Erro ${configRes.status}`;
-                try {
-                    const errorData = await configRes.json();
-                    errorMessage = errorData.error || errorMessage;
-                } catch (e) {
-                    errorMessage = configRes.statusText || errorMessage;
-                }
-                throw new Error(errorMessage);
-            }
-            
-            const config = await configRes.json();
-            console.log('✅ Configuração carregada:', config);
-            
-            // Create and show configuration modal
-            showServerConfigModal(guildId, guildName, config);
-        } catch (error) {
-            console.error('❌ Erro ao carregar configuração:', error);
-            showNotification(`Erro ao carregar configuração: ${error.message}`, 'error');
-        }
+        window.location.href = `/server/${guildId}`;
     }
 
     // Mostrar modal de configuração do servidor

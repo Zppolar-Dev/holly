@@ -49,6 +49,18 @@ const defaultConfig = {
     nickname: null, // Bot nickname in this server
     botPresent: false, // Track if bot is currently in server
     lastSeen: null, // Last time bot was seen in server
+    notifications: {
+        memberJoin: {
+            enabled: false,
+            channelId: null,
+            message: 'Bem-vindo @nome ao servidor! Entrou em @hora'
+        },
+        memberLeave: {
+            enabled: false,
+            channelId: null,
+            message: '@nome saiu do servidor em @hora'
+        }
+    },
     modules: {
         moderation: true,
         fun: true,
@@ -192,10 +204,21 @@ async function getServerConfig(guildId) {
 }
 
 // Update server configuration
-function updateServerConfig(guildId, updates) {
-    const config = getServerConfig(guildId);
+async function updateServerConfig(guildId, updates) {
+    const config = await getServerConfig(guildId);
     Object.assign(config, updates);
-    saveData();
+    
+    if (useDatabase && db) {
+        // For database, save individual fields
+        if (updates.prefix) await db.setServerPrefix(guildId, updates.prefix);
+        if (updates.nickname !== undefined) await db.setServerNickname(guildId, updates.nickname);
+        if (updates.notifications && db.updateServerConfig) {
+            await db.updateServerConfig(guildId, { notifications: updates.notifications });
+        }
+    } else {
+        saveData();
+    }
+    
     return config;
 }
 

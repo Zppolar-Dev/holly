@@ -390,6 +390,7 @@ module.exports = {
     getServerConfig,
     setServerPrefix,
     setServerNickname,
+    updateServerConfig,
     setModuleStatus,
     trackCommand,
     getServerStats,

@@ -1,1 +1,146 @@
-{}
+{
+  "921754155419332649": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.270Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1022651966809190420": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.272Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1074842431020863609": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.273Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1134219207337324595": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.274Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1246964906314436729": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.275Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  },
+  "1306373852842037329": {
+    "prefix": "!",
+    "nickname": null,
+    "botPresent": true,
+    "lastSeen": "2025-12-06T17:35:50.276Z",
+    "modules": {
+      "moderation": true,
+      "fun": true,
+      "utility": true,
+      "music": false
+    },
+    "stats": {
+      "commandsExecuted": 0,
+      "commandsByCategory": {
+        "moderation": 0,
+        "fun": 0,
+        "utility": 0,
+        "music": 0,
+        "other": 0
+      },
+      "lastCommandTime": null,
+      "uniqueUsers": {}
+    }
+  }
+}

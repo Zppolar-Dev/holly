@@ -201,13 +201,83 @@ app.post('/api/server/:guildId/nickname', discordAuth.authenticateToken, async (
         
         // Notify bot if connected locally
         if (botClient && typeof botClient.updateServerNickname === 'function') {
-            await botClient.updateServerNickname(guildId, config.nickname);
+            try {
+                await botClient.updateServerNickname(guildId, config.nickname);
+            } catch (err) {
+                console.error('Erro ao atualizar nickname no Discord:', err);
+                // Continue anyway - nickname update might fail due to permissions
+            }
         }
         
         res.json({ success: true, nickname: config.nickname });
     } catch (error) {
         console.error('Erro ao atualizar nickname:', error);
         res.status(500).json({ error: 'Erro ao atualizar nickname' });
+    }
+});
+
+// Get server channels
+app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, async (req, res) => {
+    const { guildId } = req.params;
+    try {
+        // Try to get channels via bot client first (most reliable)
+        if (botClient && botClient.guilds) {
+            const guild = botClient.guilds.cache.get(guildId);
+            if (guild) {
+                const channels = guild.channels.cache
+                    .filter(ch => ch.isTextBased())
+                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                return res.json(channels);
+            }
+        }
+
+        // Fallback: try with user token
+        const token = await discordAuth.getValidAccessToken(req.user.user_id);
+        if (token) {
+            const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const textChannels = channelsRes.data.filter(ch => ch.type === 0);
+            return res.json(textChannels);
+        }
+
+        res.json([]);
+    } catch (error) {
+        console.error('Erro ao buscar canais:', error);
+        res.status(500).json({ error: 'Erro ao buscar canais' });
+    }
+});
+
+// Update notification settings
+app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, async (req, res) => {
+    const { guildId } = req.params;
+    const { type, enabled, channelId, message } = req.body;
+    
+    if (!type || (type !== 'memberJoin' && type !== 'memberLeave')) {
+        return res.status(400).json({ error: 'Tipo de notificação inválido' });
+    }
+    
+    try {
+        const config = await dataStore.getServerConfig(guildId);
+        if (!config.notifications) {
+            config.notifications = {
+                memberJoin: { enabled: false, channelId: null, message: '' },
+                memberLeave: { enabled: false, channelId: null, message: '' }
+            };
+        }
+        
+        config.notifications[type] = {
+            enabled: enabled || false,
+            channelId: channelId || null,
+            message: message || ''
+        };
+        
+        await dataStore.updateServerConfig(guildId, { notifications: config.notifications });
+        
+        res.json({ success: true, notifications: config.notifications });
+    } catch (error) {
+        console.error('Erro ao atualizar notificações:', error);
+        res.status(500).json({ error: 'Erro ao atualizar notificações' });
     }
 });
 
@@ -261,6 +331,7 @@ app.setBotClient = (client) => {
 // Rotas estáticas (sem extensão .html)
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/server/:guildId', (req, res) => res.sendFile(path.join(__dirname, 'public', 'server-config.html')));
 
 app.listen(PORT, () => {
     console.log(`🌐 Servidor web rodando na porta ${PORT}`);
