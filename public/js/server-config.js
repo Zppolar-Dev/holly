@@ -1095,7 +1095,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Update simple message preview
         if (previewSimple) {
-            const previewText = previewSimple.querySelector('#modal-preview-text');
+            const previewText = document.getElementById('modal-preview-text');
+            const timestamp = previewSimple.querySelector('.discord-message-timestamp');
+            
             if (previewText) {
                 if (messageType === 'text' || messageType === 'both') {
                     previewText.innerHTML = replaceVars(messageText);
@@ -1103,6 +1105,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 } else {
                     previewSimple.style.display = 'none';
                 }
+            }
+            
+            // Update timestamp
+            if (timestamp) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                timestamp.textContent = `Today at ${timeStr}`;
             }
         }
         
@@ -1285,16 +1294,44 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         const notification = currentEditType === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
-        notification.message = (messageType === 'text' || messageType === 'both') ? messageText : '';
-        notification.embed = embed;
+        const finalMessage = (messageType === 'text' || messageType === 'both') ? messageText : '';
+        const finalEmbed = (messageType === 'embed' || messageType === 'both') ? embed : null;
         
-        // Update preview on main page
-        updateMainPreview(currentEditType);
+        // Update notification object
+        notification.message = finalMessage;
+        notification.embed = finalEmbed;
         
-        // Close modal
-        closeMessageEditModal();
-        
-        showNotification('✅ Mensagem salva! Clique em "Salvar Configurações" para aplicar.', 'success');
+        // Save directly to server
+        try {
+            const deleteAfter = currentEditType === 'join' 
+                ? document.getElementById('notify-join-delete-after')?.value || 0
+                : document.getElementById('notify-leave-delete-after')?.value || 0;
+            
+            await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    type: currentEditType === 'join' ? 'memberJoin' : 'memberLeave',
+                    enabled: notification.enabled || false,
+                    channelId: notification.channelId || null,
+                    message: finalMessage,
+                    embed: finalEmbed,
+                    deleteAfter: parseInt(deleteAfter) || 0
+                })
+            });
+            
+            // Update preview on main page
+            updateMainPreview(currentEditType);
+            
+            // Close modal
+            closeMessageEditModal();
+            
+            showNotification('✅ Mensagem salva com sucesso!', 'success');
+        } catch (error) {
+            console.error('Erro ao salvar mensagem:', error);
+            showNotification('❌ Erro ao salvar mensagem. Tente novamente.', 'error');
+        }
     }
     
     // Update main preview (outside modal)

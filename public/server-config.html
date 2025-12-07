@@ -477,18 +477,19 @@
                     <!-- Coluna Direita: Preview -->
                     <div>
                         <h4 style="margin-bottom: 1rem;">Pré-visualização da Mensagem</h4>
-                        <div class="discord-message-preview" id="modal-preview" style="background: #2f3136; padding: 1rem; border-radius: 8px;">
+                        <div class="discord-message-preview modal-preview-container" id="modal-preview" style="background: #36393f; padding: 1rem; border-radius: 8px;">
                             <div class="discord-message" id="modal-preview-simple">
-                                <div class="discord-avatar">
-                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                                <div class="discord-message-sidebar">
+                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" class="discord-message-avatar" alt="Bot">
                                 </div>
                                 <div class="discord-message-content">
-                                    <div class="discord-author">
-                                        <span class="discord-author-name">Holly</span>
-                                        <span class="discord-bot-tag">BOT</span>
-                                        <span class="discord-timestamp"></span>
-                                    </div>
-                                    <div class="discord-message-text" id="modal-preview-text"></div>
+                                    <h2 class="discord-message-header">
+                                        <span class="discord-message-username" style="color: #5865f2;">Holly</span>
+                                        <span class="discord-message-bot-tag">BOT</span>
+                                        <span class="discord-message-timestamp"></span>
+                                    </h2>
+                                    <div id="modal-preview-text"></div>
+                                    <div class="discord-message-accessories"></div>
                                 </div>
                             </div>
                             <div class="discord-embed" id="modal-preview-embed" style="display: none;"></div>

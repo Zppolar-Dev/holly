@@ -2595,6 +2595,48 @@ html, body {
     margin-top: 0.5rem;
 }
 
+/* Preview dentro do modal */
+.modal-preview-container {
+    background: #36393f !important;
+}
+
+.modal-preview-container .discord-message {
+    color: #dcddde !important;
+}
+
+.modal-preview-container .discord-message-content {
+    color: #dcddde !important;
+}
+
+.modal-preview-container .discord-message-content > div {
+    color: #dcddde !important;
+}
+
+.modal-preview-container .discord-message-username {
+    color: #5865f2 !important;
+}
+
+.modal-preview-container .discord-message-timestamp {
+    color: #72767d !important;
+}
+
+.modal-preview-container .discord-embed {
+    background: #2f3136 !important;
+    border-left: 4px solid #5865f2;
+}
+
+.modal-preview-container .discord-embed-title {
+    color: #fff !important;
+}
+
+.modal-preview-container .discord-embed-description {
+    color: #dcddde !important;
+}
+
+.modal-preview-container .discord-embed-author {
+    color: #fff !important;
+}
+
 [data-theme="light"] .discord-embed {
     background: #f2f3f5;
 }
