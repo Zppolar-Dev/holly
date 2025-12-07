@@ -828,12 +828,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Open message edit modal
     function openMessageEditModal(type) {
+        console.log('🔧 Abrindo modal para:', type);
         currentEditType = type;
         const modal = document.getElementById('message-edit-modal');
         const modalTitle = document.getElementById('modal-title');
         
-        if (!modal) return;
+        if (!modal) {
+            console.error('❌ Modal não encontrado!');
+            return;
+        }
         
+        console.log('✅ Modal encontrado, configurando...');
         modalTitle.textContent = type === 'join' ? 'Editar Mensagem de Entrada' : 'Editar Mensagem de Saída';
         
         // Load current configuration
@@ -871,8 +876,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         updateModalPreview();
         
         // Show modal
+        console.log('📂 Mostrando modal...');
+        modal.style.display = 'flex';
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        console.log('✅ Modal deve estar visível agora');
     }
     
     // Close modal
@@ -1278,11 +1286,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Update main preview (outside modal)
     function updateMainPreview(type) {
         const notification = type === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
-        const previewDiv = document.getElementById(`${type}-message-preview`);
         const previewSimple = document.getElementById(`${type}-preview-simple`);
         const previewEmbed = document.getElementById(`${type}-preview-embed`);
         
-        if (!previewDiv) return;
+        // Find preview section by traversing up from previewSimple
+        const previewSection = previewSimple?.closest('.message-preview-section');
+        
+        if (!previewSimple && !previewEmbed) {
+            console.warn(`⚠️ Preview elements not found for type: ${type}`);
+            return;
+        }
         
         const hasText = notification.message && notification.message.trim();
         const hasEmbed = notification.embed && (notification.embed.title || notification.embed.description);
@@ -1313,13 +1326,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Update simple message
         if (previewSimple && hasText) {
-            const previewText = previewSimple.querySelector(`#${type}-preview-text`);
+            const previewText = document.getElementById(`${type}-preview-text`);
+            const timestamp = previewSimple.querySelector('.discord-message-timestamp');
+            
             if (previewText) {
                 previewText.innerHTML = replaceVars(notification.message);
-                previewSimple.style.display = 'flex';
             }
-        } else if (previewSimple) {
+            
+            // Update timestamp
+            if (timestamp) {
+                const now = new Date();
+                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                timestamp.textContent = `Today at ${timeStr}`;
+            }
+            
+            previewSimple.style.display = 'flex';
+        } else if (previewSimple && !hasEmbed) {
             previewSimple.style.display = 'none';
+        } else if (previewSimple) {
+            previewSimple.style.display = 'flex';
         }
         
         // Update embed
@@ -1330,11 +1355,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             previewEmbed.style.display = 'none';
         }
         
-        // Show preview if has content
-        if (hasText || hasEmbed) {
-            previewDiv.style.display = 'block';
-        } else {
-            previewDiv.style.display = 'none';
+        // Show preview section if has content
+        if (previewSection) {
+            if (hasText || hasEmbed) {
+                previewSection.style.display = 'block';
+            } else {
+                previewSection.style.display = 'none';
+            }
         }
     }
     
@@ -1416,16 +1443,30 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Setup modal event listeners
     function setupModalListeners() {
+        console.log('🔧 Configurando event listeners do modal...');
         // Edit message buttons
         const editJoinBtn = document.getElementById('edit-join-message');
         const editLeaveBtn = document.getElementById('edit-leave-message');
         
+        console.log('📌 Botão join encontrado:', !!editJoinBtn);
+        console.log('📌 Botão leave encontrado:', !!editLeaveBtn);
+        
         if (editJoinBtn) {
-            editJoinBtn.addEventListener('click', () => openMessageEditModal('join'));
+            editJoinBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🖱️ Clique no botão edit-join-message');
+                openMessageEditModal('join');
+            });
         }
         
         if (editLeaveBtn) {
-            editLeaveBtn.addEventListener('click', () => openMessageEditModal('leave'));
+            editLeaveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🖱️ Clique no botão edit-leave-message');
+                openMessageEditModal('leave');
+            });
         }
         
         // Close modal buttons

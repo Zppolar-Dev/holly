@@ -1390,7 +1390,7 @@ textarea:focus-visible {
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.5);
-    display: flex !important;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 10000;
@@ -1402,6 +1402,7 @@ textarea:focus-visible {
 }
 
 .modal.active {
+    display: flex !important;
     opacity: 1 !important;
     pointer-events: all !important;
     visibility: visible !important;
@@ -2800,6 +2801,119 @@ html, body {
     margin: 0;
     color: var(--text-color);
     font-size: 1.1rem;
+}
+
+/* New Preview Structure (Loritta-style) */
+.message-preview-section {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+.message-preview-wrapper {
+    width: 100%;
+}
+
+.message-preview {
+    width: 100%;
+}
+
+.discord-style {
+    width: 100%;
+}
+
+.discord-message {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+    word-wrap: break-word;
+}
+
+.discord-message-sidebar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+}
+
+.discord-message-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.discord-message-content {
+    flex: 1;
+    min-width: 0;
+    padding-top: 0.125rem;
+}
+
+.discord-message-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+    font-size: 0.9375rem;
+    line-height: 1.375rem;
+}
+
+.discord-message-username {
+    font-weight: 500;
+    color: #fff;
+    cursor: pointer;
+}
+
+.discord-message-username:hover {
+    text-decoration: underline;
+}
+
+.discord-message-bot-tag {
+    background: #5865f2;
+    color: #fff;
+    font-size: 0.625rem;
+    font-weight: 500;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    margin-left: 0.25rem;
+}
+
+.discord-message-timestamp {
+    color: #72767d;
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+    cursor: default;
+}
+
+.discord-message-accessories {
+    margin-top: 0.25rem;
+}
+
+.discord-mention {
+    background: rgba(88, 101, 242, 0.3);
+    color: #5865f2;
+    padding: 0 0.2rem;
+    border-radius: 3px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.discord-mention:hover {
+    background: rgba(88, 101, 242, 0.4);
+}
+
+[data-theme="light"] .discord-message-username {
+    color: #060607;
+}
+
+[data-theme="light"] .discord-message-timestamp {
+    color: #747f8d;
+}
+
+[data-theme="light"] .discord-mention {
+    background: rgba(88, 101, 242, 0.15);
 }
 
 /* Placeholders Tutorial */
