@@ -625,6 +625,43 @@ app.post('/api/bot/channels', express.json(), async (req, res) => {
     }
 });
 
+// Endpoint for website to request channels from bot (triggers bot to send channels)
+app.post('/api/bot/request-channels', discordAuth.authenticateToken, async (req, res) => {
+    const { guildId } = req.body;
+    
+    if (!guildId) {
+        return res.status(400).json({ error: 'guildId é obrigatório' });
+    }
+    
+    try {
+        // Clear cache to force refresh
+        channelsCache.delete(guildId);
+        
+        // If bot client is available, trigger immediate sync
+        if (botClient && botClient.sendChannelsToWebsite) {
+            try {
+                await botClient.sendChannelsToWebsite(guildId);
+                return res.json({ 
+                    success: true, 
+                    message: 'Canais solicitados do bot com sucesso'
+                });
+            } catch (error) {
+                console.warn('Erro ao solicitar canais do bot:', error.message);
+            }
+        }
+        
+        // Fallback: bot will sync on next cycle
+        res.json({ 
+            success: true, 
+            message: 'Solicitação enviada. Canais serão atualizados em breve.',
+            note: 'O bot sincroniza canais automaticamente a cada 2 minutos'
+        });
+    } catch (error) {
+        console.error('Erro ao solicitar canais:', error);
+        res.status(500).json({ error: 'Erro ao solicitar canais' });
+    }
+});
+
 // Endpoint for bot to sync data (protected with secret token)
 app.post('/api/bot/sync', express.json(), async (req, res) => {
     const { secret, guilds, stats } = req.body;

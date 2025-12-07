@@ -580,10 +580,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             refreshBtn.addEventListener('click', async () => {
                 refreshBtn.disabled = true;
                 refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                await loadGuildChannels(true);
-                refreshBtn.disabled = false;
-                refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                showNotification('✅ Canais atualizados!', 'success');
+                
+                // Request channels from bot
+                try {
+                    await fetch(`${CONFIG.API_BASE_URL}/api/bot/request-channels`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ guildId })
+                    });
+                } catch (error) {
+                    console.error('Erro ao solicitar canais do bot:', error);
+                }
+                
+                // Wait a bit for bot to sync, then reload
+                setTimeout(async () => {
+                    await loadGuildChannels(true);
+                    refreshBtn.disabled = false;
+                    refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    showNotification('✅ Canais atualizados!', 'success');
+                }, 2000);
             });
         }
 
@@ -591,7 +607,22 @@ document.addEventListener('DOMContentLoaded', async function() {
             refreshBtnLeave.addEventListener('click', async () => {
                 refreshBtnLeave.disabled = true;
                 refreshBtnLeave.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-                await loadGuildChannels(true);
+                
+                // Request channels from bot
+                try {
+                    await fetch(`${CONFIG.API_BASE_URL}/api/bot/request-channels`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ guildId })
+                    });
+                } catch (error) {
+                    console.error('Erro ao solicitar canais do bot:', error);
+                }
+                
+                // Wait a bit for bot to sync, then reload
+                setTimeout(async () => {
+                    await loadGuildChannels(true);
                 refreshBtnLeave.disabled = false;
                 refreshBtnLeave.innerHTML = '<i class="fas fa-sync-alt"></i>';
                 showNotification('✅ Canais atualizados!', 'success');
@@ -608,6 +639,98 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.cancelBtn.addEventListener('click', () => {
                 window.location.href = '/dashboard';
             });
+        }
+        
+        // Test message buttons
+        const testJoinBtn = document.getElementById('test-join-message');
+        const testLeaveBtn = document.getElementById('test-leave-message');
+        
+        if (testJoinBtn) {
+            testJoinBtn.addEventListener('click', () => {
+                testMessage('join');
+            });
+        }
+        
+        if (testLeaveBtn) {
+            testLeaveBtn.addEventListener('click', () => {
+                testMessage('leave');
+            });
+        }
+        
+        // Update preview on message change
+        if (UI.notifyJoinMessage) {
+            UI.notifyJoinMessage.addEventListener('input', () => {
+                updatePreview('join');
+            });
+        }
+        
+        if (UI.notifyLeaveMessage) {
+            UI.notifyLeaveMessage.addEventListener('input', () => {
+                updatePreview('leave');
+            });
+        }
+    }
+    
+    // Test message function
+    function testMessage(type) {
+        const messageInput = type === 'join' ? UI.notifyJoinMessage : UI.notifyLeaveMessage;
+        const previewDiv = type === 'join' ? document.getElementById('join-message-preview') : document.getElementById('leave-message-preview');
+        const previewText = type === 'join' ? document.getElementById('join-preview-text') : document.getElementById('leave-preview-text');
+        
+        if (!messageInput || !previewDiv || !previewText) return;
+        
+        const message = messageInput.value.trim();
+        if (!message) {
+            showNotification('Digite uma mensagem para testar', 'warning');
+            return;
+        }
+        
+        // Show preview
+        previewDiv.style.display = 'block';
+        updatePreview(type);
+        
+        // Scroll to preview
+        previewDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    
+    // Update preview with variable replacement
+    function updatePreview(type) {
+        const messageInput = type === 'join' ? UI.notifyJoinMessage : UI.notifyLeaveMessage;
+        const previewDiv = type === 'join' ? document.getElementById('join-message-preview') : document.getElementById('leave-message-preview');
+        const previewText = type === 'join' ? document.getElementById('join-preview-text') : document.getElementById('leave-preview-text');
+        const timestamp = document.querySelector(`#${type === 'join' ? 'join' : 'leave'}-message-preview .discord-timestamp`);
+        
+        if (!messageInput || !previewDiv || !previewText) return;
+        
+        let message = messageInput.value.trim();
+        if (!message) {
+            previewDiv.style.display = 'none';
+            return;
+        }
+        
+        // Get server info for variables
+        const serverName = UI.serverName?.textContent || 'Server';
+        const now = new Date();
+        const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+        const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        const members = '100'; // Placeholder
+        
+        // Replace variables
+        message = message
+            .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
+            .replace(/\{username\}/g, 'UsuarioTeste')
+            .replace(/\{time\}/g, time)
+            .replace(/\{date\}/g, date)
+            .replace(/\{server\}/g, serverName)
+            .replace(/\{members\}/g, members);
+        
+        // Update preview
+        previewText.innerHTML = message;
+        
+        // Update timestamp
+        if (timestamp) {
+            const nowStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            timestamp.textContent = `Today at ${nowStr}`;
         }
     }
 
