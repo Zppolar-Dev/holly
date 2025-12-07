@@ -877,10 +877,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Show modal
         console.log('📂 Mostrando modal...');
+        console.log('Modal antes:', modal.style.display, modal.classList.toString());
         modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        modal.style.pointerEvents = 'all';
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+        console.log('Modal depois:', modal.style.display, modal.classList.toString());
         console.log('✅ Modal deve estar visível agora');
+        
+        // Force reflow
+        void modal.offsetHeight;
     }
     
     // Close modal
@@ -1565,6 +1573,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         originalSetupEventListeners();
         setupModalListeners();
     };
+
+    // Use event delegation for edit buttons (works even if buttons are added later)
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('#edit-join-message')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Clique detectado no botão edit-join-message (delegation)');
+            openMessageEditModal('join');
+        } else if (e.target.closest('#edit-leave-message')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Clique detectado no botão edit-leave-message (delegation)');
+            openMessageEditModal('leave');
+        }
+    });
 
     init();
 });

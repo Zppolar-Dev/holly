@@ -2589,6 +2589,12 @@ html, body {
     border-left: 4px solid #5865f2;
 }
 
+/* Embed dentro do preview */
+.message-preview-section .discord-embed {
+    background: #2f3136;
+    margin-top: 0.5rem;
+}
+
 [data-theme="light"] .discord-embed {
     background: #f2f3f5;
 }
@@ -2795,6 +2801,8 @@ html, body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    position: relative;
+    z-index: 10;
 }
 
 .preview-header h3 {
@@ -2803,10 +2811,32 @@ html, body {
     font-size: 1.1rem;
 }
 
-/* New Preview Structure (Loritta-style) */
+.preview-header .btn {
+    position: relative;
+    z-index: 10;
+    cursor: pointer;
+    pointer-events: auto;
+}
+
+/* New Preview Structure (Loritta-style) - Discord Window */
 .message-preview-section {
     width: 100%;
     margin-top: 1rem;
+    background: #36393f;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    min-height: 80px;
+}
+
+/* Discord window background */
+.message-preview-container {
+    background: var(--card-bg);
+}
+
+.message-preview-container .message-preview-section {
+    background: #36393f;
 }
 
 .message-preview-wrapper {
@@ -2819,6 +2849,11 @@ html, body {
 
 .discord-style {
     width: 100%;
+    background: transparent;
+    border-radius: 4px;
+    padding: 0.5rem;
+    position: relative;
+    z-index: 1;
 }
 
 .discord-message {
@@ -2828,6 +2863,8 @@ html, body {
     font-size: 0.9375rem;
     line-height: 1.375rem;
     word-wrap: break-word;
+    background: transparent;
+    color: #dcddde;
 }
 
 .discord-message-sidebar {
@@ -2866,6 +2903,15 @@ html, body {
 
 .discord-message-username:hover {
     text-decoration: underline;
+}
+
+/* Ensure text is visible in Discord preview */
+.message-preview-section .discord-message-content {
+    color: #dcddde;
+}
+
+.message-preview-section .discord-message-content > div {
+    color: #dcddde;
 }
 
 .discord-message-bot-tag {
