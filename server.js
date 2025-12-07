@@ -354,6 +354,7 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
     const { guildId } = req.params;
     try {
         // Try to get channels via bot client first (most reliable and doesn't need user token)
+        // Note: This only works if bot is running in the same process as the web server
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild && guild.channels && guild.channels.cache) {
@@ -366,9 +367,12 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
                     return res.json(channels);
                 }
             }
+        } else {
+            // Bot client not available (bot running separately) - log for debugging
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário.`);
         }
 
-        // Fallback: try with user token (only if bot is not available or bot doesn't have access)
+        // Fallback: try with user token (required when bot runs separately)
         try {
             const token = await discordAuth.getValidAccessToken(req.user.user_id);
             if (token) {
@@ -389,21 +393,22 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
             // If it's a 401, the token might be expired
             if (err.response && err.response.status === 401) {
                 console.warn('⚠️ Token do usuário expirado ou inválido (401)');
-                console.warn('   Tentando usar bot client...');
                 
-                // Try bot client one more time if available
+                // Try bot client one more time if available (unlikely but worth trying)
                 if (botClient && botClient.guilds && botClient.guilds.cache) {
+                    console.log('   Tentando usar bot client como fallback...');
                     const guild = botClient.guilds.cache.get(guildId);
                     if (guild && guild.channels && guild.channels.cache) {
                         const channels = Array.from(guild.channels.cache.values())
                             .filter(ch => ch && ch.isTextBased && ch.isTextBased())
                             .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                        console.log(`✅ Canais carregados via bot client (fallback): ${channels.length} canais`);
                         return res.json(channels);
                     }
                 }
                 
-                // Return empty array - user can refresh the page to get new token
-                console.warn('   Retornando lista vazia. O usuário pode atualizar a página para obter novo token.');
+                // Return empty array - user needs to refresh the page to get new token
+                console.warn('   Retornando lista vazia. O usuário precisa atualizar a página para obter novo token.');
             } else if (err.code === 'ECONNABORTED') {
                 console.warn('⚠️ Timeout ao buscar canais com token do usuário');
             } else {
