@@ -329,8 +329,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Notifications
         const notifications = config.notifications || {
-            memberJoin: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null },
-            memberLeave: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null }
+            memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+            memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
         };
 
         // Join notifications
@@ -341,28 +341,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (UI.notifyJoinChannel) {
             UI.notifyJoinChannel.value = notifications.memberJoin?.channelId || '';
         }
-        if (UI.notifyJoinMessage) {
-            UI.notifyJoinMessage.value = notifications.memberJoin?.message || 'Welcome {user} to the server! Joined at {time}';
+        
+        // Delete after
+        const joinDeleteAfter = document.getElementById('notify-join-delete-after');
+        if (joinDeleteAfter) {
+            joinDeleteAfter.value = notifications.memberJoin?.deleteAfter || 0;
         }
         
-        // Join embed settings
-        if (UI.notifyJoinUseEmbed) {
-            UI.notifyJoinUseEmbed.checked = notifications.memberJoin?.useEmbed || false;
-            toggleEmbedMode('join', UI.notifyJoinUseEmbed.checked);
-        }
-        if (notifications.memberJoin?.embed) {
-            const embed = notifications.memberJoin.embed;
-            if (UI.notifyJoinEmbedTitle) UI.notifyJoinEmbedTitle.value = embed.title || '';
-            if (UI.notifyJoinEmbedDescription) UI.notifyJoinEmbedDescription.value = embed.description || '';
-            if (UI.notifyJoinEmbedColor) {
-                UI.notifyJoinEmbedColor.value = embed.color || '#5865f2';
-                if (UI.notifyJoinEmbedColorPicker) UI.notifyJoinEmbedColorPicker.value = embed.color || '#5865f2';
-            }
-            if (UI.notifyJoinEmbedThumbnailUser) UI.notifyJoinEmbedThumbnailUser.checked = embed.thumbnailUser || false;
-            if (UI.notifyJoinEmbedThumbnail) UI.notifyJoinEmbedThumbnail.value = embed.thumbnail || '';
-            if (UI.notifyJoinEmbedImage) UI.notifyJoinEmbedImage.value = embed.image || '';
-            if (UI.notifyJoinEmbedFooter) UI.notifyJoinEmbedFooter.value = embed.footer || '';
-        }
+        // Update preview automatically
+        updateMainPreview('join');
 
         // Leave notifications
         if (UI.notifyLeaveEnabled) {
@@ -372,28 +359,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (UI.notifyLeaveChannel) {
             UI.notifyLeaveChannel.value = notifications.memberLeave?.channelId || '';
         }
-        if (UI.notifyLeaveMessage) {
-            UI.notifyLeaveMessage.value = notifications.memberLeave?.message || '{username} left the server at {time}';
+        
+        // Delete after
+        const leaveDeleteAfter = document.getElementById('notify-leave-delete-after');
+        if (leaveDeleteAfter) {
+            leaveDeleteAfter.value = notifications.memberLeave?.deleteAfter || 0;
         }
         
-        // Leave embed settings
-        if (UI.notifyLeaveUseEmbed) {
-            UI.notifyLeaveUseEmbed.checked = notifications.memberLeave?.useEmbed || false;
-            toggleEmbedMode('leave', UI.notifyLeaveUseEmbed.checked);
-        }
-        if (notifications.memberLeave?.embed) {
-            const embed = notifications.memberLeave.embed;
-            if (UI.notifyLeaveEmbedTitle) UI.notifyLeaveEmbedTitle.value = embed.title || '';
-            if (UI.notifyLeaveEmbedDescription) UI.notifyLeaveEmbedDescription.value = embed.description || '';
-            if (UI.notifyLeaveEmbedColor) {
-                UI.notifyLeaveEmbedColor.value = embed.color || '#e74c3c';
-                if (UI.notifyLeaveEmbedColorPicker) UI.notifyLeaveEmbedColorPicker.value = embed.color || '#e74c3c';
-            }
-            if (UI.notifyLeaveEmbedThumbnailUser) UI.notifyLeaveEmbedThumbnailUser.checked = embed.thumbnailUser || false;
-            if (UI.notifyLeaveEmbedThumbnail) UI.notifyLeaveEmbedThumbnail.value = embed.thumbnail || '';
-            if (UI.notifyLeaveEmbedImage) UI.notifyLeaveEmbedImage.value = embed.image || '';
-            if (UI.notifyLeaveEmbedFooter) UI.notifyLeaveEmbedFooter.value = embed.footer || '';
-        }
+        // Update preview automatically
+        updateMainPreview('leave');
 
         // Modules
         const modules = config.modules || {};
@@ -494,26 +468,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                 body: JSON.stringify({ nickname: nickname || null })
             });
 
-            // Prepare join notification data
-            const joinNotification = {
-                type: 'memberJoin',
-                enabled: UI.notifyJoinEnabled.checked,
-                channelId: UI.notifyJoinChannel.value || null,
-                message: UI.notifyJoinMessage.value.trim(),
-                useEmbed: UI.notifyJoinUseEmbed?.checked || false,
-                embed: null
+            // Get notification data from serverConfig (updated by modal)
+            const notifications = serverConfig.notifications || {
+                memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+                memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
             };
             
-            if (joinNotification.useEmbed) {
-                joinNotification.embed = {
-                    title: UI.notifyJoinEmbedTitle?.value.trim() || null,
-                    description: UI.notifyJoinEmbedDescription?.value.trim() || null,
-                    color: UI.notifyJoinEmbedColor?.value.trim() || '#5865f2',
-                    thumbnailUser: UI.notifyJoinEmbedThumbnailUser?.checked || false,
-                    thumbnail: UI.notifyJoinEmbedThumbnail?.value.trim() || null,
-                    image: UI.notifyJoinEmbedImage?.value.trim() || null,
-                    footer: UI.notifyJoinEmbedFooter?.value.trim() || null
-                };
+            // Update enabled and channelId from UI
+            notifications.memberJoin.enabled = UI.notifyJoinEnabled.checked;
+            notifications.memberJoin.channelId = UI.notifyJoinChannel.value || null;
+            const joinDeleteAfter = document.getElementById('notify-join-delete-after');
+            if (joinDeleteAfter) {
+                notifications.memberJoin.deleteAfter = parseInt(joinDeleteAfter.value) || 0;
+            }
+            
+            notifications.memberLeave.enabled = UI.notifyLeaveEnabled.checked;
+            notifications.memberLeave.channelId = UI.notifyLeaveChannel.value || null;
+            const leaveDeleteAfter = document.getElementById('notify-leave-delete-after');
+            if (leaveDeleteAfter) {
+                notifications.memberLeave.deleteAfter = parseInt(leaveDeleteAfter.value) || 0;
             }
             
             // Save join notifications
@@ -521,37 +494,29 @@ document.addEventListener('DOMContentLoaded', async function() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(joinNotification)
+                body: JSON.stringify({
+                    type: 'memberJoin',
+                    enabled: notifications.memberJoin.enabled,
+                    channelId: notifications.memberJoin.channelId,
+                    message: notifications.memberJoin.message || '',
+                    embed: notifications.memberJoin.embed,
+                    deleteAfter: notifications.memberJoin.deleteAfter
+                })
             });
-
-            // Prepare leave notification data
-            const leaveNotification = {
-                type: 'memberLeave',
-                enabled: UI.notifyLeaveEnabled.checked,
-                channelId: UI.notifyLeaveChannel.value || null,
-                message: UI.notifyLeaveMessage.value.trim(),
-                useEmbed: UI.notifyLeaveUseEmbed?.checked || false,
-                embed: null
-            };
-            
-            if (leaveNotification.useEmbed) {
-                leaveNotification.embed = {
-                    title: UI.notifyLeaveEmbedTitle?.value.trim() || null,
-                    description: UI.notifyLeaveEmbedDescription?.value.trim() || null,
-                    color: UI.notifyLeaveEmbedColor?.value.trim() || '#e74c3c',
-                    thumbnailUser: UI.notifyLeaveEmbedThumbnailUser?.checked || false,
-                    thumbnail: UI.notifyLeaveEmbedThumbnail?.value.trim() || null,
-                    image: UI.notifyLeaveEmbedImage?.value.trim() || null,
-                    footer: UI.notifyLeaveEmbedFooter?.value.trim() || null
-                };
-            }
 
             // Save leave notifications
             await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify(leaveNotification)
+                body: JSON.stringify({
+                    type: 'memberLeave',
+                    enabled: notifications.memberLeave.enabled,
+                    channelId: notifications.memberLeave.channelId,
+                    message: notifications.memberLeave.message || '',
+                    embed: notifications.memberLeave.embed,
+                    deleteAfter: notifications.memberLeave.deleteAfter
+                })
             });
 
             // Save modules
@@ -750,126 +715,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 window.location.href = '/dashboard';
             });
         }
-        
-        // Embed mode toggles
-        if (UI.notifyJoinUseEmbed) {
-            UI.notifyJoinUseEmbed.addEventListener('change', (e) => {
-                toggleEmbedMode('join', e.target.checked);
-            });
-        }
-        
-        if (UI.notifyLeaveUseEmbed) {
-            UI.notifyLeaveUseEmbed.addEventListener('change', (e) => {
-                toggleEmbedMode('leave', e.target.checked);
-            });
-        }
-        
-        // Color picker sync
-        if (UI.notifyJoinEmbedColorPicker && UI.notifyJoinEmbedColor) {
-            UI.notifyJoinEmbedColorPicker.addEventListener('input', (e) => {
-                UI.notifyJoinEmbedColor.value = e.target.value;
-                updatePreview('join');
-            });
-            UI.notifyJoinEmbedColor.addEventListener('input', (e) => {
-                if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
-                    UI.notifyJoinEmbedColorPicker.value = e.target.value;
-                }
-                updatePreview('join');
-            });
-        }
-        
-        if (UI.notifyLeaveEmbedColorPicker && UI.notifyLeaveEmbedColor) {
-            UI.notifyLeaveEmbedColorPicker.addEventListener('input', (e) => {
-                UI.notifyLeaveEmbedColor.value = e.target.value;
-                updatePreview('leave');
-            });
-            UI.notifyLeaveEmbedColor.addEventListener('input', (e) => {
-                if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
-                    UI.notifyLeaveEmbedColorPicker.value = e.target.value;
-                }
-                updatePreview('leave');
-            });
-        }
-        
-        // Test message buttons
-        const testJoinBtn = document.getElementById('test-join-message');
-        const testLeaveBtn = document.getElementById('test-leave-message');
-        const testJoinEmbedBtn = document.getElementById('test-join-embed');
-        const testLeaveEmbedBtn = document.getElementById('test-leave-embed');
-        
-        if (testJoinBtn) {
-            testJoinBtn.addEventListener('click', () => {
-                testMessage('join');
-            });
-        }
-        
-        if (testLeaveBtn) {
-            testLeaveBtn.addEventListener('click', () => {
-                testMessage('leave');
-            });
-        }
-        
-        if (testJoinEmbedBtn) {
-            testJoinEmbedBtn.addEventListener('click', () => {
-                testMessage('join');
-            });
-        }
-        
-        if (testLeaveEmbedBtn) {
-            testLeaveEmbedBtn.addEventListener('click', () => {
-                testMessage('leave');
-            });
-        }
-        
-        // Update preview on message/embed change
-        if (UI.notifyJoinMessage) {
-            UI.notifyJoinMessage.addEventListener('input', () => {
-                updatePreview('join');
-            });
-        }
-        
-        if (UI.notifyLeaveMessage) {
-            UI.notifyLeaveMessage.addEventListener('input', () => {
-                updatePreview('leave');
-            });
-        }
-        
-        // Update preview on embed fields change
-        const joinEmbedFields = [
-            UI.notifyJoinEmbedTitle,
-            UI.notifyJoinEmbedDescription,
-            UI.notifyJoinEmbedColor,
-            UI.notifyJoinEmbedThumbnail,
-            UI.notifyJoinEmbedImage,
-            UI.notifyJoinEmbedFooter
-        ];
-        joinEmbedFields.forEach(field => {
-            if (field) {
-                field.addEventListener('input', () => updatePreview('join'));
-            }
-        });
-        
-        const leaveEmbedFields = [
-            UI.notifyLeaveEmbedTitle,
-            UI.notifyLeaveEmbedDescription,
-            UI.notifyLeaveEmbedColor,
-            UI.notifyLeaveEmbedThumbnail,
-            UI.notifyLeaveEmbedImage,
-            UI.notifyLeaveEmbedFooter
-        ];
-        leaveEmbedFields.forEach(field => {
-            if (field) {
-                field.addEventListener('input', () => updatePreview('leave'));
-            }
-        });
-        
-        if (UI.notifyJoinEmbedThumbnailUser) {
-            UI.notifyJoinEmbedThumbnailUser.addEventListener('change', () => updatePreview('join'));
-        }
-        
-        if (UI.notifyLeaveEmbedThumbnailUser) {
-            UI.notifyLeaveEmbedThumbnailUser.addEventListener('change', () => updatePreview('leave'));
-        }
     }
     
     // Test message function
@@ -976,6 +821,709 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         showLoading(false);
     }
+
+    // ========== MODAL DE EDIÇÃO DE MENSAGEM ==========
+    let currentEditType = null; // 'join' or 'leave'
+    let embedFields = []; // Array to store embed fields
+    
+    // Open message edit modal
+    function openMessageEditModal(type) {
+        currentEditType = type;
+        const modal = document.getElementById('message-edit-modal');
+        const modalTitle = document.getElementById('modal-title');
+        
+        if (!modal) return;
+        
+        modalTitle.textContent = type === 'join' ? 'Editar Mensagem de Entrada' : 'Editar Mensagem de Saída';
+        
+        // Load current configuration
+        const notifications = serverConfig?.notifications || {
+            memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+            memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
+        };
+        
+        const notification = type === 'join' ? notifications.memberJoin : notifications.memberLeave;
+        
+        // Determine message type
+        const hasText = notification.message && notification.message.trim();
+        const hasEmbed = notification.embed && (notification.embed.title || notification.embed.description);
+        
+        let messageType = 'text';
+        if (hasText && hasEmbed) messageType = 'both';
+        else if (hasEmbed) messageType = 'embed';
+        
+        document.getElementById('message-type').value = messageType;
+        toggleMessageType(messageType);
+        
+        // Load text message
+        if (document.getElementById('message-text')) {
+            document.getElementById('message-text').value = notification.message || '';
+        }
+        
+        // Load embed configuration
+        if (notification.embed) {
+            loadEmbedConfig(notification.embed);
+        } else {
+            resetEmbedConfig();
+        }
+        
+        // Update preview
+        updateModalPreview();
+        
+        // Show modal
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // Close modal
+    function closeMessageEditModal() {
+        const modal = document.getElementById('message-edit-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+    }
+    
+    // Toggle message type
+    function toggleMessageType(type) {
+        const textSection = document.getElementById('text-message-section');
+        const embedSection = document.getElementById('embed-config-section');
+        
+        if (type === 'text') {
+            if (textSection) textSection.style.display = 'block';
+            if (embedSection) embedSection.style.display = 'none';
+        } else if (type === 'embed') {
+            if (textSection) textSection.style.display = 'none';
+            if (embedSection) embedSection.style.display = 'block';
+        } else { // both
+            if (textSection) textSection.style.display = 'block';
+            if (embedSection) embedSection.style.display = 'block';
+        }
+        
+        updateModalPreview();
+    }
+    
+    // Load embed configuration into form
+    function loadEmbedConfig(embed) {
+        if (!embed) return;
+        
+        if (document.getElementById('embed-color')) {
+            const color = embed.color || '#5865f2';
+            document.getElementById('embed-color').value = color;
+            if (document.getElementById('embed-color-picker')) {
+                document.getElementById('embed-color-picker').value = color;
+            }
+        }
+        
+        if (document.getElementById('embed-author-name')) {
+            document.getElementById('embed-author-name').value = embed.author?.name || '';
+        }
+        if (document.getElementById('embed-author-url')) {
+            document.getElementById('embed-author-url').value = embed.author?.url || '';
+        }
+        if (document.getElementById('embed-author-icon')) {
+            document.getElementById('embed-author-icon').value = embed.author?.icon_url || '';
+        }
+        
+        if (document.getElementById('embed-title')) {
+            document.getElementById('embed-title').value = embed.title || '';
+        }
+        if (document.getElementById('embed-title-url')) {
+            document.getElementById('embed-title-url').value = embed.titleUrl || '';
+        }
+        if (document.getElementById('embed-description')) {
+            document.getElementById('embed-description').value = embed.description || '';
+        }
+        
+        if (document.getElementById('embed-image')) {
+            document.getElementById('embed-image').value = embed.image?.url || '';
+        }
+        if (document.getElementById('embed-thumbnail')) {
+            document.getElementById('embed-thumbnail').value = embed.thumbnail?.url || '';
+        }
+        
+        if (document.getElementById('embed-footer-text')) {
+            document.getElementById('embed-footer-text').value = embed.footer?.text || '';
+        }
+        if (document.getElementById('embed-footer-icon')) {
+            document.getElementById('embed-footer-icon').value = embed.footer?.icon_url || '';
+        }
+        
+        // Load fields
+        embedFields = [];
+        if (embed.fields && Array.isArray(embed.fields)) {
+            embed.fields.forEach(field => {
+                addEmbedField(field.name || '', field.value || '', field.inline || false);
+            });
+        }
+    }
+    
+    // Reset embed configuration
+    function resetEmbedConfig() {
+        if (document.getElementById('embed-color')) {
+            document.getElementById('embed-color').value = '#5865f2';
+            if (document.getElementById('embed-color-picker')) {
+                document.getElementById('embed-color-picker').value = '#5865f2';
+            }
+        }
+        
+        const fields = ['embed-author-name', 'embed-author-url', 'embed-author-icon', 
+                       'embed-title', 'embed-title-url', 'embed-description',
+                       'embed-image', 'embed-thumbnail', 'embed-footer-text', 'embed-footer-icon'];
+        fields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        
+        embedFields = [];
+        const container = document.getElementById('embed-fields-container');
+        if (container) container.innerHTML = '';
+    }
+    
+    // Add embed field
+    function addEmbedField(name = '', value = '', inline = false) {
+        const fieldId = `field-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        embedFields.push({ id: fieldId, name, value, inline });
+        
+        const container = document.getElementById('embed-fields-container');
+        if (!container) return;
+        
+        const fieldDiv = document.createElement('div');
+        fieldDiv.className = 'embed-field-item';
+        fieldDiv.id = fieldId;
+        fieldDiv.innerHTML = `
+            <div class="embed-field-item-header">
+                <h6>Field ${embedFields.length}</h6>
+                <button type="button" class="remove-field-btn" onclick="removeEmbedField('${fieldId}')">
+                    <i class="fas fa-times"></i> Remover
+                </button>
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label>Nome</label>
+                <input type="text" class="form-input field-name" value="${name}" placeholder="Nome do field">
+            </div>
+            <div class="form-group" style="margin-bottom: 0.5rem;">
+                <label>Valor</label>
+                <textarea class="form-input field-value" rows="2" placeholder="Valor do field">${value}</textarea>
+            </div>
+            <div class="form-group">
+                <label class="toggle-switch">
+                    <input type="checkbox" class="field-inline" ${inline ? 'checked' : ''}>
+                    <span class="slider"></span>
+                    <span>Inline (mesma linha)</span>
+                </label>
+            </div>
+        `;
+        
+        container.appendChild(fieldDiv);
+        
+        // Add event listeners
+        const nameInput = fieldDiv.querySelector('.field-name');
+        const valueInput = fieldDiv.querySelector('.field-value');
+        const inlineInput = fieldDiv.querySelector('.field-inline');
+        
+        [nameInput, valueInput, inlineInput].forEach(input => {
+            if (input) {
+                input.addEventListener('input', updateModalPreview);
+                input.addEventListener('change', updateModalPreview);
+            }
+        });
+        
+        updateModalPreview();
+    }
+    
+    // Remove embed field
+    window.removeEmbedField = function(fieldId) {
+        embedFields = embedFields.filter(f => f.id !== fieldId);
+        const fieldDiv = document.getElementById(fieldId);
+        if (fieldDiv) fieldDiv.remove();
+        updateModalPreview();
+    };
+    
+    // Update modal preview
+    function updateModalPreview() {
+        const messageType = document.getElementById('message-type')?.value || 'text';
+        const messageText = document.getElementById('message-text')?.value || '';
+        const previewSimple = document.getElementById('modal-preview-simple');
+        const previewEmbed = document.getElementById('modal-preview-embed');
+        
+        // Replace variables helper
+        const replaceVars = (text) => {
+            if (!text) return '';
+            const serverName = UI.serverName?.textContent || 'Server';
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const channelSelect = currentEditType === 'join' ? UI.notifyJoinChannel : UI.notifyLeaveChannel;
+            let channelName = 'general';
+            if (channelSelect && channelSelect.value) {
+                const selectedOption = channelSelect.options[channelSelect.selectedIndex];
+                if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
+            }
+            
+            return text
+                .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
+                .replace(/\{username\}/g, 'UsuarioTeste')
+                .replace(/\{time\}/g, time)
+                .replace(/\{date\}/g, date)
+                .replace(/\{server\}/g, serverName)
+                .replace(/\{members\}/g, '100')
+                .replace(/\{channel\}/g, `<span class="discord-mention">#${channelName}</span>`);
+        };
+        
+        // Update simple message preview
+        if (previewSimple) {
+            const previewText = previewSimple.querySelector('#modal-preview-text');
+            if (previewText) {
+                if (messageType === 'text' || messageType === 'both') {
+                    previewText.innerHTML = replaceVars(messageText);
+                    previewSimple.style.display = 'flex';
+                } else {
+                    previewSimple.style.display = 'none';
+                }
+            }
+        }
+        
+        // Update embed preview
+        if (previewEmbed && (messageType === 'embed' || messageType === 'both')) {
+            updateModalEmbedPreview(previewEmbed, replaceVars);
+            previewEmbed.style.display = 'block';
+        } else if (previewEmbed) {
+            previewEmbed.style.display = 'none';
+        }
+    }
+    
+    // Update embed preview (for modal)
+    function updateModalEmbedPreview(container, replaceVars) {
+        const color = document.getElementById('embed-color')?.value || '#5865f2';
+        const authorName = document.getElementById('embed-author-name')?.value || '';
+        const authorUrl = document.getElementById('embed-author-url')?.value || '';
+        const authorIcon = document.getElementById('embed-author-icon')?.value || '';
+        const title = document.getElementById('embed-title')?.value || '';
+        const titleUrl = document.getElementById('embed-title-url')?.value || '';
+        const description = document.getElementById('embed-description')?.value || '';
+        const image = document.getElementById('embed-image')?.value || '';
+        const thumbnail = document.getElementById('embed-thumbnail')?.value || '';
+        const footerText = document.getElementById('embed-footer-text')?.value || '';
+        const footerIcon = document.getElementById('embed-footer-icon')?.value || '';
+        
+        // Build embed HTML
+        let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${color};"></div>`;
+        embedHTML += '<div class="discord-embed-content">';
+        
+        // Author
+        if (authorName) {
+            embedHTML += '<div class="discord-embed-author">';
+            if (authorIcon) {
+                embedHTML += `<img src="${authorIcon}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
+            }
+            if (authorUrl) {
+                embedHTML += `<a href="${authorUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(authorName)}</a>`;
+            } else {
+                embedHTML += replaceVars(authorName);
+            }
+            embedHTML += '</div>';
+        }
+        
+        // Title
+        if (title) {
+            if (titleUrl) {
+                embedHTML += `<div class="discord-embed-title"><a href="${titleUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(title)}</a></div>`;
+            } else {
+                embedHTML += `<div class="discord-embed-title">${replaceVars(title)}</div>`;
+            }
+        }
+        
+        // Description
+        if (description) {
+            embedHTML += `<div class="discord-embed-description">${replaceVars(description)}</div>`;
+        }
+        
+        // Fields
+        if (embedFields.length > 0) {
+            embedHTML += '<div class="discord-embed-fields">';
+            embedFields.forEach(field => {
+                const fieldDiv = document.getElementById(field.id);
+                if (fieldDiv) {
+                    const name = fieldDiv.querySelector('.field-name')?.value || '';
+                    const value = fieldDiv.querySelector('.field-value')?.value || '';
+                    const inline = fieldDiv.querySelector('.field-inline')?.checked || false;
+                    
+                    if (name || value) {
+                        embedHTML += `<div class="discord-embed-field" style="display: ${inline ? 'inline-block' : 'block'}; width: ${inline ? '48%' : '100%'}; margin-right: ${inline ? '2%' : '0'};">`;
+                        embedHTML += `<div class="discord-embed-field-name">${replaceVars(name)}</div>`;
+                        embedHTML += `<div class="discord-embed-field-value">${replaceVars(value)}</div>`;
+                        embedHTML += '</div>';
+                    }
+                }
+            });
+            embedHTML += '</div>';
+        }
+        
+        // Thumbnail
+        if (thumbnail) {
+            embedHTML += `<div class="discord-embed-thumbnail"><img src="${thumbnail}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        
+        // Image
+        if (image) {
+            embedHTML += `<div class="discord-embed-image"><img src="${image}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        
+        // Footer
+        if (footerText) {
+            embedHTML += '<div class="discord-embed-footer">';
+            if (footerIcon) {
+                embedHTML += `<img src="${footerIcon}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
+            }
+            embedHTML += `<span>${replaceVars(footerText)}</span>`;
+            embedHTML += '</div>';
+        }
+        
+        embedHTML += '</div>';
+        container.innerHTML = embedHTML;
+    }
+    
+    // Save message configuration
+    async function saveMessageConfig() {
+        if (!currentEditType) return;
+        
+        const messageType = document.getElementById('message-type')?.value || 'text';
+        const messageText = document.getElementById('message-text')?.value || '';
+        
+        // Validate: at least one must have content
+        if (messageType === 'text' && !messageText.trim()) {
+            showNotification('A mensagem de texto não pode estar vazia quando o tipo é "Apenas Texto"', 'error');
+            return;
+        }
+        
+        if (messageType === 'embed') {
+            const title = document.getElementById('embed-title')?.value || '';
+            const description = document.getElementById('embed-description')?.value || '';
+            if (!title.trim() && !description.trim()) {
+                showNotification('O embed deve ter pelo menos título ou descrição', 'error');
+                return;
+            }
+        }
+        
+        // Build embed object
+        let embed = null;
+        if (messageType === 'embed' || messageType === 'both') {
+            embed = {
+                color: document.getElementById('embed-color')?.value || '#5865f2',
+                author: {
+                    name: document.getElementById('embed-author-name')?.value || null,
+                    url: document.getElementById('embed-author-url')?.value || null,
+                    icon_url: document.getElementById('embed-author-icon')?.value || null
+                },
+                title: document.getElementById('embed-title')?.value || null,
+                titleUrl: document.getElementById('embed-title-url')?.value || null,
+                description: document.getElementById('embed-description')?.value || null,
+                image: document.getElementById('embed-image')?.value ? { url: document.getElementById('embed-image').value } : null,
+                thumbnail: document.getElementById('embed-thumbnail')?.value ? { url: document.getElementById('embed-thumbnail').value } : null,
+                footer: {
+                    text: document.getElementById('embed-footer-text')?.value || null,
+                    icon_url: document.getElementById('embed-footer-icon')?.value || null
+                },
+                fields: []
+            };
+            
+            // Add fields
+            embedFields.forEach(field => {
+                const fieldDiv = document.getElementById(field.id);
+                if (fieldDiv) {
+                    const name = fieldDiv.querySelector('.field-name')?.value || '';
+                    const value = fieldDiv.querySelector('.field-value')?.value || '';
+                    const inline = fieldDiv.querySelector('.field-inline')?.checked || false;
+                    
+                    if (name || value) {
+                        embed.fields.push({ name, value, inline });
+                    }
+                }
+            });
+            
+            // Clean null values
+            if (!embed.author.name && !embed.author.url && !embed.author.icon_url) {
+                embed.author = null;
+            }
+            if (!embed.footer.text && !embed.footer.icon_url) {
+                embed.footer = null;
+            }
+            if (embed.fields.length === 0) {
+                embed.fields = null;
+            }
+        }
+        
+        // Save to temporary storage (will be saved when user clicks main save button)
+        if (!serverConfig.notifications) {
+            serverConfig.notifications = {
+                memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+                memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
+            };
+        }
+        
+        const notification = currentEditType === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
+        notification.message = (messageType === 'text' || messageType === 'both') ? messageText : '';
+        notification.embed = embed;
+        
+        // Update preview on main page
+        updateMainPreview(currentEditType);
+        
+        // Close modal
+        closeMessageEditModal();
+        
+        showNotification('✅ Mensagem salva! Clique em "Salvar Configurações" para aplicar.', 'success');
+    }
+    
+    // Update main preview (outside modal)
+    function updateMainPreview(type) {
+        const notification = type === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
+        const previewDiv = document.getElementById(`${type}-message-preview`);
+        const previewSimple = document.getElementById(`${type}-preview-simple`);
+        const previewEmbed = document.getElementById(`${type}-preview-embed`);
+        
+        if (!previewDiv) return;
+        
+        const hasText = notification.message && notification.message.trim();
+        const hasEmbed = notification.embed && (notification.embed.title || notification.embed.description);
+        
+        // Replace variables helper
+        const replaceVars = (text) => {
+            if (!text) return '';
+            const serverName = UI.serverName?.textContent || 'Server';
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const channelSelect = type === 'join' ? UI.notifyJoinChannel : UI.notifyLeaveChannel;
+            let channelName = 'general';
+            if (channelSelect && channelSelect.value) {
+                const selectedOption = channelSelect.options[channelSelect.selectedIndex];
+                if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
+            }
+            
+            return text
+                .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
+                .replace(/\{username\}/g, 'UsuarioTeste')
+                .replace(/\{time\}/g, time)
+                .replace(/\{date\}/g, date)
+                .replace(/\{server\}/g, serverName)
+                .replace(/\{members\}/g, '100')
+                .replace(/\{channel\}/g, `<span class="discord-mention">#${channelName}</span>`);
+        };
+        
+        // Update simple message
+        if (previewSimple && hasText) {
+            const previewText = previewSimple.querySelector(`#${type}-preview-text`);
+            if (previewText) {
+                previewText.innerHTML = replaceVars(notification.message);
+                previewSimple.style.display = 'flex';
+            }
+        } else if (previewSimple) {
+            previewSimple.style.display = 'none';
+        }
+        
+        // Update embed
+        if (previewEmbed && hasEmbed) {
+            updateMainEmbedPreview(previewEmbed, notification.embed, replaceVars);
+            previewEmbed.style.display = 'block';
+        } else if (previewEmbed) {
+            previewEmbed.style.display = 'none';
+        }
+        
+        // Show preview if has content
+        if (hasText || hasEmbed) {
+            previewDiv.style.display = 'block';
+        } else {
+            previewDiv.style.display = 'none';
+        }
+    }
+    
+    // Update main embed preview (for preview outside modal)
+    function updateMainEmbedPreview(container, embed, replaceVars) {
+        if (!embed) return;
+        
+        const color = embed.color || '#5865f2';
+        
+        // Build embed HTML
+        let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${color};"></div>`;
+        embedHTML += '<div class="discord-embed-content">';
+        
+        // Author
+        if (embed.author && embed.author.name) {
+            embedHTML += '<div class="discord-embed-author">';
+            if (embed.author.icon_url) {
+                embedHTML += `<img src="${embed.author.icon_url}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
+            }
+            if (embed.author.url) {
+                embedHTML += `<a href="${embed.author.url}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.author.name)}</a>`;
+            } else {
+                embedHTML += replaceVars(embed.author.name);
+            }
+            embedHTML += '</div>';
+        }
+        
+        // Title
+        if (embed.title) {
+            if (embed.titleUrl) {
+                embedHTML += `<div class="discord-embed-title"><a href="${embed.titleUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.title)}</a></div>`;
+            } else {
+                embedHTML += `<div class="discord-embed-title">${replaceVars(embed.title)}</div>`;
+            }
+        }
+        
+        // Description
+        if (embed.description) {
+            embedHTML += `<div class="discord-embed-description">${replaceVars(embed.description)}</div>`;
+        }
+        
+        // Fields
+        if (embed.fields && Array.isArray(embed.fields) && embed.fields.length > 0) {
+            embedHTML += '<div class="discord-embed-fields">';
+            embed.fields.forEach(field => {
+                if (field.name || field.value) {
+                    embedHTML += `<div class="discord-embed-field" style="display: ${field.inline ? 'inline-block' : 'block'}; width: ${field.inline ? '48%' : '100%'}; margin-right: ${field.inline ? '2%' : '0'};">`;
+                    embedHTML += `<div class="discord-embed-field-name">${replaceVars(field.name || '\u200b')}</div>`;
+                    embedHTML += `<div class="discord-embed-field-value">${replaceVars(field.value || '\u200b')}</div>`;
+                    embedHTML += '</div>';
+                }
+            });
+            embedHTML += '</div>';
+        }
+        
+        // Thumbnail
+        if (embed.thumbnail && embed.thumbnail.url) {
+            embedHTML += `<div class="discord-embed-thumbnail"><img src="${embed.thumbnail.url}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        
+        // Image
+        if (embed.image && embed.image.url) {
+            embedHTML += `<div class="discord-embed-image"><img src="${embed.image.url}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
+        }
+        
+        // Footer
+        if (embed.footer && embed.footer.text) {
+            embedHTML += '<div class="discord-embed-footer">';
+            if (embed.footer.icon_url) {
+                embedHTML += `<img src="${embed.footer.icon_url}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
+            }
+            embedHTML += `<span>${replaceVars(embed.footer.text)}</span>`;
+            embedHTML += '</div>';
+        }
+        
+        embedHTML += '</div>';
+        container.innerHTML = embedHTML;
+    }
+    
+    // Setup modal event listeners
+    function setupModalListeners() {
+        // Edit message buttons
+        const editJoinBtn = document.getElementById('edit-join-message');
+        const editLeaveBtn = document.getElementById('edit-leave-message');
+        
+        if (editJoinBtn) {
+            editJoinBtn.addEventListener('click', () => openMessageEditModal('join'));
+        }
+        
+        if (editLeaveBtn) {
+            editLeaveBtn.addEventListener('click', () => openMessageEditModal('leave'));
+        }
+        
+        // Close modal buttons
+        const closeModalBtn = document.getElementById('close-message-modal');
+        const cancelBtn = document.getElementById('cancel-message-edit');
+        
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener('click', closeMessageEditModal);
+        }
+        
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', closeMessageEditModal);
+        }
+        
+        // Close on backdrop click
+        const modal = document.getElementById('message-edit-modal');
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    closeMessageEditModal();
+                }
+            });
+        }
+        
+        // Message type change
+        const messageTypeSelect = document.getElementById('message-type');
+        if (messageTypeSelect) {
+            messageTypeSelect.addEventListener('change', (e) => {
+                toggleMessageType(e.target.value);
+            });
+        }
+        
+        // Add embed field button
+        const addFieldBtn = document.getElementById('add-embed-field');
+        if (addFieldBtn) {
+            addFieldBtn.addEventListener('click', () => addEmbedField());
+        }
+        
+        // Color picker sync
+        const colorPicker = document.getElementById('embed-color-picker');
+        const colorInput = document.getElementById('embed-color');
+        
+        if (colorPicker && colorInput) {
+            colorPicker.addEventListener('input', (e) => {
+                colorInput.value = e.target.value;
+                updateModalPreview();
+            });
+            
+            colorInput.addEventListener('input', (e) => {
+                if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    colorPicker.value = e.target.value;
+                }
+                updateModalPreview();
+            });
+        }
+        
+        // Color presets
+        document.querySelectorAll('.color-preset').forEach(preset => {
+            preset.addEventListener('click', (e) => {
+                const color = e.target.dataset.color;
+                if (colorInput) colorInput.value = color;
+                if (colorPicker) colorPicker.value = color;
+                
+                // Update active state
+                document.querySelectorAll('.color-preset').forEach(p => p.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                updateModalPreview();
+            });
+        });
+        
+        // Save message button
+        const saveMessageBtn = document.getElementById('save-message-edit');
+        if (saveMessageBtn) {
+            saveMessageBtn.addEventListener('click', saveMessageConfig);
+        }
+        
+        // Update preview on input changes
+        const previewInputs = [
+            'message-text', 'embed-author-name', 'embed-author-url', 'embed-author-icon',
+            'embed-title', 'embed-title-url', 'embed-description',
+            'embed-image', 'embed-thumbnail', 'embed-footer-text', 'embed-footer-icon'
+        ];
+        
+        previewInputs.forEach(id => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.addEventListener('input', updateModalPreview);
+            }
+        });
+    }
+    
+    // Call setupModalListeners in setupEventListeners
+    const originalSetupEventListeners = setupEventListeners;
+    setupEventListeners = function() {
+        originalSetupEventListeners();
+        setupModalListeners();
+    };
 
     init();
 });

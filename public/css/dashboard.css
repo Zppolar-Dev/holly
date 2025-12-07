@@ -2712,10 +2712,200 @@ html, body {
     border-radius: 50%;
 }
 
+.discord-embed-fields {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.discord-embed-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.discord-embed-field-name {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+}
+
+[data-theme="light"] .discord-embed-field-name {
+    color: #060607;
+}
+
+.discord-embed-field-value {
+    font-size: 0.875rem;
+    line-height: 1.4;
+    color: #dcddde;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+[data-theme="light"] .discord-embed-field-value {
+    color: #2c2f33;
+}
+
+.discord-embed-field-value .discord-mention {
+    background: rgba(88, 101, 242, 0.3);
+    color: #5865f2;
+    padding: 0 0.2rem;
+    border-radius: 3px;
+    font-weight: 500;
+}
+
+[data-theme="light"] .discord-embed-field-value .discord-mention {
+    background: rgba(88, 101, 242, 0.15);
+}
+
+/* Inline fields (side by side) */
+.discord-embed-field.inline {
+    flex: 1;
+    min-width: 0;
+}
+
+.discord-embed-fields.inline {
+    flex-direction: row;
+    gap: 1rem;
+}
+
 .notification-mode {
     margin-top: 1rem;
     padding: 1rem;
     background: var(--card-bg);
     border-radius: 8px;
     border: 1px solid var(--border-color);
+}
+
+/* Message Preview Container */
+.message-preview-container {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
+.preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.preview-header h3 {
+    margin: 0;
+    color: var(--text-color);
+    font-size: 1.1rem;
+}
+
+/* Placeholders Tutorial */
+.placeholders-tutorial {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.placeholder-item {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1rem;
+    padding: 0.75rem;
+    background: var(--card-bg);
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.placeholder-name {
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.placeholder-name code {
+    background: rgba(138, 79, 255, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    color: var(--primary-color);
+}
+
+.placeholder-value {
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* Color Presets */
+.color-preset {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.color-preset:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 3px rgba(138, 79, 255, 0.3);
+}
+
+.color-preset.active {
+    box-shadow: 0 0 0 3px var(--primary-color);
+    transform: scale(1.1);
+}
+
+/* Embed Fields */
+.embed-field-item {
+    padding: 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.embed-field-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.embed-field-item-header h6 {
+    margin: 0;
+    color: var(--text-color);
+}
+
+.remove-field-btn {
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.remove-field-btn:hover {
+    background: #c0392b;
+}
+
+/* Modal Footer */
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: var(--card-bg);
+    border-radius: 0 0 12px 12px;
+}
+
+/* Responsive Modal */
+@media (max-width: 968px) {
+    .modal-content[style*="max-width: 900px"] {
+        max-width: 95% !important;
+    }
+    
+    .modal-body > div[style*="grid-template-columns"] {
+        grid-template-columns: 1fr !important;
+    }
 }

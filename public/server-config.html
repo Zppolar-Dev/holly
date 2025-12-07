@@ -141,128 +141,43 @@
                                 <option value="">Carregando canais...</option>
                             </select>
                         </div>
+                        
                         <div class="form-group">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="notify-join-use-embed">
-                                <span class="slider"></span>
-                                <span>Usar Embed (mensagem rica estilo Discord)</span>
-                            </label>
+                            <label for="notify-join-delete-after">Segundos para deletar a mensagem</label>
+                            <input 
+                                type="number" 
+                                id="notify-join-delete-after" 
+                                class="form-input" 
+                                min="0" 
+                                value="0"
+                                placeholder="0 = nunca deletar"
+                            >
+                            <small>Deixe em 0 para nunca deletar a mensagem</small>
                         </div>
                         
-                        <!-- Simple Message Mode -->
-                        <div id="notify-join-simple" class="notification-mode">
-                            <div class="form-group">
-                                <label for="notify-join-message">
-                                    Mensagem
-                                    <button type="button" class="btn-icon" id="test-join-message" title="Testar mensagem">
-                                        <i class="fas fa-vial"></i> Testar
-                                    </button>
-                                </label>
-                                <textarea 
-                                    id="notify-join-message" 
-                                    class="form-input" 
-                                    rows="4"
-                                    placeholder="Welcome {user} to the server! Joined at {time}"
-                                ></textarea>
-                                <small>
-                                    <strong>Available variables (must be inside {}):</strong><br>
-                                    <code>{user}</code> - User mention<br>
-                                    <code>{username}</code> - Username (no mention)<br>
-                                    <code>{time}</code> - Join time (HH:MM)<br>
-                                    <code>{date}</code> - Join date (DD/MM/YYYY)<br>
-                                    <code>{server}</code> - Server name<br>
-                                    <code>{members}</code> - Total members count<br>
-                                    <code>{channel}</code> - Channel mention (use channel ID or name)
-                                </small>
+                        <!-- Preview da Mensagem -->
+                        <div class="message-preview-container">
+                            <div class="preview-header">
+                                <h3>Pré-visualização da Mensagem</h3>
+                                <button type="button" class="btn btn-secondary" id="edit-join-message">
+                                    <i class="fas fa-edit"></i> Editar Mensagem
+                                </button>
                             </div>
-                        </div>
-                        
-                        <!-- Embed Mode -->
-                        <div id="notify-join-embed" class="notification-mode" style="display: none;">
-                            <div class="form-group">
-                                <label for="notify-join-embed-title">Título do Embed</label>
-                                <input type="text" id="notify-join-embed-title" class="form-input" placeholder="Bem-vindo ao servidor!">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-join-embed-description">Descrição</label>
-                                <textarea 
-                                    id="notify-join-embed-description" 
-                                    class="form-input" 
-                                    rows="3"
-                                    placeholder="{user} acabou de entrar no servidor! Agora somos {members} membros."
-                                ></textarea>
-                                <small>Suporta as mesmas variáveis da mensagem simples</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-join-embed-color">Cor do Embed (hex)</label>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <input type="color" id="notify-join-embed-color-picker" value="#5865f2" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
-                                    <input type="text" id="notify-join-embed-color" class="form-input" placeholder="#5865f2" style="flex: 1;">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="notify-join-embed-thumbnail-user">
-                                    <span class="slider"></span>
-                                    <span>Usar imagem de perfil do membro como thumbnail</span>
-                                </label>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-join-embed-thumbnail">Thumbnail (URL da imagem)</label>
-                                <input type="url" id="notify-join-embed-thumbnail" class="form-input" placeholder="https://exemplo.com/imagem.png">
-                                <small>Deixe vazio se estiver usando imagem de perfil do membro</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-join-embed-image">Imagem do Embed (URL)</label>
-                                <input type="url" id="notify-join-embed-image" class="form-input" placeholder="https://exemplo.com/imagem-grande.png">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-join-embed-footer">Footer (texto no rodapé)</label>
-                                <input type="text" id="notify-join-embed-footer" class="form-input" placeholder="Servidor: {server}">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>
-                                    <button type="button" class="btn-icon" id="test-join-embed" title="Testar embed">
-                                        <i class="fas fa-vial"></i> Testar Embed
-                                    </button>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Discord Preview -->
-                        <div class="discord-message-preview" id="join-message-preview" style="display: none;">
-                            <div class="discord-message" id="join-preview-simple">
-                                <div class="discord-avatar">
-                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
-                                </div>
-                                <div class="discord-message-content">
-                                    <div class="discord-author">
-                                        <span class="discord-author-name">Holly</span>
-                                        <span class="discord-bot-tag">BOT</span>
-                                        <span class="discord-timestamp"></span>
+                            <div class="discord-message-preview" id="join-message-preview">
+                                <div class="discord-message" id="join-preview-simple">
+                                    <div class="discord-avatar">
+                                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
                                     </div>
-                                    <div class="discord-message-text" id="join-preview-text"></div>
-                                </div>
-                            </div>
-                            <div class="discord-embed" id="join-preview-embed" style="display: none;">
-                                <div class="discord-embed-color-bar"></div>
-                                <div class="discord-embed-content">
-                                    <div class="discord-embed-header">
-                                        <div class="discord-embed-author" id="join-embed-author"></div>
-                                        <div class="discord-embed-title" id="join-embed-title"></div>
+                                    <div class="discord-message-content">
+                                        <div class="discord-author">
+                                            <span class="discord-author-name">Holly</span>
+                                            <span class="discord-bot-tag">BOT</span>
+                                            <span class="discord-timestamp"></span>
+                                        </div>
+                                        <div class="discord-message-text" id="join-preview-text"></div>
                                     </div>
-                                    <div class="discord-embed-description" id="join-embed-description"></div>
-                                    <div class="discord-embed-thumbnail" id="join-embed-thumbnail"></div>
-                                    <div class="discord-embed-image" id="join-embed-image"></div>
-                                    <div class="discord-embed-footer" id="join-embed-footer"></div>
                                 </div>
+                                <div class="discord-embed" id="join-preview-embed" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -290,128 +205,43 @@
                                 <option value="">Carregando canais...</option>
                             </select>
                         </div>
+                        
                         <div class="form-group">
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="notify-leave-use-embed">
-                                <span class="slider"></span>
-                                <span>Usar Embed (mensagem rica estilo Discord)</span>
-                            </label>
+                            <label for="notify-leave-delete-after">Segundos para deletar a mensagem</label>
+                            <input 
+                                type="number" 
+                                id="notify-leave-delete-after" 
+                                class="form-input" 
+                                min="0" 
+                                value="0"
+                                placeholder="0 = nunca deletar"
+                            >
+                            <small>Deixe em 0 para nunca deletar a mensagem</small>
                         </div>
                         
-                        <!-- Simple Message Mode -->
-                        <div id="notify-leave-simple" class="notification-mode">
-                            <div class="form-group">
-                                <label for="notify-leave-message">
-                                    Mensagem
-                                    <button type="button" class="btn-icon" id="test-leave-message" title="Testar mensagem">
-                                        <i class="fas fa-vial"></i> Testar
-                                    </button>
-                                </label>
-                                <textarea 
-                                    id="notify-leave-message" 
-                                    class="form-input" 
-                                    rows="4"
-                                    placeholder="{username} left the server at {time}"
-                                ></textarea>
-                                <small>
-                                    <strong>Available variables (must be inside {}):</strong><br>
-                                    <code>{user}</code> - User mention<br>
-                                    <code>{username}</code> - Username (no mention)<br>
-                                    <code>{time}</code> - Leave time (HH:MM)<br>
-                                    <code>{date}</code> - Leave date (DD/MM/YYYY)<br>
-                                    <code>{server}</code> - Server name<br>
-                                    <code>{members}</code> - Total members count<br>
-                                    <code>{channel}</code> - Channel mention (use channel ID or name)
-                                </small>
+                        <!-- Preview da Mensagem -->
+                        <div class="message-preview-container">
+                            <div class="preview-header">
+                                <h3>Pré-visualização da Mensagem</h3>
+                                <button type="button" class="btn btn-secondary" id="edit-leave-message">
+                                    <i class="fas fa-edit"></i> Editar Mensagem
+                                </button>
                             </div>
-                        </div>
-                        
-                        <!-- Embed Mode -->
-                        <div id="notify-leave-embed" class="notification-mode" style="display: none;">
-                            <div class="form-group">
-                                <label for="notify-leave-embed-title">Título do Embed</label>
-                                <input type="text" id="notify-leave-embed-title" class="form-input" placeholder="Membro saiu do servidor">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-leave-embed-description">Descrição</label>
-                                <textarea 
-                                    id="notify-leave-embed-description" 
-                                    class="form-input" 
-                                    rows="3"
-                                    placeholder="{username} saiu do servidor. Agora somos {members} membros."
-                                ></textarea>
-                                <small>Suporta as mesmas variáveis da mensagem simples</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-leave-embed-color">Cor do Embed (hex)</label>
-                                <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                    <input type="color" id="notify-leave-embed-color-picker" value="#e74c3c" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
-                                    <input type="text" id="notify-leave-embed-color" class="form-input" placeholder="#e74c3c" style="flex: 1;">
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="notify-leave-embed-thumbnail-user">
-                                    <span class="slider"></span>
-                                    <span>Usar imagem de perfil do membro como thumbnail</span>
-                                </label>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-leave-embed-thumbnail">Thumbnail (URL da imagem)</label>
-                                <input type="url" id="notify-leave-embed-thumbnail" class="form-input" placeholder="https://exemplo.com/imagem.png">
-                                <small>Deixe vazio se estiver usando imagem de perfil do membro</small>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-leave-embed-image">Imagem do Embed (URL)</label>
-                                <input type="url" id="notify-leave-embed-image" class="form-input" placeholder="https://exemplo.com/imagem-grande.png">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="notify-leave-embed-footer">Footer (texto no rodapé)</label>
-                                <input type="text" id="notify-leave-embed-footer" class="form-input" placeholder="Servidor: {server}">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>
-                                    <button type="button" class="btn-icon" id="test-leave-embed" title="Testar embed">
-                                        <i class="fas fa-vial"></i> Testar Embed
-                                    </button>
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <!-- Discord Preview -->
-                        <div class="discord-message-preview" id="leave-message-preview" style="display: none;">
-                            <div class="discord-message" id="leave-preview-simple">
-                                <div class="discord-avatar">
-                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
-                                </div>
-                                <div class="discord-message-content">
-                                    <div class="discord-author">
-                                        <span class="discord-author-name">Holly</span>
-                                        <span class="discord-bot-tag">BOT</span>
-                                        <span class="discord-timestamp"></span>
+                            <div class="discord-message-preview" id="leave-message-preview">
+                                <div class="discord-message" id="leave-preview-simple">
+                                    <div class="discord-avatar">
+                                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
                                     </div>
-                                    <div class="discord-message-text" id="leave-preview-text"></div>
-                                </div>
-                            </div>
-                            <div class="discord-embed" id="leave-preview-embed" style="display: none;">
-                                <div class="discord-embed-color-bar"></div>
-                                <div class="discord-embed-content">
-                                    <div class="discord-embed-header">
-                                        <div class="discord-embed-author" id="leave-embed-author"></div>
-                                        <div class="discord-embed-title" id="leave-embed-title"></div>
+                                    <div class="discord-message-content">
+                                        <div class="discord-author">
+                                            <span class="discord-author-name">Holly</span>
+                                            <span class="discord-bot-tag">BOT</span>
+                                            <span class="discord-timestamp"></span>
+                                        </div>
+                                        <div class="discord-message-text" id="leave-preview-text"></div>
                                     </div>
-                                    <div class="discord-embed-description" id="leave-embed-description"></div>
-                                    <div class="discord-embed-thumbnail" id="leave-embed-thumbnail"></div>
-                                    <div class="discord-embed-image" id="leave-embed-image"></div>
-                                    <div class="discord-embed-footer" id="leave-embed-footer"></div>
                                 </div>
+                                <div class="discord-embed" id="leave-preview-embed" style="display: none;"></div>
                             </div>
                         </div>
                     </div>
@@ -468,6 +298,196 @@
             </div>
         </div>
     </main>
+
+    <!-- Modal de Edição de Mensagem -->
+    <div class="modal" id="message-edit-modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Mensagem</h3>
+                <button class="close-modal" id="close-message-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 80vh; overflow-y: auto;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <!-- Coluna Esquerda: Configurações -->
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">Configurações</h4>
+                        
+                        <!-- Tipo de Mensagem -->
+                        <div class="form-group">
+                            <label for="message-type">Tipo de Mensagem</label>
+                            <select id="message-type" class="form-input">
+                                <option value="text">Apenas Texto</option>
+                                <option value="embed">Apenas Embed</option>
+                                <option value="both">Texto + Embed</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Mensagem de Texto -->
+                        <div id="text-message-section" class="form-group">
+                            <label for="message-text">Mensagem de Texto (Opcional)</label>
+                            <textarea 
+                                id="message-text" 
+                                class="form-input" 
+                                rows="4"
+                                placeholder="Seja bem-vindo {user}!"
+                            ></textarea>
+                        </div>
+                        
+                        <!-- Configurações de Embed -->
+                        <div id="embed-config-section" style="display: none;">
+                            <h5 style="margin: 1.5rem 0 1rem 0;">Configurações do Embed</h5>
+                            
+                            <!-- Cor -->
+                            <div class="form-group">
+                                <label>Cor</label>
+                                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem;">
+                                    <button type="button" class="color-preset" data-color="#5865f2" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #5865f2;"></button>
+                                    <button type="button" class="color-preset" data-color="#57f287" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #57f287;"></button>
+                                    <button type="button" class="color-preset" data-color="#fee75c" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #fee75c;"></button>
+                                    <button type="button" class="color-preset" data-color="#eb459e" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #eb459e;"></button>
+                                    <button type="button" class="color-preset" data-color="#ed4245" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #ed4245;"></button>
+                                    <button type="button" class="color-preset" data-color="#95a5a6" style="width: 30px; height: 30px; border-radius: 4px; border: 2px solid var(--border-color); cursor: pointer; background: #95a5a6;"></button>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="color" id="embed-color-picker" value="#5865f2" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
+                                    <input type="text" id="embed-color" class="form-input" placeholder="#5865f2" style="flex: 1;">
+                                </div>
+                            </div>
+                            
+                            <!-- Autor -->
+                            <div class="form-group">
+                                <label for="embed-author-name">Nome do Autor</label>
+                                <input type="text" id="embed-author-name" class="form-input" placeholder="Nome do autor">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="embed-author-url">URL do Autor</label>
+                                <input type="url" id="embed-author-url" class="form-input" placeholder="https://exemplo.com">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="embed-author-icon">URL do Ícone do Autor</label>
+                                <input type="url" id="embed-author-icon" class="form-input" placeholder="https://exemplo.com/icon.png">
+                            </div>
+                            
+                            <!-- Título -->
+                            <div class="form-group">
+                                <label for="embed-title">Título</label>
+                                <input type="text" id="embed-title" class="form-input" placeholder="Título do embed">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="embed-title-url">URL do Título</label>
+                                <input type="url" id="embed-title-url" class="form-input" placeholder="https://exemplo.com">
+                            </div>
+                            
+                            <!-- Descrição -->
+                            <div class="form-group">
+                                <label for="embed-description">Descrição</label>
+                                <textarea 
+                                    id="embed-description" 
+                                    class="form-input" 
+                                    rows="3"
+                                    placeholder="Descrição do embed"
+                                ></textarea>
+                            </div>
+                            
+                            <!-- Fields -->
+                            <div class="form-group">
+                                <label>Fields</label>
+                                <div id="embed-fields-container"></div>
+                                <button type="button" class="btn btn-secondary" id="add-embed-field" style="margin-top: 0.5rem;">
+                                    <i class="fas fa-plus"></i> Adicionar Field
+                                </button>
+                            </div>
+                            
+                            <!-- Imagens -->
+                            <div class="form-group">
+                                <label for="embed-image">URL da Imagem</label>
+                                <input type="url" id="embed-image" class="form-input" placeholder="https://exemplo.com/imagem.png">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="embed-thumbnail">URL da Thumbnail</label>
+                                <input type="url" id="embed-thumbnail" class="form-input" placeholder="https://exemplo.com/thumbnail.png">
+                            </div>
+                            
+                            <!-- Footer -->
+                            <div class="form-group">
+                                <label for="embed-footer-text">Texto do Rodapé</label>
+                                <input type="text" id="embed-footer-text" class="form-input" placeholder="Texto do rodapé">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="embed-footer-icon">URL do Ícone do Rodapé</label>
+                                <input type="url" id="embed-footer-icon" class="form-input" placeholder="https://exemplo.com/footer-icon.png">
+                            </div>
+                        </div>
+                        
+                        <!-- Tutorial de Placeholders -->
+                        <div class="form-group" style="margin-top: 2rem;">
+                            <h4 style="margin-bottom: 1rem;">Quais variáveis/placeholders eu posso usar?</h4>
+                            <div class="placeholders-tutorial">
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{user}</code></div>
+                                    <div class="placeholder-value">Menção do usuário (@Usuario)</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{username}</code></div>
+                                    <div class="placeholder-value">Nome do usuário (sem menção)</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{time}</code></div>
+                                    <div class="placeholder-value">Hora (HH:MM)</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{date}</code></div>
+                                    <div class="placeholder-value">Data (DD/MM/YYYY)</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{server}</code></div>
+                                    <div class="placeholder-value">Nome do servidor</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{members}</code></div>
+                                    <div class="placeholder-value">Total de membros</div>
+                                </div>
+                                <div class="placeholder-item">
+                                    <div class="placeholder-name"><code>{channel}</code></div>
+                                    <div class="placeholder-value">Menção do canal (#canal)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Coluna Direita: Preview -->
+                    <div>
+                        <h4 style="margin-bottom: 1rem;">Pré-visualização da Mensagem</h4>
+                        <div class="discord-message-preview" id="modal-preview" style="background: #2f3136; padding: 1rem; border-radius: 8px;">
+                            <div class="discord-message" id="modal-preview-simple">
+                                <div class="discord-avatar">
+                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                                </div>
+                                <div class="discord-message-content">
+                                    <div class="discord-author">
+                                        <span class="discord-author-name">Holly</span>
+                                        <span class="discord-bot-tag">BOT</span>
+                                        <span class="discord-timestamp"></span>
+                                    </div>
+                                    <div class="discord-message-text" id="modal-preview-text"></div>
+                                </div>
+                            </div>
+                            <div class="discord-embed" id="modal-preview-embed" style="display: none;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 1rem;">
+                <button class="btn secondary-btn" id="cancel-message-edit">Cancelar</button>
+                <button class="btn primary-btn" id="save-message-edit">Salvar</button>
+            </div>
+        </div>
+    </div>
 
     <script src="/js/server-config.js"></script>
 </body>

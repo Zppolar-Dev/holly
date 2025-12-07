@@ -471,7 +471,7 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
 // Update notification settings
 app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
-    const { type, enabled, channelId, message, useEmbed, embed } = req.body;
+    const { type, enabled, channelId, message, embed, deleteAfter } = req.body;
     
     if (!type || (type !== 'memberJoin' && type !== 'memberLeave')) {
         return res.status(400).json({ error: 'Tipo de notificação inválido' });
@@ -481,8 +481,8 @@ app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, ch
         const config = await dataStore.getServerConfig(guildId);
         if (!config.notifications) {
             config.notifications = {
-                memberJoin: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null },
-                memberLeave: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null }
+                memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+                memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
             };
         }
         
@@ -490,8 +490,8 @@ app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, ch
             enabled: enabled || false,
             channelId: channelId || null,
             message: message || '',
-            useEmbed: useEmbed || false,
-            embed: embed || null
+            embed: embed || null,
+            deleteAfter: deleteAfter || 0
         };
         
         await dataStore.updateServerConfig(guildId, { notifications: config.notifications });
