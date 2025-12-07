@@ -1247,6 +1247,10 @@ textarea:focus-visible {
     border-radius: 50%;
     object-fit: cover;
     transition: all var(--transition-speed) ease;
+    max-width: 80px;
+    max-height: 80px;
+    min-width: 80px;
+    min-height: 80px;
 }
 
 .server-card:hover .server-icon img {

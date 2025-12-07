@@ -662,6 +662,7 @@ module.exports = {
     setServerPrefix,
     setServerNickname,
     updateServerConfig,
+    setModuleStatus,
     trackCommand,
     getServerStats,
     getAllServers,

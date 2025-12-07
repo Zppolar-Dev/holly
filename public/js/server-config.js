@@ -463,10 +463,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             showNotification('✅ Configurações salvas com sucesso!', 'success');
             
-            // Small delay before redirect
-            setTimeout(() => {
-                window.location.href = '/dashboard';
-            }, 1000);
+            // Don't redirect - just show success notification
         } catch (error) {
             console.error('Erro ao salvar configurações:', error);
             showNotification('Erro ao salvar configurações', 'error');
@@ -478,26 +475,64 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Show notification
     function showNotification(message, type = 'info') {
-        // Simple notification system
+        // Notification system matching dashboard style
+        const types = {
+            success: { icon: 'check-circle', color: '#2ecc71' },
+            error: { icon: 'exclamation-triangle', color: '#e74c3c' },
+            info: { icon: 'info-circle', color: '#3498db' },
+            warning: { icon: 'exclamation-circle', color: '#f39c12' }
+        };
+
         const notification = document.createElement('div');
-        notification.className = `notification notification-${type}`;
-        notification.textContent = message;
+        notification.className = 'notification';
+        notification.setAttribute('role', 'alert');
+        notification.setAttribute('aria-live', 'assertive');
+        notification.innerHTML = `
+            <i class="fas fa-${types[type]?.icon || 'info-circle'}" aria-hidden="true"></i>
+            <span>${message}</span>
+        `;
         notification.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
             padding: 1rem 1.5rem;
-            background: ${type === 'success' ? '#2ecc71' : type === 'error' ? '#e74c3c' : '#3498db'};
+            background: ${types[type]?.color || '#3498db'};
             color: white;
             border-radius: 8px;
             z-index: 10000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease-out;
         `;
         document.body.appendChild(notification);
 
+        // Add animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+        `;
+        if (!document.head.querySelector('style[data-notification-anim]')) {
+            style.setAttribute('data-notification-anim', 'true');
+            document.head.appendChild(style);
+        }
+
         setTimeout(() => {
             notification.style.opacity = '0';
-            notification.style.transition = 'opacity 0.3s';
+            notification.style.transition = 'opacity 0.3s, transform 0.3s';
+            notification.style.transform = 'translateX(100%)';
             setTimeout(() => notification.remove(), 300);
         }, 3000);
     }
