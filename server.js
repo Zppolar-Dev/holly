@@ -516,21 +516,34 @@ app.post('/api/bot/sync', express.json(), async (req, res) => {
     const { secret, guilds, stats } = req.body;
     
     // Verify secret token
-    if (secret !== process.env.BOT_SYNC_SECRET) {
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de sincronização com secret inválido');
         return res.status(401).json({ error: 'Unauthorized' });
     }
     
     try {
         // Sync bot presence for all guilds
         if (guilds && Array.isArray(guilds)) {
+            console.log(`📡 Sincronizando ${guilds.length} servidor(es)...`);
             for (const guildId of guilds) {
-                await dataStore.markBotPresent(guildId, true);
+                try {
+                    await dataStore.markBotPresent(guildId, true);
+                } catch (err) {
+                    console.error(`   Erro ao marcar servidor ${guildId}:`, err.message);
+                }
             }
+            console.log('✅ Sincronização concluída');
+        } else {
+            console.warn('⚠️ Nenhum servidor recebido na sincronização');
         }
         
         res.json({ success: true, message: 'Data synced successfully' });
     } catch (error) {
-        console.error('Erro ao sincronizar dados do bot:', error);
+        console.error('❌ Erro ao sincronizar dados do bot:', error.message);
+        if (error.stack) {
+            console.error('   Stack:', error.stack.split('\n').slice(0, 3).join('\n'));
+        }
         res.status(500).json({ error: 'Erro ao sincronizar dados' });
     }
 });
@@ -944,10 +957,39 @@ app.listen(PORT, () => {
     // Try to start bot if token is available
     if (process.env.DISCORD_BOT_TOKEN) {
         try {
-            const bot = require('./bot/index');
-            app.setBotClient(bot);
+            // Try different paths for bot
+            let bot = null;
+            const botPaths = [
+                './bot/index',
+                path.join(__dirname, 'bot', 'index'),
+                '../bot/index',
+                path.join(__dirname, '..', 'bot', 'index')
+            ];
+            
+            for (const botPath of botPaths) {
+                try {
+                    bot = require(botPath);
+                    if (bot) {
+                        console.log(`✅ Bot carregado de: ${botPath}`);
+                        break;
+                    }
+                } catch (err) {
+                    // Try next path
+                    continue;
+                }
+            }
+            
+            if (bot) {
+                app.setBotClient(bot);
+            } else {
+                console.warn('⚠️  Bot não pôde ser encontrado em nenhum dos caminhos testados');
+                console.log('💡 Para iniciar o bot separadamente, execute: cd bot && npm start');
+            }
         } catch (error) {
             console.warn('⚠️  Bot não pôde ser iniciado:', error.message);
+            if (error.stack) {
+                console.warn('   Stack:', error.stack.split('\n').slice(0, 3).join('\n'));
+            }
             console.log('💡 Para iniciar o bot separadamente, execute: cd bot && npm start');
         }
     } else {
