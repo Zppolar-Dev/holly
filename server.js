@@ -439,6 +439,30 @@ app.post('/api/server/:guildId/module', discordAuth.authenticateToken, checkServ
     }
 });
 
+// Check if user is admin
+app.get('/api/user/is-admin', discordAuth.authenticateToken, async (req, res) => {
+    const userId = req.user?.user_id;
+    
+    if (!userId) {
+        return res.json({ isAdmin: false, isOwner: false });
+    }
+    
+    // Owner is always admin
+    if (userId === OWNER_ID) {
+        return res.json({ isAdmin: true, isOwner: true });
+    }
+    
+    // Check if user is in administrators table
+    let isAdmin = false;
+    if (useDatabase && db && db.isAdministrator) {
+        isAdmin = await db.isAdministrator(userId);
+    } else if (dataStore.isAdministrator) {
+        isAdmin = await dataStore.isAdministrator(userId);
+    }
+    
+    res.json({ isAdmin, isOwner: false });
+});
+
 // Get all user's servers with stats
 app.get('/api/user/servers/stats', discordAuth.authenticateToken, async (req, res) => {
     try {
@@ -447,13 +471,11 @@ app.get('/api/user/servers/stats', discordAuth.authenticateToken, async (req, re
             return res.status(401).json({ error: 'Sessão expirada' });
         }
 
-        const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-
-        const guilds = guildsRes.data.filter(guild => guild.permissions & 0x20); // Manage server permission
+        // Use cached function to avoid rate limits
+        const guilds = await getUserGuildsCached(req.user.user_id, token);
+        const filteredGuilds = guilds.filter(guild => guild.permissions & 0x20); // Manage server permission
         
-        const serversWithStats = guilds.map(guild => ({
+        const serversWithStats = filteredGuilds.map(guild => ({
             id: guild.id,
             name: guild.name,
             icon: guild.icon,
@@ -743,6 +765,59 @@ app.get('/admin', discordAuth.authenticateToken, async (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// Cache for guilds to avoid rate limiting
+const guildsCache = new Map();
+const GUILDS_CACHE_TTL = 60000; // 1 minute cache
+
+// Helper function to get user guilds with caching and rate limit handling
+async function getUserGuildsCached(userId, token) {
+    const cacheKey = `${userId}_guilds`;
+    const cached = guildsCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < GUILDS_CACHE_TTL) {
+        return cached.data;
+    }
+    
+    try {
+        const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        guildsCache.set(cacheKey, {
+            data: guildsRes.data,
+            timestamp: Date.now()
+        });
+        
+        return guildsRes.data;
+    } catch (error) {
+        // Handle rate limit
+        if (error.response && error.response.status === 429) {
+            const retryAfter = parseFloat(error.response.headers['retry-after'] || error.response.data?.retry_after || 1);
+            console.warn(`⚠️ Rate limit atingido. Aguardando ${retryAfter}s...`);
+            
+            // Return cached data if available, even if expired
+            if (cached) {
+                console.log('📦 Retornando dados em cache devido ao rate limit');
+                return cached.data;
+            }
+            
+            // Wait and retry once
+            await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+            try {
+                const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                return guildsRes.data;
+            } catch (retryError) {
+                // If still fails, return cached or empty
+                console.error('❌ Retry após rate limit falhou:', retryError.message);
+                return cached ? cached.data : [];
+            }
+        }
+        throw error;
+    }
+}
+
 // Helper function to check if user is server owner or has permission
 async function checkServerPermission(req, res, next) {
     const { guildId } = req.params;
@@ -759,11 +834,9 @@ async function checkServerPermission(req, res, next) {
             return res.status(401).json({ error: 'Sessão expirada' });
         }
         
-        const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        const guilds = await getUserGuildsCached(userId, token);
+        const guild = guilds.find(g => g.id === guildId);
         
-        const guild = guildsRes.data.find(g => g.id === guildId);
         if (!guild) {
             return res.status(404).json({ error: 'Servidor não encontrado' });
         }
@@ -787,7 +860,11 @@ async function checkServerPermission(req, res, next) {
         req.guild = guild;
         next();
     } catch (error) {
-        console.error('Erro ao verificar permissão:', error);
+        console.error('Erro ao verificar permissão:', error.message);
+        // Don't fail completely on rate limit, try to continue
+        if (error.response && error.response.status === 429) {
+            return res.status(429).json({ error: 'Muitas requisições. Tente novamente em alguns segundos.' });
+        }
         return res.status(500).json({ error: 'Erro ao verificar permissão' });
     }
 }
@@ -815,11 +892,10 @@ app.get('/server/:guildId', discordAuth.authenticateToken, async (req, res) => {
             return res.redirect('/dashboard?error=session_expired');
         }
         
-        const guildsRes = await axios.get('https://discord.com/api/users/@me/guilds', {
-            headers: { Authorization: `Bearer ${token}` }
-        });
+        // Use cached function to avoid rate limits
+        const guilds = await getUserGuildsCached(userId, token);
         
-        const guild = guildsRes.data.find(g => g.id === guildId);
+        const guild = guilds.find(g => g.id === guildId);
         if (!guild) {
             return res.redirect('/dashboard?error=server_not_found');
         }

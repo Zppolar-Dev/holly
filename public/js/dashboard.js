@@ -321,10 +321,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Gerenciamento de autenticação (totalmente atualizado)
     async function checkAuth() {
         try {
-            const [userRes, guildsRes, statsRes] = await Promise.all([
+            const [userRes, guildsRes, statsRes, adminRes] = await Promise.all([
                 fetch(`${CONFIG.API_BASE_URL}/api/user`, { credentials: 'include' }),
                 fetch(`${CONFIG.API_BASE_URL}/api/user/guilds`, { credentials: 'include' }),
-                fetch(`${CONFIG.API_BASE_URL}/api/stats`, { credentials: 'include' })
+                fetch(`${CONFIG.API_BASE_URL}/api/stats`, { credentials: 'include' }),
+                fetch(`${CONFIG.API_BASE_URL}/api/user/is-admin`, { credentials: 'include' }).catch(() => ({ ok: false }))
             ]);
 
             if (!userRes.ok) {
@@ -337,14 +338,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             const userData = await userRes.json();
             const guildsData = await guildsRes.json();
             const statsData = await statsRes.json();
+            
+            // Check admin status
+            let isAdmin = false;
+            let isOwner = false;
+            if (adminRes.ok) {
+                const adminData = await adminRes.json();
+                isAdmin = adminData.isAdmin || false;
+                isOwner = adminData.isOwner || false;
+            }
 
             STATE.user = userData;
             STATE.guilds = guildsData.filter(guild => guild.permissions & 0x20);
             STATE.stats = statsData;
+            STATE.isAdmin = isAdmin;
+            STATE.isOwner = isOwner;
 
             updateUserUI();
             await updateServersUI();
             updateStatsUI();
+            updateAdminUI();
 
             return true;
         } catch (error) {
@@ -356,6 +369,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             return false;
+        }
+    }
+
+    // Update admin UI (show/hide admin button)
+    function updateAdminUI() {
+        const adminNavItem = document.getElementById('admin-nav-item');
+        const adminSidebarItem = document.getElementById('admin-sidebar-item');
+        
+        if (STATE.isAdmin || STATE.isOwner) {
+            if (adminNavItem) adminNavItem.style.display = 'block';
+            if (adminSidebarItem) adminSidebarItem.style.display = 'block';
+        } else {
+            if (adminNavItem) adminNavItem.style.display = 'none';
+            if (adminSidebarItem) adminSidebarItem.style.display = 'none';
         }
     }
 

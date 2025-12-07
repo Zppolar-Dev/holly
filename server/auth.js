@@ -219,6 +219,28 @@ async function getUserGuilds(req, res) {
     }
 }
 
+// Check if user is administrator
+async function isUserAdministrator(userId) {
+    const OWNER_ID = '909204567042981978';
+    
+    // Owner is always admin
+    if (userId === OWNER_ID) {
+        return true;
+    }
+    
+    // Check database
+    try {
+        const dataStore = require('./dataStore');
+        if (dataStore.isAdministrator) {
+            return await dataStore.isAdministrator(userId);
+        }
+    } catch (error) {
+        console.error('Erro ao verificar administrador:', error);
+    }
+    
+    return false;
+}
+
 module.exports = {
     authenticateToken,
     login,
@@ -226,6 +248,7 @@ module.exports = {
     logout,
     getUserData,
     getUserGuilds,
-    getValidAccessToken
+    getValidAccessToken,
+    isUserAdministrator
 };
 
