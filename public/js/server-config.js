@@ -702,9 +702,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Wait a bit for bot to sync, then reload
                 setTimeout(async () => {
                     await loadGuildChannels(true);
-                refreshBtnLeave.disabled = false;
-                refreshBtnLeave.innerHTML = '<i class="fas fa-sync-alt"></i>';
-                showNotification('✅ Canais atualizados!', 'success');
+                    refreshBtnLeave.disabled = false;
+                    refreshBtnLeave.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    showNotification('✅ Canais atualizados!', 'success');
+                }, 2000);
             });
         }
 
