@@ -310,6 +310,8 @@ module.exports = {
     getUserData,
     getUserGuilds,
     getValidAccessToken,
+    refreshAccessToken,
+    getUserBadges,
     isUserAdministrator
 };
 

@@ -374,44 +374,73 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
 
         // Fallback: try with user token (required when bot runs separately)
         try {
-            const token = await discordAuth.getValidAccessToken(req.user.user_id);
-            if (token) {
-                const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    timeout: 10000
-                });
-                const textChannels = channelsRes.data
-                    .filter(ch => ch.type === 0 || ch.type === 5) // TEXT_CHANNEL or NEWS_CHANNEL
-                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
-                
-                console.log(`✅ Canais carregados via token do usuário: ${textChannels.length} canais`);
-                return res.json(textChannels);
-            } else {
+            let token = await discordAuth.getValidAccessToken(req.user.user_id);
+            if (!token) {
                 console.warn('⚠️ Token do usuário não disponível para buscar canais');
-            }
-        } catch (err) {
-            // If it's a 401, the token might be expired
-            if (err.response && err.response.status === 401) {
-                console.warn('⚠️ Token do usuário expirado ou inválido (401)');
-                
-                // Try bot client one more time if available (unlikely but worth trying)
-                if (botClient && botClient.guilds && botClient.guilds.cache) {
-                    console.log('   Tentando usar bot client como fallback...');
-                    const guild = botClient.guilds.cache.get(guildId);
-                    if (guild && guild.channels && guild.channels.cache) {
-                        const channels = Array.from(guild.channels.cache.values())
-                            .filter(ch => ch && ch.isTextBased && ch.isTextBased())
-                            .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
-                        console.log(`✅ Canais carregados via bot client (fallback): ${channels.length} canais`);
-                        return res.json(channels);
+            } else {
+                // Try to fetch channels
+                try {
+                    const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+                        headers: { Authorization: `Bearer ${token}` },
+                        timeout: 10000
+                    });
+                    const textChannels = channelsRes.data
+                        .filter(ch => ch.type === 0 || ch.type === 5) // TEXT_CHANNEL or NEWS_CHANNEL
+                        .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                    
+                    console.log(`✅ Canais carregados via token do usuário: ${textChannels.length} canais`);
+                    return res.json(textChannels);
+                } catch (apiErr) {
+                    // If it's a 401, try to refresh token and retry
+                    if (apiErr.response && apiErr.response.status === 401) {
+                        console.warn('⚠️ Token do usuário expirado ou inválido (401) - tentando renovar...');
+                        
+                        // Try to get a fresh token (getValidAccessToken handles refresh automatically)
+                        const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
+                        if (newToken && newToken !== token) {
+                            // Token was refreshed, retry request
+                            console.log('🔄 Token renovado automaticamente, tentando novamente...');
+                            try {
+                                const retryRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
+                                    headers: { Authorization: `Bearer ${newToken}` },
+                                    timeout: 10000
+                                });
+                                const textChannels = retryRes.data
+                                    .filter(ch => ch.type === 0 || ch.type === 5)
+                                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                                
+                                console.log(`✅ Canais carregados após renovação: ${textChannels.length} canais`);
+                                return res.json(textChannels);
+                            } catch (retryErr) {
+                                console.warn('⚠️ Falha ao buscar canais mesmo após renovar token:', retryErr.message);
+                            }
+                        }
+                        
+                        // Try bot client one more time if available (unlikely but worth trying)
+                        if (botClient && botClient.guilds && botClient.guilds.cache) {
+                            console.log('   Tentando usar bot client como fallback...');
+                            const guild = botClient.guilds.cache.get(guildId);
+                            if (guild && guild.channels && guild.channels.cache) {
+                                const channels = Array.from(guild.channels.cache.values())
+                                    .filter(ch => ch && ch.isTextBased && ch.isTextBased())
+                                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                                console.log(`✅ Canais carregados via bot client (fallback): ${channels.length} canais`);
+                                return res.json(channels);
+                            }
+                        }
+                        
+                        // Return empty array - user needs to refresh the page to get new token
+                        console.warn('   Retornando lista vazia. O usuário precisa atualizar a página para obter novo token.');
+                    } else {
+                        throw apiErr; // Re-throw if not 401
                     }
                 }
-                
-                // Return empty array - user needs to refresh the page to get new token
-                console.warn('   Retornando lista vazia. O usuário precisa atualizar a página para obter novo token.');
-            } else if (err.code === 'ECONNABORTED') {
+            }
+        } catch (err) {
+            if (err.code === 'ECONNABORTED') {
                 console.warn('⚠️ Timeout ao buscar canais com token do usuário');
-            } else {
+            } else if (err.response && err.response.status !== 401) {
+                // Only log if not 401 (already handled above)
                 console.error('Erro ao buscar canais com token do usuário:', err.message || err);
             }
         }
