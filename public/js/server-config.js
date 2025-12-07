@@ -33,10 +33,32 @@ document.addEventListener('DOMContentLoaded', async function() {
         notifyJoinConfig: document.getElementById('notify-join-config'),
         notifyJoinChannel: document.getElementById('notify-join-channel'),
         notifyJoinMessage: document.getElementById('notify-join-message'),
+        notifyJoinUseEmbed: document.getElementById('notify-join-use-embed'),
+        notifyJoinSimple: document.getElementById('notify-join-simple'),
+        notifyJoinEmbed: document.getElementById('notify-join-embed'),
+        notifyJoinEmbedTitle: document.getElementById('notify-join-embed-title'),
+        notifyJoinEmbedDescription: document.getElementById('notify-join-embed-description'),
+        notifyJoinEmbedColor: document.getElementById('notify-join-embed-color'),
+        notifyJoinEmbedColorPicker: document.getElementById('notify-join-embed-color-picker'),
+        notifyJoinEmbedThumbnailUser: document.getElementById('notify-join-embed-thumbnail-user'),
+        notifyJoinEmbedThumbnail: document.getElementById('notify-join-embed-thumbnail'),
+        notifyJoinEmbedImage: document.getElementById('notify-join-embed-image'),
+        notifyJoinEmbedFooter: document.getElementById('notify-join-embed-footer'),
         notifyLeaveEnabled: document.getElementById('notify-leave-enabled'),
         notifyLeaveConfig: document.getElementById('notify-leave-config'),
         notifyLeaveChannel: document.getElementById('notify-leave-channel'),
         notifyLeaveMessage: document.getElementById('notify-leave-message'),
+        notifyLeaveUseEmbed: document.getElementById('notify-leave-use-embed'),
+        notifyLeaveSimple: document.getElementById('notify-leave-simple'),
+        notifyLeaveEmbed: document.getElementById('notify-leave-embed'),
+        notifyLeaveEmbedTitle: document.getElementById('notify-leave-embed-title'),
+        notifyLeaveEmbedDescription: document.getElementById('notify-leave-embed-description'),
+        notifyLeaveEmbedColor: document.getElementById('notify-leave-embed-color'),
+        notifyLeaveEmbedColorPicker: document.getElementById('notify-leave-embed-color-picker'),
+        notifyLeaveEmbedThumbnailUser: document.getElementById('notify-leave-embed-thumbnail-user'),
+        notifyLeaveEmbedThumbnail: document.getElementById('notify-leave-embed-thumbnail'),
+        notifyLeaveEmbedImage: document.getElementById('notify-leave-embed-image'),
+        notifyLeaveEmbedFooter: document.getElementById('notify-leave-embed-footer'),
         saveBtn: document.getElementById('save-btn'),
         cancelBtn: document.getElementById('cancel-btn'),
         themeToggle: document.getElementById('themeToggle')
@@ -307,8 +329,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Notifications
         const notifications = config.notifications || {
-            memberJoin: { enabled: false, channelId: null, message: '' },
-            memberLeave: { enabled: false, channelId: null, message: '' }
+            memberJoin: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null },
+            memberLeave: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null }
         };
 
         // Join notifications
@@ -322,6 +344,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (UI.notifyJoinMessage) {
             UI.notifyJoinMessage.value = notifications.memberJoin?.message || 'Welcome {user} to the server! Joined at {time}';
         }
+        
+        // Join embed settings
+        if (UI.notifyJoinUseEmbed) {
+            UI.notifyJoinUseEmbed.checked = notifications.memberJoin?.useEmbed || false;
+            toggleEmbedMode('join', UI.notifyJoinUseEmbed.checked);
+        }
+        if (notifications.memberJoin?.embed) {
+            const embed = notifications.memberJoin.embed;
+            if (UI.notifyJoinEmbedTitle) UI.notifyJoinEmbedTitle.value = embed.title || '';
+            if (UI.notifyJoinEmbedDescription) UI.notifyJoinEmbedDescription.value = embed.description || '';
+            if (UI.notifyJoinEmbedColor) {
+                UI.notifyJoinEmbedColor.value = embed.color || '#5865f2';
+                if (UI.notifyJoinEmbedColorPicker) UI.notifyJoinEmbedColorPicker.value = embed.color || '#5865f2';
+            }
+            if (UI.notifyJoinEmbedThumbnailUser) UI.notifyJoinEmbedThumbnailUser.checked = embed.thumbnailUser || false;
+            if (UI.notifyJoinEmbedThumbnail) UI.notifyJoinEmbedThumbnail.value = embed.thumbnail || '';
+            if (UI.notifyJoinEmbedImage) UI.notifyJoinEmbedImage.value = embed.image || '';
+            if (UI.notifyJoinEmbedFooter) UI.notifyJoinEmbedFooter.value = embed.footer || '';
+        }
 
         // Leave notifications
         if (UI.notifyLeaveEnabled) {
@@ -333,6 +374,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         if (UI.notifyLeaveMessage) {
             UI.notifyLeaveMessage.value = notifications.memberLeave?.message || '{username} left the server at {time}';
+        }
+        
+        // Leave embed settings
+        if (UI.notifyLeaveUseEmbed) {
+            UI.notifyLeaveUseEmbed.checked = notifications.memberLeave?.useEmbed || false;
+            toggleEmbedMode('leave', UI.notifyLeaveUseEmbed.checked);
+        }
+        if (notifications.memberLeave?.embed) {
+            const embed = notifications.memberLeave.embed;
+            if (UI.notifyLeaveEmbedTitle) UI.notifyLeaveEmbedTitle.value = embed.title || '';
+            if (UI.notifyLeaveEmbedDescription) UI.notifyLeaveEmbedDescription.value = embed.description || '';
+            if (UI.notifyLeaveEmbedColor) {
+                UI.notifyLeaveEmbedColor.value = embed.color || '#e74c3c';
+                if (UI.notifyLeaveEmbedColorPicker) UI.notifyLeaveEmbedColorPicker.value = embed.color || '#e74c3c';
+            }
+            if (UI.notifyLeaveEmbedThumbnailUser) UI.notifyLeaveEmbedThumbnailUser.checked = embed.thumbnailUser || false;
+            if (UI.notifyLeaveEmbedThumbnail) UI.notifyLeaveEmbedThumbnail.value = embed.thumbnail || '';
+            if (UI.notifyLeaveEmbedImage) UI.notifyLeaveEmbedImage.value = embed.image || '';
+            if (UI.notifyLeaveEmbedFooter) UI.notifyLeaveEmbedFooter.value = embed.footer || '';
         }
 
         // Modules
@@ -373,6 +433,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (configDiv) {
             configDiv.style.display = enabled ? 'block' : 'none';
         }
+    }
+    
+    // Toggle embed mode
+    function toggleEmbedMode(type, useEmbed) {
+        const simpleDiv = type === 'join' ? UI.notifyJoinSimple : UI.notifyLeaveSimple;
+        const embedDiv = type === 'join' ? UI.notifyJoinEmbed : UI.notifyLeaveEmbed;
+        
+        if (simpleDiv) {
+            simpleDiv.style.display = useEmbed ? 'none' : 'block';
+        }
+        if (embedDiv) {
+            embedDiv.style.display = useEmbed ? 'block' : 'none';
+        }
+        
+        // Update preview
+        updatePreview(type);
     }
 
     // Save configuration
@@ -418,30 +494,64 @@ document.addEventListener('DOMContentLoaded', async function() {
                 body: JSON.stringify({ nickname: nickname || null })
             });
 
+            // Prepare join notification data
+            const joinNotification = {
+                type: 'memberJoin',
+                enabled: UI.notifyJoinEnabled.checked,
+                channelId: UI.notifyJoinChannel.value || null,
+                message: UI.notifyJoinMessage.value.trim(),
+                useEmbed: UI.notifyJoinUseEmbed?.checked || false,
+                embed: null
+            };
+            
+            if (joinNotification.useEmbed) {
+                joinNotification.embed = {
+                    title: UI.notifyJoinEmbedTitle?.value.trim() || null,
+                    description: UI.notifyJoinEmbedDescription?.value.trim() || null,
+                    color: UI.notifyJoinEmbedColor?.value.trim() || '#5865f2',
+                    thumbnailUser: UI.notifyJoinEmbedThumbnailUser?.checked || false,
+                    thumbnail: UI.notifyJoinEmbedThumbnail?.value.trim() || null,
+                    image: UI.notifyJoinEmbedImage?.value.trim() || null,
+                    footer: UI.notifyJoinEmbedFooter?.value.trim() || null
+                };
+            }
+            
             // Save join notifications
             await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    type: 'memberJoin',
-                    enabled: UI.notifyJoinEnabled.checked,
-                    channelId: UI.notifyJoinChannel.value || null,
-                    message: UI.notifyJoinMessage.value.trim()
-                })
+                body: JSON.stringify(joinNotification)
             });
+
+            // Prepare leave notification data
+            const leaveNotification = {
+                type: 'memberLeave',
+                enabled: UI.notifyLeaveEnabled.checked,
+                channelId: UI.notifyLeaveChannel.value || null,
+                message: UI.notifyLeaveMessage.value.trim(),
+                useEmbed: UI.notifyLeaveUseEmbed?.checked || false,
+                embed: null
+            };
+            
+            if (leaveNotification.useEmbed) {
+                leaveNotification.embed = {
+                    title: UI.notifyLeaveEmbedTitle?.value.trim() || null,
+                    description: UI.notifyLeaveEmbedDescription?.value.trim() || null,
+                    color: UI.notifyLeaveEmbedColor?.value.trim() || '#e74c3c',
+                    thumbnailUser: UI.notifyLeaveEmbedThumbnailUser?.checked || false,
+                    thumbnail: UI.notifyLeaveEmbedThumbnail?.value.trim() || null,
+                    image: UI.notifyLeaveEmbedImage?.value.trim() || null,
+                    footer: UI.notifyLeaveEmbedFooter?.value.trim() || null
+                };
+            }
 
             // Save leave notifications
             await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
-                body: JSON.stringify({
-                    type: 'memberLeave',
-                    enabled: UI.notifyLeaveEnabled.checked,
-                    channelId: UI.notifyLeaveChannel.value || null,
-                    message: UI.notifyLeaveMessage.value.trim()
-                })
+                body: JSON.stringify(leaveNotification)
             });
 
             // Save modules
@@ -641,9 +751,51 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
         
+        // Embed mode toggles
+        if (UI.notifyJoinUseEmbed) {
+            UI.notifyJoinUseEmbed.addEventListener('change', (e) => {
+                toggleEmbedMode('join', e.target.checked);
+            });
+        }
+        
+        if (UI.notifyLeaveUseEmbed) {
+            UI.notifyLeaveUseEmbed.addEventListener('change', (e) => {
+                toggleEmbedMode('leave', e.target.checked);
+            });
+        }
+        
+        // Color picker sync
+        if (UI.notifyJoinEmbedColorPicker && UI.notifyJoinEmbedColor) {
+            UI.notifyJoinEmbedColorPicker.addEventListener('input', (e) => {
+                UI.notifyJoinEmbedColor.value = e.target.value;
+                updatePreview('join');
+            });
+            UI.notifyJoinEmbedColor.addEventListener('input', (e) => {
+                if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    UI.notifyJoinEmbedColorPicker.value = e.target.value;
+                }
+                updatePreview('join');
+            });
+        }
+        
+        if (UI.notifyLeaveEmbedColorPicker && UI.notifyLeaveEmbedColor) {
+            UI.notifyLeaveEmbedColorPicker.addEventListener('input', (e) => {
+                UI.notifyLeaveEmbedColor.value = e.target.value;
+                updatePreview('leave');
+            });
+            UI.notifyLeaveEmbedColor.addEventListener('input', (e) => {
+                if (e.target.value.match(/^#[0-9A-Fa-f]{6}$/)) {
+                    UI.notifyLeaveEmbedColorPicker.value = e.target.value;
+                }
+                updatePreview('leave');
+            });
+        }
+        
         // Test message buttons
         const testJoinBtn = document.getElementById('test-join-message');
         const testLeaveBtn = document.getElementById('test-leave-message');
+        const testJoinEmbedBtn = document.getElementById('test-join-embed');
+        const testLeaveEmbedBtn = document.getElementById('test-leave-embed');
         
         if (testJoinBtn) {
             testJoinBtn.addEventListener('click', () => {
@@ -657,7 +809,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
         
-        // Update preview on message change
+        if (testJoinEmbedBtn) {
+            testJoinEmbedBtn.addEventListener('click', () => {
+                testMessage('join');
+            });
+        }
+        
+        if (testLeaveEmbedBtn) {
+            testLeaveEmbedBtn.addEventListener('click', () => {
+                testMessage('leave');
+            });
+        }
+        
+        // Update preview on message/embed change
         if (UI.notifyJoinMessage) {
             UI.notifyJoinMessage.addEventListener('input', () => {
                 updatePreview('join');
@@ -668,6 +832,43 @@ document.addEventListener('DOMContentLoaded', async function() {
             UI.notifyLeaveMessage.addEventListener('input', () => {
                 updatePreview('leave');
             });
+        }
+        
+        // Update preview on embed fields change
+        const joinEmbedFields = [
+            UI.notifyJoinEmbedTitle,
+            UI.notifyJoinEmbedDescription,
+            UI.notifyJoinEmbedColor,
+            UI.notifyJoinEmbedThumbnail,
+            UI.notifyJoinEmbedImage,
+            UI.notifyJoinEmbedFooter
+        ];
+        joinEmbedFields.forEach(field => {
+            if (field) {
+                field.addEventListener('input', () => updatePreview('join'));
+            }
+        });
+        
+        const leaveEmbedFields = [
+            UI.notifyLeaveEmbedTitle,
+            UI.notifyLeaveEmbedDescription,
+            UI.notifyLeaveEmbedColor,
+            UI.notifyLeaveEmbedThumbnail,
+            UI.notifyLeaveEmbedImage,
+            UI.notifyLeaveEmbedFooter
+        ];
+        leaveEmbedFields.forEach(field => {
+            if (field) {
+                field.addEventListener('input', () => updatePreview('leave'));
+            }
+        });
+        
+        if (UI.notifyJoinEmbedThumbnailUser) {
+            UI.notifyJoinEmbedThumbnailUser.addEventListener('change', () => updatePreview('join'));
+        }
+        
+        if (UI.notifyLeaveEmbedThumbnailUser) {
+            UI.notifyLeaveEmbedThumbnailUser.addEventListener('change', () => updatePreview('leave'));
         }
     }
     

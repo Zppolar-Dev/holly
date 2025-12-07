@@ -142,41 +142,126 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="notify-join-message">
-                                Mensagem
-                                <button type="button" class="btn-icon" id="test-join-message" title="Testar mensagem">
-                                    <i class="fas fa-vial"></i> Testar
-                                </button>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notify-join-use-embed">
+                                <span class="slider"></span>
+                                <span>Usar Embed (mensagem rica estilo Discord)</span>
                             </label>
-                            <textarea 
-                                id="notify-join-message" 
-                                class="form-input" 
-                                rows="4"
-                                placeholder="Welcome {user} to the server! Joined at {time}"
-                            ></textarea>
-                            <small>
-                                <strong>Available variables (must be inside {}):</strong><br>
-                                <code>{user}</code> - User mention<br>
-                                <code>{username}</code> - Username (no mention)<br>
-                                <code>{time}</code> - Join time (HH:MM)<br>
-                                <code>{date}</code> - Join date (DD/MM/YYYY)<br>
-                                <code>{server}</code> - Server name<br>
-                                <code>{members}</code> - Total members count
-                            </small>
-                            <!-- Discord Preview -->
-                            <div class="discord-message-preview" id="join-message-preview" style="display: none;">
-                                <div class="discord-message">
-                                    <div class="discord-avatar">
-                                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                        </div>
+                        
+                        <!-- Simple Message Mode -->
+                        <div id="notify-join-simple" class="notification-mode">
+                            <div class="form-group">
+                                <label for="notify-join-message">
+                                    Mensagem
+                                    <button type="button" class="btn-icon" id="test-join-message" title="Testar mensagem">
+                                        <i class="fas fa-vial"></i> Testar
+                                    </button>
+                                </label>
+                                <textarea 
+                                    id="notify-join-message" 
+                                    class="form-input" 
+                                    rows="4"
+                                    placeholder="Welcome {user} to the server! Joined at {time}"
+                                ></textarea>
+                                <small>
+                                    <strong>Available variables (must be inside {}):</strong><br>
+                                    <code>{user}</code> - User mention<br>
+                                    <code>{username}</code> - Username (no mention)<br>
+                                    <code>{time}</code> - Join time (HH:MM)<br>
+                                    <code>{date}</code> - Join date (DD/MM/YYYY)<br>
+                                    <code>{server}</code> - Server name<br>
+                                    <code>{members}</code> - Total members count<br>
+                                    <code>{channel}</code> - Channel mention (use channel ID or name)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Embed Mode -->
+                        <div id="notify-join-embed" class="notification-mode" style="display: none;">
+                            <div class="form-group">
+                                <label for="notify-join-embed-title">Título do Embed</label>
+                                <input type="text" id="notify-join-embed-title" class="form-input" placeholder="Bem-vindo ao servidor!">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-join-embed-description">Descrição</label>
+                                <textarea 
+                                    id="notify-join-embed-description" 
+                                    class="form-input" 
+                                    rows="3"
+                                    placeholder="{user} acabou de entrar no servidor! Agora somos {members} membros."
+                                ></textarea>
+                                <small>Suporta as mesmas variáveis da mensagem simples</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-join-embed-color">Cor do Embed (hex)</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="color" id="notify-join-embed-color-picker" value="#5865f2" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
+                                    <input type="text" id="notify-join-embed-color" class="form-input" placeholder="#5865f2" style="flex: 1;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notify-join-embed-thumbnail-user">
+                                    <span class="slider"></span>
+                                    <span>Usar imagem de perfil do membro como thumbnail</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-join-embed-thumbnail">Thumbnail (URL da imagem)</label>
+                                <input type="url" id="notify-join-embed-thumbnail" class="form-input" placeholder="https://exemplo.com/imagem.png">
+                                <small>Deixe vazio se estiver usando imagem de perfil do membro</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-join-embed-image">Imagem do Embed (URL)</label>
+                                <input type="url" id="notify-join-embed-image" class="form-input" placeholder="https://exemplo.com/imagem-grande.png">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-join-embed-footer">Footer (texto no rodapé)</label>
+                                <input type="text" id="notify-join-embed-footer" class="form-input" placeholder="Servidor: {server}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>
+                                    <button type="button" class="btn-icon" id="test-join-embed" title="Testar embed">
+                                        <i class="fas fa-vial"></i> Testar Embed
+                                    </button>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Discord Preview -->
+                        <div class="discord-message-preview" id="join-message-preview" style="display: none;">
+                            <div class="discord-message" id="join-preview-simple">
+                                <div class="discord-avatar">
+                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                                </div>
+                                <div class="discord-message-content">
+                                    <div class="discord-author">
+                                        <span class="discord-author-name">Holly</span>
+                                        <span class="discord-bot-tag">BOT</span>
+                                        <span class="discord-timestamp"></span>
                                     </div>
-                                    <div class="discord-message-content">
-                                        <div class="discord-author">
-                                            <span class="discord-author-name">Holly</span>
-                                            <span class="discord-bot-tag">BOT</span>
-                                            <span class="discord-timestamp"></span>
-                                        </div>
-                                        <div class="discord-message-text" id="join-preview-text"></div>
+                                    <div class="discord-message-text" id="join-preview-text"></div>
+                                </div>
+                            </div>
+                            <div class="discord-embed" id="join-preview-embed" style="display: none;">
+                                <div class="discord-embed-color-bar"></div>
+                                <div class="discord-embed-content">
+                                    <div class="discord-embed-header">
+                                        <div class="discord-embed-author" id="join-embed-author"></div>
+                                        <div class="discord-embed-title" id="join-embed-title"></div>
                                     </div>
+                                    <div class="discord-embed-description" id="join-embed-description"></div>
+                                    <div class="discord-embed-thumbnail" id="join-embed-thumbnail"></div>
+                                    <div class="discord-embed-image" id="join-embed-image"></div>
+                                    <div class="discord-embed-footer" id="join-embed-footer"></div>
                                 </div>
                             </div>
                         </div>
@@ -206,41 +291,126 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="notify-leave-message">
-                                Mensagem
-                                <button type="button" class="btn-icon" id="test-leave-message" title="Testar mensagem">
-                                    <i class="fas fa-vial"></i> Testar
-                                </button>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="notify-leave-use-embed">
+                                <span class="slider"></span>
+                                <span>Usar Embed (mensagem rica estilo Discord)</span>
                             </label>
-                            <textarea 
-                                id="notify-leave-message" 
-                                class="form-input" 
-                                rows="4"
-                                placeholder="{username} left the server at {time}"
-                            ></textarea>
-                            <small>
-                                <strong>Available variables (must be inside {}):</strong><br>
-                                <code>{user}</code> - User mention<br>
-                                <code>{username}</code> - Username (no mention)<br>
-                                <code>{time}</code> - Leave time (HH:MM)<br>
-                                <code>{date}</code> - Leave date (DD/MM/YYYY)<br>
-                                <code>{server}</code> - Server name<br>
-                                <code>{members}</code> - Total members count
-                            </small>
-                            <!-- Discord Preview -->
-                            <div class="discord-message-preview" id="leave-message-preview" style="display: none;">
-                                <div class="discord-message">
-                                    <div class="discord-avatar">
-                                        <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                        </div>
+                        
+                        <!-- Simple Message Mode -->
+                        <div id="notify-leave-simple" class="notification-mode">
+                            <div class="form-group">
+                                <label for="notify-leave-message">
+                                    Mensagem
+                                    <button type="button" class="btn-icon" id="test-leave-message" title="Testar mensagem">
+                                        <i class="fas fa-vial"></i> Testar
+                                    </button>
+                                </label>
+                                <textarea 
+                                    id="notify-leave-message" 
+                                    class="form-input" 
+                                    rows="4"
+                                    placeholder="{username} left the server at {time}"
+                                ></textarea>
+                                <small>
+                                    <strong>Available variables (must be inside {}):</strong><br>
+                                    <code>{user}</code> - User mention<br>
+                                    <code>{username}</code> - Username (no mention)<br>
+                                    <code>{time}</code> - Leave time (HH:MM)<br>
+                                    <code>{date}</code> - Leave date (DD/MM/YYYY)<br>
+                                    <code>{server}</code> - Server name<br>
+                                    <code>{members}</code> - Total members count<br>
+                                    <code>{channel}</code> - Channel mention (use channel ID or name)
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Embed Mode -->
+                        <div id="notify-leave-embed" class="notification-mode" style="display: none;">
+                            <div class="form-group">
+                                <label for="notify-leave-embed-title">Título do Embed</label>
+                                <input type="text" id="notify-leave-embed-title" class="form-input" placeholder="Membro saiu do servidor">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-leave-embed-description">Descrição</label>
+                                <textarea 
+                                    id="notify-leave-embed-description" 
+                                    class="form-input" 
+                                    rows="3"
+                                    placeholder="{username} saiu do servidor. Agora somos {members} membros."
+                                ></textarea>
+                                <small>Suporta as mesmas variáveis da mensagem simples</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-leave-embed-color">Cor do Embed (hex)</label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="color" id="notify-leave-embed-color-picker" value="#e74c3c" style="width: 60px; height: 40px; border: none; border-radius: 4px; cursor: pointer;">
+                                    <input type="text" id="notify-leave-embed-color" class="form-input" placeholder="#e74c3c" style="flex: 1;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notify-leave-embed-thumbnail-user">
+                                    <span class="slider"></span>
+                                    <span>Usar imagem de perfil do membro como thumbnail</span>
+                                </label>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-leave-embed-thumbnail">Thumbnail (URL da imagem)</label>
+                                <input type="url" id="notify-leave-embed-thumbnail" class="form-input" placeholder="https://exemplo.com/imagem.png">
+                                <small>Deixe vazio se estiver usando imagem de perfil do membro</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-leave-embed-image">Imagem do Embed (URL)</label>
+                                <input type="url" id="notify-leave-embed-image" class="form-input" placeholder="https://exemplo.com/imagem-grande.png">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="notify-leave-embed-footer">Footer (texto no rodapé)</label>
+                                <input type="text" id="notify-leave-embed-footer" class="form-input" placeholder="Servidor: {server}">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>
+                                    <button type="button" class="btn-icon" id="test-leave-embed" title="Testar embed">
+                                        <i class="fas fa-vial"></i> Testar Embed
+                                    </button>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Discord Preview -->
+                        <div class="discord-message-preview" id="leave-message-preview" style="display: none;">
+                            <div class="discord-message" id="leave-preview-simple">
+                                <div class="discord-avatar">
+                                    <img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="Bot">
+                                </div>
+                                <div class="discord-message-content">
+                                    <div class="discord-author">
+                                        <span class="discord-author-name">Holly</span>
+                                        <span class="discord-bot-tag">BOT</span>
+                                        <span class="discord-timestamp"></span>
                                     </div>
-                                    <div class="discord-message-content">
-                                        <div class="discord-author">
-                                            <span class="discord-author-name">Holly</span>
-                                            <span class="discord-bot-tag">BOT</span>
-                                            <span class="discord-timestamp"></span>
-                                        </div>
-                                        <div class="discord-message-text" id="leave-preview-text"></div>
+                                    <div class="discord-message-text" id="leave-preview-text"></div>
+                                </div>
+                            </div>
+                            <div class="discord-embed" id="leave-preview-embed" style="display: none;">
+                                <div class="discord-embed-color-bar"></div>
+                                <div class="discord-embed-content">
+                                    <div class="discord-embed-header">
+                                        <div class="discord-embed-author" id="leave-embed-author"></div>
+                                        <div class="discord-embed-title" id="leave-embed-title"></div>
                                     </div>
+                                    <div class="discord-embed-description" id="leave-embed-description"></div>
+                                    <div class="discord-embed-thumbnail" id="leave-embed-thumbnail"></div>
+                                    <div class="discord-embed-image" id="leave-embed-image"></div>
+                                    <div class="discord-embed-footer" id="leave-embed-footer"></div>
                                 </div>
                             </div>
                         </div>

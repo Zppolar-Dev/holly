@@ -235,8 +235,8 @@ async function getServerConfig(guildId) {
             botPresent: row.bot_present || false,
             lastSeen: row.last_seen ? row.last_seen.toISOString() : null,
             notifications: stats.notifications || {
-                memberJoin: { enabled: false, channelId: null, message: '' },
-                memberLeave: { enabled: false, channelId: null, message: '' }
+                memberJoin: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null },
+                memberLeave: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null }
             },
             modules: row.modules,
             stats: {

@@ -53,12 +53,16 @@ const defaultConfig = {
         memberJoin: {
             enabled: false,
             channelId: null,
-            message: 'Bem-vindo @nome ao servidor! Entrou em @hora'
+            message: 'Bem-vindo @nome ao servidor! Entrou em @hora',
+            useEmbed: false,
+            embed: null
         },
         memberLeave: {
             enabled: false,
             channelId: null,
-            message: '@nome saiu do servidor em @hora'
+            message: '@nome saiu do servidor em @hora',
+            useEmbed: false,
+            embed: null
         }
     },
     modules: {
