@@ -130,6 +130,42 @@ async function initializeDatabase() {
             CREATE INDEX IF NOT EXISTS idx_servers_updated_at ON servers(updated_at)
         `);
 
+        // Create server_permissions table for managing who can configure servers
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS server_permissions (
+                id SERIAL PRIMARY KEY,
+                guild_id VARCHAR(20) NOT NULL,
+                user_id VARCHAR(20) NOT NULL,
+                added_by VARCHAR(20),
+                added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(guild_id, user_id),
+                FOREIGN KEY (guild_id) REFERENCES servers(guild_id) ON DELETE CASCADE
+            )
+        `);
+
+        // Create index for faster permission queries
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_server_permissions_guild_user 
+            ON server_permissions(guild_id, user_id)
+        `);
+
+        // Create administrators table
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS administrators (
+                id SERIAL PRIMARY KEY,
+                user_id VARCHAR(20) UNIQUE NOT NULL,
+                added_by VARCHAR(20) NOT NULL,
+                role VARCHAR(20) DEFAULT 'admin',
+                added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Create index for faster admin queries
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_administrators_user_id 
+            ON administrators(user_id)
+        `);
+
         console.log('✅ Tabelas do banco de dados inicializadas');
         return true;
     } catch (error) {
@@ -406,14 +442,22 @@ async function getServerStats(guildId) {
 // Get all servers
 async function getAllServers() {
     try {
-        const result = await pool.query('SELECT guild_id FROM servers');
+        const result = await pool.query('SELECT guild_id, prefix, bot_present, last_seen, modules, stats FROM servers');
         const servers = [];
         
         for (const row of result.rows) {
             const stats = await getServerStats(row.guild_id);
             servers.push({
                 guildId: row.guild_id,
-                ...stats
+                guild_id: row.guild_id,
+                prefix: row.prefix || '!',
+                botPresent: row.bot_present || false,
+                lastSeen: row.last_seen ? row.last_seen.toISOString() : null,
+                modules: row.modules || {},
+                stats: {
+                    ...stats,
+                    uniqueUsers: stats.uniqueUsers || 0
+                }
             });
         }
         
@@ -429,6 +473,59 @@ async function closeDatabase() {
     await pool.end();
 }
 
+// Permission management functions
+async function hasPermission(guildId, userId) {
+    try {
+        const result = await pool.query(
+            'SELECT user_id FROM server_permissions WHERE guild_id = $1 AND user_id = $2',
+            [guildId, userId]
+        );
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error('Erro ao verificar permissão:', error);
+        return false;
+    }
+}
+
+async function addPermission(guildId, userId, addedBy) {
+    try {
+        await pool.query(
+            'INSERT INTO server_permissions (guild_id, user_id, added_by) VALUES ($1, $2, $3) ON CONFLICT (guild_id, user_id) DO NOTHING',
+            [guildId, userId, addedBy]
+        );
+        return true;
+    } catch (error) {
+        console.error('Erro ao adicionar permissão:', error);
+        return false;
+    }
+}
+
+async function removePermission(guildId, userId) {
+    try {
+        const result = await pool.query(
+            'DELETE FROM server_permissions WHERE guild_id = $1 AND user_id = $2',
+            [guildId, userId]
+        );
+        return result.rowCount > 0;
+    } catch (error) {
+        console.error('Erro ao remover permissão:', error);
+        return false;
+    }
+}
+
+async function getServerPermissions(guildId) {
+    try {
+        const result = await pool.query(
+            'SELECT user_id, added_by, added_at FROM server_permissions WHERE guild_id = $1 ORDER BY added_at DESC',
+            [guildId]
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('Erro ao buscar permissões:', error);
+        return [];
+    }
+}
+
 module.exports = {
     pool,
     initializeDatabase,
@@ -440,6 +537,10 @@ module.exports = {
     trackCommand,
     getServerStats,
     getAllServers,
-    closeDatabase
+    closeDatabase,
+    hasPermission,
+    addPermission,
+    removePermission,
+    getServerPermissions
 };
 

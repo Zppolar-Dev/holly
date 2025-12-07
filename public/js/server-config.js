@@ -139,12 +139,60 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (guild) {
                     UI.serverName.textContent = guild.name;
                     UI.serverId.textContent = `ID: ${guild.id}`;
+                    
+                    // Set server icon
+                    const serverIcon = document.getElementById('serverIcon');
+                    if (serverIcon && guild.icon) {
+                        serverIcon.src = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
+                    } else if (serverIcon) {
+                        serverIcon.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(guild.id) % 5}.png`;
+                    }
+                    
                     return guild;
                 }
             }
             return null;
         } catch (error) {
             console.error('Erro ao carregar informações do servidor:', error);
+            return null;
+        }
+    }
+
+    // Load user info
+    async function loadUserInfo() {
+        try {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/api/user`, {
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                
+                // Set user avatar
+                const userAvatar = document.getElementById('userAvatar');
+                if (userAvatar && user.avatar) {
+                    userAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`;
+                } else if (userAvatar) {
+                    userAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
+                }
+                
+                // Set user display name
+                const userDisplayName = document.getElementById('userDisplayName');
+                if (userDisplayName) {
+                    userDisplayName.textContent = user.username || 'Usuário';
+                }
+                
+                // Set user discriminator
+                const userDiscriminator = document.getElementById('userDiscriminator');
+                if (userDiscriminator) {
+                    userDiscriminator.textContent = user.discriminator ? `#${user.discriminator}` : '';
+                }
+                
+                return user;
+            }
+            return null;
+        } catch (error) {
+            console.error('Erro ao carregar informações do usuário:', error);
             return null;
         }
     }
@@ -440,6 +488,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         const isAuthenticated = await checkAuth();
         if (!isAuthenticated) return;
+
+        // Load user info first
+        await loadUserInfo();
 
         const [config, serverInfo] = await Promise.all([
             loadServerConfig(),

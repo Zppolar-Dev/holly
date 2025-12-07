@@ -183,6 +183,8 @@ async function getServerConfig(guildId) {
             nickname: defaultConfig.nickname,
             botPresent: defaultConfig.botPresent,
             lastSeen: defaultConfig.lastSeen,
+            permissions: [],
+            notifications: { ...defaultConfig.notifications },
             modules: { ...defaultConfig.modules },
             stats: {
                 ...defaultConfig.stats,
@@ -358,6 +360,100 @@ function getDataFilePathExport() {
     return DATA_FILE;
 }
 
+// Permission management (for JSON fallback)
+async function hasPermission(guildId, userId) {
+    if (useDatabase && db && db.hasPermission) {
+        return await db.hasPermission(guildId, userId);
+    }
+    const config = await getServerConfig(guildId);
+    return (config.permissions || []).includes(userId);
+}
+
+async function addPermission(guildId, userId, addedBy) {
+    if (useDatabase && db && db.addPermission) {
+        return await db.addPermission(guildId, userId, addedBy);
+    }
+    const config = await getServerConfig(guildId);
+    if (!config.permissions) {
+        config.permissions = [];
+    }
+    if (!config.permissions.includes(userId)) {
+        config.permissions.push(userId);
+        saveData();
+    }
+    return true;
+}
+
+async function removePermission(guildId, userId) {
+    if (useDatabase && db && db.removePermission) {
+        return await db.removePermission(guildId, userId);
+    }
+    const config = await getServerConfig(guildId);
+    if (config.permissions) {
+        config.permissions = config.permissions.filter(id => id !== userId);
+        saveData();
+    }
+    return true;
+}
+
+async function getServerPermissions(guildId) {
+    if (useDatabase && db && db.getServerPermissions) {
+        return await db.getServerPermissions(guildId);
+    }
+    const config = await getServerConfig(guildId);
+    return (config.permissions || []).map(userId => ({ user_id: userId }));
+}
+
+// Administrator management (for JSON fallback)
+async function isAdministrator(userId) {
+    if (useDatabase && db && db.isAdministrator) {
+        return await db.isAdministrator(userId);
+    }
+    // For JSON fallback, check in-memory or file
+    const adminData = loadData();
+    const admins = adminData._administrators || [];
+    return admins.includes(userId);
+}
+
+async function addAdministrator(userId, addedBy, role = 'admin') {
+    if (useDatabase && db && db.addAdministrator) {
+        return await db.addAdministrator(userId, addedBy, role);
+    }
+    // For JSON fallback
+    const adminData = loadData();
+    if (!adminData._administrators) {
+        adminData._administrators = [];
+    }
+    if (!adminData._administrators.includes(userId)) {
+        adminData._administrators.push(userId);
+        saveData();
+    }
+    return true;
+}
+
+async function removeAdministrator(userId) {
+    if (useDatabase && db && db.removeAdministrator) {
+        return await db.removeAdministrator(userId);
+    }
+    // For JSON fallback
+    const adminData = loadData();
+    if (adminData._administrators) {
+        adminData._administrators = adminData._administrators.filter(id => id !== userId);
+        saveData();
+    }
+    return true;
+}
+
+async function getAllAdministrators() {
+    if (useDatabase && db && db.getAllAdministrators) {
+        return await db.getAllAdministrators();
+    }
+    // For JSON fallback
+    const adminData = loadData();
+    const admins = adminData._administrators || [];
+    return admins.map(userId => ({ user_id: userId, role: 'admin' }));
+}
+
 module.exports = {
     getServerConfig,
     updateServerConfig,
@@ -370,6 +466,14 @@ module.exports = {
     markBotPresent,
     loadData,
     saveData,
-    getDataFilePath: getDataFilePathExport
+    getDataFilePath: getDataFilePathExport,
+    hasPermission,
+    addPermission,
+    removePermission,
+    getServerPermissions,
+    isAdministrator,
+    addAdministrator,
+    removeAdministrator,
+    getAllAdministrators
 };
 
