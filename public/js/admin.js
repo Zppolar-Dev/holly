@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     };
 
-    // Add administrator
+    // Add administrator with confirmation
     if (UI.addAdminBtn) {
         UI.addAdminBtn.addEventListener('click', async () => {
             const userId = UI.newAdminId.value.trim();
@@ -138,7 +138,27 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return;
             }
 
+            // Fetch user info from Discord
             try {
+                const userRes = await fetch(`${CONFIG.API_BASE_URL}/api/discord/user/${userId}`, {
+                    credentials: 'include'
+                });
+
+                if (!userRes.ok) {
+                    const error = await userRes.json();
+                    showNotification(error.error || 'Usuário não encontrado', 'error');
+                    return;
+                }
+
+                const user = await userRes.json();
+                
+                // Show confirmation modal
+                const confirmed = await showConfirmAddAdmin(user);
+                if (!confirmed) {
+                    return;
+                }
+
+                // Add administrator
                 const res = await fetch(`${CONFIG.API_BASE_URL}/api/admin/administrators`, {
                     method: 'POST',
                     headers: {
@@ -160,6 +180,63 @@ document.addEventListener('DOMContentLoaded', async function() {
                 console.error('Erro ao adicionar administrador:', error);
                 showNotification('Erro ao adicionar administrador', 'error');
             }
+        });
+    }
+    
+    // Show confirmation modal for adding admin
+    function showConfirmAddAdmin(user) {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'admin-confirm-modal';
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+            `;
+            
+            modal.innerHTML = `
+                <div style="background: var(--card-bg, #fff); border-radius: 12px; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <h3 style="margin-top: 0; color: var(--text-color, #333);">Confirmar Adição</h3>
+                    <div style="display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0;">
+                        <img src="${user.avatarUrl}" alt="${user.username}" style="width: 64px; height: 64px; border-radius: 50%;">
+                        <div>
+                            <div style="font-weight: 600; color: var(--text-color, #333);">${user.username}${user.discriminator ? `#${user.discriminator}` : ''}</div>
+                            <div style="font-size: 0.85rem; color: var(--text-light, #666);">ID: ${user.id}</div>
+                        </div>
+                    </div>
+                    <p style="color: var(--text-color, #333); margin: 1rem 0;">Tem certeza que deseja adicionar este usuário como administrador?</p>
+                    <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+                        <button id="confirm-yes" style="flex: 1; padding: 0.75rem; background: #2ecc71; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Sim, adicionar</button>
+                        <button id="confirm-no" style="flex: 1; padding: 0.75rem; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cancelar</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            modal.querySelector('#confirm-yes').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve(true);
+            });
+            
+            modal.querySelector('#confirm-no').addEventListener('click', () => {
+                document.body.removeChild(modal);
+                resolve(false);
+            });
+            
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    document.body.removeChild(modal);
+                    resolve(false);
+                }
+            });
         });
     }
 
@@ -277,11 +354,88 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // Load user info and setup dropdown
+    async function loadUserInfo() {
+        try {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/api/user`, {
+                credentials: 'include'
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                
+                // Set user avatar in navbar
+                const navUserAvatar = document.getElementById('nav-user-avatar');
+                const navUsername = document.getElementById('nav-username');
+                if (navUserAvatar && user.avatar) {
+                    navUserAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`;
+                } else if (navUserAvatar) {
+                    navUserAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || 0) % 5}.png`;
+                }
+                if (navUsername) {
+                    navUsername.textContent = user.username || 'Usuário';
+                }
+                
+                // Setup user dropdown
+                setupUserDropdown(user);
+                
+                return user;
+            }
+            return null;
+        } catch (error) {
+            console.error('Erro ao carregar informações do usuário:', error);
+            return null;
+        }
+    }
+    
+    // Setup user dropdown
+    function setupUserDropdown(user) {
+        const userDropdown = document.getElementById('userDropdown');
+        if (!userDropdown) return;
+        
+        const dropdownToggle = userDropdown.querySelector('.dropdown-toggle');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = userDropdown.querySelector('a[href="#"]:last-child');
+        
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+        }
+        
+        if (loginBtn) {
+            loginBtn.style.display = 'none';
+        }
+        
+        if (logoutBtn) {
+            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+            logoutBtn.onclick = (e) => {
+                e.preventDefault();
+                fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                }).then(() => {
+                    window.location.href = '/';
+                });
+            };
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (userDropdown && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
+    }
+
     // Initialize
     async function init() {
         const isAuthenticated = await checkAuth();
         if (!isAuthenticated) return;
 
+        await loadUserInfo();
+        
         await Promise.all([
             loadAdministrators(),
             loadAllServers()

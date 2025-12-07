@@ -83,6 +83,7 @@ const defaultConfig = {
 
 // In-memory store (loaded from file)
 let serverData = {};
+let globalData = { _administrators: [] }; // Global data (admins, etc.)
 
 // Load data from file
 function loadData() {
@@ -91,38 +92,54 @@ function loadData() {
             const rawData = fs.readFileSync(DATA_FILE, 'utf8');
             const parsed = JSON.parse(rawData);
             
-            // Convert Set arrays back to Sets
-            Object.keys(parsed).forEach(guildId => {
-                if (parsed[guildId].stats?.uniqueUsers) {
-                    // Handle different formats: array, object, or already Set
-                    const uniqueUsers = parsed[guildId].stats.uniqueUsers;
-                    if (Array.isArray(uniqueUsers)) {
-                        parsed[guildId].stats.uniqueUsers = new Set(uniqueUsers);
-                    } else if (typeof uniqueUsers === 'object' && uniqueUsers !== null) {
-                        // If it's an object (empty {} or with keys), convert to array first
-                        const keys = Object.keys(uniqueUsers);
-                        parsed[guildId].stats.uniqueUsers = keys.length > 0 
-                            ? new Set(keys) 
-                            : new Set();
+            // Separate server data from global data
+            const { _administrators, ...servers } = parsed;
+            
+            // Store global data
+            globalData = {
+                _administrators: _administrators || []
+            };
+            
+            // Convert Set arrays back to Sets for server data
+            Object.keys(servers).forEach(guildId => {
+                if (servers[guildId] && typeof servers[guildId] === 'object' && servers[guildId].stats) {
+                    if (servers[guildId].stats?.uniqueUsers) {
+                        // Handle different formats: array, object, or already Set
+                        const uniqueUsers = servers[guildId].stats.uniqueUsers;
+                        if (Array.isArray(uniqueUsers)) {
+                            servers[guildId].stats.uniqueUsers = new Set(uniqueUsers);
+                        } else if (typeof uniqueUsers === 'object' && uniqueUsers !== null) {
+                            // If it's an object (empty {} or with keys), convert to array first
+                            const keys = Object.keys(uniqueUsers);
+                            servers[guildId].stats.uniqueUsers = keys.length > 0 
+                                ? new Set(keys) 
+                                : new Set();
+                        } else {
+                            servers[guildId].stats.uniqueUsers = new Set();
+                        }
                     } else {
-                        parsed[guildId].stats.uniqueUsers = new Set();
-                    }
-                } else {
-                    // Initialize if missing
-                    if (!parsed[guildId].stats) {
-                        parsed[guildId].stats = { ...defaultConfig.stats, uniqueUsers: new Set() };
-                    } else {
-                        parsed[guildId].stats.uniqueUsers = new Set();
+                        // Initialize if missing
+                        if (!servers[guildId].stats) {
+                            servers[guildId].stats = { ...defaultConfig.stats, uniqueUsers: new Set() };
+                        } else {
+                            servers[guildId].stats.uniqueUsers = new Set();
+                        }
                     }
                 }
             });
             
-            serverData = parsed;
+            serverData = servers;
+        } else {
+            // Initialize empty structure
+            globalData = { _administrators: [] };
+            serverData = {};
         }
     } catch (error) {
         console.error('Erro ao carregar dados:', error);
         serverData = {};
+        globalData = { _administrators: [] };
     }
+    return { ...serverData, ...globalData }; // Return combined for compatibility
 }
 
 // Save data to file
@@ -130,9 +147,12 @@ function saveData() {
     try {
         const dataToSave = JSON.parse(JSON.stringify(serverData));
         
+        // Add global data
+        dataToSave._administrators = globalData._administrators || [];
+        
         // Convert Sets to arrays for JSON
         Object.keys(dataToSave).forEach(guildId => {
-            if (dataToSave[guildId].stats?.uniqueUsers instanceof Set) {
+            if (guildId !== '_administrators' && dataToSave[guildId] && dataToSave[guildId].stats?.uniqueUsers instanceof Set) {
                 dataToSave[guildId].stats.uniqueUsers = Array.from(dataToSave[guildId].stats.uniqueUsers);
             }
         });
@@ -411,11 +431,7 @@ async function isAdministrator(userId) {
     }
     // For JSON fallback, check in-memory or file
     try {
-        const adminData = loadData();
-        if (!adminData || typeof adminData !== 'object') {
-            return false;
-        }
-        const admins = adminData._administrators || [];
+        const admins = globalData._administrators || [];
         return admins.includes(userId);
     } catch (error) {
         console.error('Erro ao verificar administrador (JSON):', error);
@@ -429,16 +445,11 @@ async function addAdministrator(userId, addedBy, role = 'admin') {
     }
     // For JSON fallback
     try {
-        const adminData = loadData();
-        if (!adminData || typeof adminData !== 'object') {
-            console.error('Erro: adminData não é um objeto válido');
-            return false;
+        if (!globalData._administrators) {
+            globalData._administrators = [];
         }
-        if (!adminData._administrators) {
-            adminData._administrators = [];
-        }
-        if (!adminData._administrators.includes(userId)) {
-            adminData._administrators.push(userId);
+        if (!globalData._administrators.includes(userId)) {
+            globalData._administrators.push(userId);
             saveData();
         }
         return true;
@@ -454,12 +465,8 @@ async function removeAdministrator(userId) {
     }
     // For JSON fallback
     try {
-        const adminData = loadData();
-        if (!adminData || typeof adminData !== 'object') {
-            return false;
-        }
-        if (adminData._administrators) {
-            adminData._administrators = adminData._administrators.filter(id => id !== userId);
+        if (globalData._administrators) {
+            globalData._administrators = globalData._administrators.filter(id => id !== userId);
             saveData();
         }
         return true;
@@ -475,12 +482,7 @@ async function getAllAdministrators() {
     }
     // For JSON fallback
     try {
-        const adminData = loadData();
-        // Check if adminData exists and has _administrators
-        if (!adminData || typeof adminData !== 'object') {
-            return [];
-        }
-        const admins = adminData._administrators || [];
+        const admins = globalData._administrators || [];
         return admins.map(userId => ({ user_id: userId, role: 'admin' }));
     } catch (error) {
         console.error('Erro ao buscar administradores (JSON):', error);

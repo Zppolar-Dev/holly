@@ -346,6 +346,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const adminData = await adminRes.json();
                 isAdmin = adminData.isAdmin || false;
                 isOwner = adminData.isOwner || false;
+            } else {
+                // If endpoint fails, check if user is owner by ID
+                if (userData && userData.id === '909204567042981978') {
+                    isOwner = true;
+                    isAdmin = true;
+                }
             }
 
             STATE.user = userData;
@@ -353,6 +359,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             STATE.stats = statsData;
             STATE.isAdmin = isAdmin;
             STATE.isOwner = isOwner;
+            
+            // Debug log
+            if (isOwner || isAdmin) {
+                console.log('✅ Usuário é admin/owner:', { isAdmin, isOwner, userId: userData?.id });
+            }
 
             updateUserUI();
             await updateServersUI();

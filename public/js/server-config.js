@@ -168,12 +168,24 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (res.ok) {
                 const user = await res.json();
                 
-                // Set user avatar
+                // Set user avatar in navbar
+                const navUserAvatar = document.getElementById('nav-user-avatar');
+                const navUsername = document.getElementById('nav-username');
+                if (navUserAvatar && user.avatar) {
+                    navUserAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`;
+                } else if (navUserAvatar) {
+                    navUserAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || 0) % 5}.png`;
+                }
+                if (navUsername) {
+                    navUsername.textContent = user.username || 'Usuário';
+                }
+                
+                // Set user avatar in config page
                 const userAvatar = document.getElementById('userAvatar');
                 if (userAvatar && user.avatar) {
                     userAvatar.src = `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`;
                 } else if (userAvatar) {
-                    userAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator) % 5}.png`;
+                    userAvatar.src = `https://cdn.discordapp.com/embed/avatars/${parseInt(user.discriminator || 0) % 5}.png`;
                 }
                 
                 // Set user display name
@@ -188,6 +200,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                     userDiscriminator.textContent = user.discriminator ? `#${user.discriminator}` : '';
                 }
                 
+                // Setup user dropdown
+                setupUserDropdown(user);
+                
                 return user;
             }
             return null;
@@ -195,6 +210,47 @@ document.addEventListener('DOMContentLoaded', async function() {
             console.error('Erro ao carregar informações do usuário:', error);
             return null;
         }
+    }
+    
+    // Setup user dropdown
+    function setupUserDropdown(user) {
+        const userDropdown = document.getElementById('userDropdown');
+        if (!userDropdown) return;
+        
+        const dropdownToggle = userDropdown.querySelector('.dropdown-toggle');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = userDropdown.querySelector('a[href="#"]:last-child');
+        
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                userDropdown.classList.toggle('active');
+            });
+        }
+        
+        if (loginBtn) {
+            loginBtn.style.display = 'none';
+        }
+        
+        if (logoutBtn) {
+            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+            logoutBtn.onclick = (e) => {
+                e.preventDefault();
+                fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
+                    method: 'POST',
+                    credentials: 'include'
+                }).then(() => {
+                    window.location.href = '/';
+                });
+            };
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (userDropdown && !userDropdown.contains(e.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
     }
 
     // Populate form with config

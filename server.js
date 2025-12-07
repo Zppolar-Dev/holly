@@ -582,6 +582,43 @@ app.get('/api/admin/administrators', discordAuth.authenticateToken, checkAdminis
     }
 });
 
+// Get Discord user info by ID (for admin confirmation)
+app.get('/api/discord/user/:userId', discordAuth.authenticateToken, async (req, res) => {
+    const { userId } = req.params;
+    
+    if (!userId) {
+        return res.status(400).json({ error: 'ID do usuário é obrigatório' });
+    }
+    
+    try {
+        // Use bot token to fetch user info
+        const botToken = process.env.DISCORD_BOT_TOKEN;
+        if (!botToken) {
+            return res.status(500).json({ error: 'Bot token não configurado' });
+        }
+        
+        const userRes = await axios.get(`https://discord.com/api/users/${userId}`, {
+            headers: { Authorization: `Bot ${botToken}` }
+        });
+        
+        res.json({
+            id: userRes.data.id,
+            username: userRes.data.username,
+            discriminator: userRes.data.discriminator,
+            avatar: userRes.data.avatar,
+            avatarUrl: userRes.data.avatar 
+                ? `https://cdn.discordapp.com/avatars/${userRes.data.id}/${userRes.data.avatar}.png?size=256`
+                : `https://cdn.discordapp.com/embed/avatars/${parseInt(userRes.data.discriminator || 0) % 5}.png`
+        });
+    } catch (error) {
+        if (error.response && error.response.status === 404) {
+            return res.status(404).json({ error: 'Usuário não encontrado' });
+        }
+        console.error('Erro ao buscar usuário do Discord:', error);
+        res.status(500).json({ error: 'Erro ao buscar usuário do Discord' });
+    }
+});
+
 // Add administrator (only owner can add)
 app.post('/api/admin/administrators', discordAuth.authenticateToken, checkAdministrator, async (req, res) => {
     if (!req.isOwner) {
