@@ -200,14 +200,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                     userDiscriminator.textContent = user.discriminator ? `#${user.discriminator}` : '';
                 }
                 
-                // Setup user dropdown
+                // Setup user dropdown with user data
                 setupUserDropdown(user);
                 
                 return user;
+            } else if (res.status === 401) {
+                // Token expired - redirect to login
+                console.warn('Token expirado, redirecionando para login...');
+                window.location.href = '/dashboard?error=session_expired';
+                return null;
+            } else {
+                console.error('Erro ao carregar informações do usuário:', res.status, res.statusText);
+                // Setup dropdown anyway but show login option
+                setupUserDropdown(null);
+                return null;
             }
-            return null;
         } catch (error) {
             console.error('Erro ao carregar informações do usuário:', error);
+            // Setup dropdown anyway but show login option
+            setupUserDropdown(null);
             return null;
         }
     }
@@ -221,36 +232,62 @@ document.addEventListener('DOMContentLoaded', async function() {
         const loginBtn = document.getElementById('login-btn');
         const logoutBtn = userDropdown.querySelector('a[href="#"]:last-child');
         
-        if (dropdownToggle) {
-            dropdownToggle.addEventListener('click', (e) => {
+        // Remove existing event listeners by cloning
+        const newToggle = dropdownToggle.cloneNode(true);
+        dropdownToggle.parentNode.replaceChild(newToggle, dropdownToggle);
+        
+        if (newToggle) {
+            newToggle.addEventListener('click', (e) => {
                 e.stopPropagation();
                 userDropdown.classList.toggle('active');
             });
         }
         
-        if (loginBtn) {
-            loginBtn.style.display = 'none';
+        if (user) {
+            // User is logged in
+            if (loginBtn) {
+                loginBtn.style.display = 'none';
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+                logoutBtn.onclick = (e) => {
+                    e.preventDefault();
+                    fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
+                        method: 'POST',
+                        credentials: 'include'
+                    }).then(() => {
+                        window.location.href = '/';
+                    }).catch(() => {
+                        window.location.href = '/';
+                    });
+                };
+            }
+        } else {
+            // User is not logged in
+            if (loginBtn) {
+                loginBtn.style.display = 'block';
+                loginBtn.onclick = (e) => {
+                    e.preventDefault();
+                    window.location.href = `${CONFIG.API_BASE_URL}/auth/discord`;
+                };
+            }
+            
+            if (logoutBtn) {
+                logoutBtn.style.display = 'none';
+            }
         }
         
-        if (logoutBtn) {
-            logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-            logoutBtn.onclick = (e) => {
-                e.preventDefault();
-                fetch(`${CONFIG.API_BASE_URL}/auth/logout`, {
-                    method: 'POST',
-                    credentials: 'include'
-                }).then(() => {
-                    window.location.href = '/';
-                });
-            };
-        }
-        
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
+        // Close dropdown when clicking outside (only add once)
+        const clickHandler = (e) => {
             if (userDropdown && !userDropdown.contains(e.target)) {
                 userDropdown.classList.remove('active');
             }
-        });
+        };
+        
+        // Remove old listener if exists
+        document.removeEventListener('click', clickHandler);
+        document.addEventListener('click', clickHandler);
     }
 
     // Populate form with config
@@ -542,12 +579,21 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function init() {
         showLoading(true);
 
-        const isAuthenticated = await checkAuth();
-        if (!isAuthenticated) return;
+        // Load user info first (this handles auth check and redirects if needed)
+        const user = await loadUserInfo();
+        
+        // If user is null, it means token expired and we should have redirected
+        // But just in case, check again
+        if (!user) {
+            showLoading(false);
+            // loadUserInfo should have already redirected, but if not, redirect now
+            setTimeout(() => {
+                window.location.href = '/dashboard?error=session_expired';
+            }, 1000);
+            return;
+        }
 
-        // Load user info first
-        await loadUserInfo();
-
+        // User is authenticated, continue loading
         const [config, serverInfo] = await Promise.all([
             loadServerConfig(),
             loadServerInfo()

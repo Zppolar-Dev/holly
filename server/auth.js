@@ -180,11 +180,14 @@ async function getUserData(req, res) {
     try {
         const token = await getValidAccessToken(req.user.user_id);
         if (!token) {
-            return res.status(401).json({ error: 'Sessão expirada' });
+            // Token expired or session lost (server restart)
+            console.warn(`⚠️ Sessão não encontrada para usuário ${req.user.user_id} - servidor pode ter reiniciado`);
+            return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
         }
 
         const userRes = await axios.get('https://discord.com/api/users/@me', {
-            headers: { Authorization: `Bearer ${token}` }
+            headers: { Authorization: `Bearer ${token}` },
+            timeout: 10000
         });
 
         const userId = userRes.data.id;
@@ -196,6 +199,15 @@ async function getUserData(req, res) {
             badges: badges
         });
     } catch (err) {
+        // If it's a 401 from Discord, the token is invalid
+        if (err.response && err.response.status === 401) {
+            console.warn(`⚠️ Token do Discord inválido para usuário ${req.user.user_id}`);
+            // Clear the session
+            if (req.user?.user_id) {
+                sessionStore.delete(req.user.user_id);
+            }
+            return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
+        }
         console.error('Erro ao buscar usuário:', err.message);
         return res.status(500).json({ error: 'Erro ao buscar usuário' });
     }
