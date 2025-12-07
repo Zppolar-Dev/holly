@@ -354,17 +354,17 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
     const { guildId } = req.params;
     try {
         // Try to get channels via bot client first (most reliable)
-        if (botClient && botClient.guilds) {
+        if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
-            if (guild) {
-                const channels = guild.channels.cache
-                    .filter(ch => ch.isTextBased())
+            if (guild && guild.channels && guild.channels.cache) {
+                const channels = Array.from(guild.channels.cache.values())
+                    .filter(ch => ch && ch.isTextBased && ch.isTextBased())
                     .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
                 return res.json(channels);
             }
         }
 
-        // Fallback: try with user token
+        // Fallback: try with user token (only if bot is not available)
         try {
             const token = await discordAuth.getValidAccessToken(req.user.user_id);
             if (token) {
@@ -651,7 +651,7 @@ app.delete('/api/admin/administrators/:userId', discordAuth.authenticateToken, c
     }
 });
 
-// Get all servers where bot is present
+// Get all servers where bot is present (only bot's servers, not owner's)
 app.get('/api/admin/servers', discordAuth.authenticateToken, checkAdministrator, async (req, res) => {
     try {
         // Get all servers where bot is currently present
@@ -690,40 +690,20 @@ app.get('/api/admin/servers', discordAuth.authenticateToken, checkAdministrator,
                     // Still add server with minimal info
                     servers.push({
                         guildId: guildId,
-                        guildName: 'Error loading',
+                        guildName: guild.name || 'Error loading',
+                        guildIcon: null,
+                        memberCount: 0,
                         botPresent: true,
                         prefix: '!',
+                        lastSeen: new Date().toISOString(),
                         stats: { commandsExecuted: 0, uniqueUsers: 0 },
                         modules: {}
                     });
                 }
             }
         } else {
-            // Bot not connected, return empty array or servers from database
-            const allServers = [];
-            if (useDatabase && db && db.getAllServers) {
-                const dbServers = await db.getAllServers();
-                allServers.push(...dbServers);
-            } else if (dataStore.getAllServers) {
-                const dbServers = await dataStore.getAllServers();
-                allServers.push(...dbServers);
-            }
-            
-            // Format response
-            for (const server of allServers) {
-                servers.push({
-                    guildId: server.guildId || server.guild_id,
-                    guildName: 'Unknown',
-                    prefix: server.prefix || '!',
-                    botPresent: server.botPresent || false,
-                    lastSeen: server.lastSeen || null,
-                    stats: {
-                        commandsExecuted: server.stats?.commandsExecuted || 0,
-                        uniqueUsers: server.stats?.uniqueUsers || 0
-                    },
-                    modules: server.modules || {}
-                });
-            }
+            // Bot not connected, return empty array
+            console.warn('⚠️ Bot não está conectado, retornando lista vazia');
         }
         
         res.json(servers);

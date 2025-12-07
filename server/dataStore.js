@@ -410,9 +410,17 @@ async function isAdministrator(userId) {
         return await db.isAdministrator(userId);
     }
     // For JSON fallback, check in-memory or file
-    const adminData = loadData();
-    const admins = adminData._administrators || [];
-    return admins.includes(userId);
+    try {
+        const adminData = loadData();
+        if (!adminData || typeof adminData !== 'object') {
+            return false;
+        }
+        const admins = adminData._administrators || [];
+        return admins.includes(userId);
+    } catch (error) {
+        console.error('Erro ao verificar administrador (JSON):', error);
+        return false;
+    }
 }
 
 async function addAdministrator(userId, addedBy, role = 'admin') {
@@ -420,15 +428,24 @@ async function addAdministrator(userId, addedBy, role = 'admin') {
         return await db.addAdministrator(userId, addedBy, role);
     }
     // For JSON fallback
-    const adminData = loadData();
-    if (!adminData._administrators) {
-        adminData._administrators = [];
+    try {
+        const adminData = loadData();
+        if (!adminData || typeof adminData !== 'object') {
+            console.error('Erro: adminData não é um objeto válido');
+            return false;
+        }
+        if (!adminData._administrators) {
+            adminData._administrators = [];
+        }
+        if (!adminData._administrators.includes(userId)) {
+            adminData._administrators.push(userId);
+            saveData();
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro ao adicionar administrador (JSON):', error);
+        return false;
     }
-    if (!adminData._administrators.includes(userId)) {
-        adminData._administrators.push(userId);
-        saveData();
-    }
-    return true;
 }
 
 async function removeAdministrator(userId) {
@@ -436,12 +453,20 @@ async function removeAdministrator(userId) {
         return await db.removeAdministrator(userId);
     }
     // For JSON fallback
-    const adminData = loadData();
-    if (adminData._administrators) {
-        adminData._administrators = adminData._administrators.filter(id => id !== userId);
-        saveData();
+    try {
+        const adminData = loadData();
+        if (!adminData || typeof adminData !== 'object') {
+            return false;
+        }
+        if (adminData._administrators) {
+            adminData._administrators = adminData._administrators.filter(id => id !== userId);
+            saveData();
+        }
+        return true;
+    } catch (error) {
+        console.error('Erro ao remover administrador (JSON):', error);
+        return false;
     }
-    return true;
 }
 
 async function getAllAdministrators() {
@@ -449,9 +474,18 @@ async function getAllAdministrators() {
         return await db.getAllAdministrators();
     }
     // For JSON fallback
-    const adminData = loadData();
-    const admins = adminData._administrators || [];
-    return admins.map(userId => ({ user_id: userId, role: 'admin' }));
+    try {
+        const adminData = loadData();
+        // Check if adminData exists and has _administrators
+        if (!adminData || typeof adminData !== 'object') {
+            return [];
+        }
+        const admins = adminData._administrators || [];
+        return admins.map(userId => ({ user_id: userId, role: 'admin' }));
+    } catch (error) {
+        console.error('Erro ao buscar administradores (JSON):', error);
+        return [];
+    }
 }
 
 module.exports = {

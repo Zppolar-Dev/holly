@@ -372,17 +372,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Update admin UI (show/hide admin button)
+    // Update admin UI (show/hide admin button in sidebar only)
     function updateAdminUI() {
-        const adminNavItem = document.getElementById('admin-nav-item');
         const adminSidebarItem = document.getElementById('admin-sidebar-item');
         
         if (STATE.isAdmin || STATE.isOwner) {
-            if (adminNavItem) adminNavItem.style.display = 'block';
-            if (adminSidebarItem) adminSidebarItem.style.display = 'block';
+            if (adminSidebarItem) {
+                adminSidebarItem.style.display = 'block';
+            }
         } else {
-            if (adminNavItem) adminNavItem.style.display = 'none';
-            if (adminSidebarItem) adminSidebarItem.style.display = 'none';
+            if (adminSidebarItem) {
+                adminSidebarItem.style.display = 'none';
+            }
         }
     }
 
