@@ -9,7 +9,19 @@ const REDIRECT_URI = `${BASE_URL}/auth/discord/callback`;
 const FRONTEND_URL = process.env.FRONTEND_URL || BASE_URL;
 const JWT_SECRET = process.env.JWT_SECRET || 'uma_chave_bem_segura';
 
-// TODO: trocar por Redis/DB quando disponível
+// Try to use database for sessions, fallback to Map
+let db = null;
+let useDatabase = false;
+try {
+    if (process.env.DATABASE_URL || process.env.DB_HOST) {
+        db = require('./database');
+        useDatabase = true;
+    }
+} catch (error) {
+    console.warn('⚠️  Banco de dados não disponível para sessões, usando Map em memória');
+}
+
+// Fallback to Map if database not available
 const sessionStore = new Map();
 
 function authenticateToken(req, res, next) {
@@ -68,11 +80,18 @@ async function callback(req, res) {
         });
 
         const userId = userRes.data.id;
-        sessionStore.set(userId, {
-            access_token,
-            refresh_token,
-            expires_at: Date.now() + expires_in * 1000
-        });
+        const expiresAt = Date.now() + expires_in * 1000;
+        
+        // Save session to database if available, otherwise use Map
+        if (useDatabase && db && db.setSession) {
+            await db.setSession(userId, access_token, refresh_token, expiresAt);
+        } else {
+            sessionStore.set(userId, {
+                access_token,
+                refresh_token,
+                expires_at: expiresAt
+            });
+        }
 
         const jwtToken = jwt.sign({ user_id: userId, username: userRes.data.username }, JWT_SECRET, { expiresIn: '30d' });
 
@@ -104,24 +123,45 @@ async function refreshAccessToken(userId, session) {
         );
 
         const { access_token, refresh_token, expires_in } = tokenResponse.data;
+        const expiresAt = Date.now() + expires_in * 1000;
 
-        sessionStore.set(userId, {
-            access_token,
-            refresh_token,
-            expires_at: Date.now() + expires_in * 1000
-        });
+        // Save updated session to database if available
+        if (useDatabase && db && db.setSession) {
+            await db.setSession(userId, access_token, refresh_token, expiresAt);
+        } else {
+            sessionStore.set(userId, {
+                access_token,
+                refresh_token,
+                expires_at: expiresAt
+            });
+        }
 
         console.log(`🔄 Token do Discord renovado para usuário ${userId}`);
         return access_token;
     } catch (err) {
         console.error('Erro ao renovar token do Discord:', err.response?.data || err.message);
-        sessionStore.delete(userId);
+        
+        // Delete session from database or Map
+        if (useDatabase && db && db.deleteSession) {
+            await db.deleteSession(userId);
+        } else {
+            sessionStore.delete(userId);
+        }
+        
         return null;
     }
 }
 
 async function getValidAccessToken(userId) {
-    const session = sessionStore.get(userId);
+    let session = null;
+    
+    // Try to get session from database first, then fallback to Map
+    if (useDatabase && db && db.getSession) {
+        session = await db.getSession(userId);
+    } else {
+        session = sessionStore.get(userId);
+    }
+    
     if (!session) return null;
 
     if (Date.now() >= session.expires_at) {
@@ -131,9 +171,14 @@ async function getValidAccessToken(userId) {
     return session.access_token;
 }
 
-function logout(req, res) {
+async function logout(req, res) {
     if (req.user?.user_id) {
-        sessionStore.delete(req.user.user_id);
+        // Delete session from database or Map
+        if (useDatabase && db && db.deleteSession) {
+            await db.deleteSession(req.user.user_id);
+        } else {
+            sessionStore.delete(req.user.user_id);
+        }
     }
 
     res.clearCookie('holly_token', {
@@ -204,7 +249,11 @@ async function getUserData(req, res) {
             console.warn(`⚠️ Token do Discord inválido para usuário ${req.user.user_id}`);
             // Clear the session
             if (req.user?.user_id) {
-                sessionStore.delete(req.user.user_id);
+                if (useDatabase && db && db.deleteSession) {
+                    await db.deleteSession(req.user.user_id);
+                } else {
+                    sessionStore.delete(req.user.user_id);
+                }
             }
             return res.status(401).json({ error: 'Sessão expirada. Faça login novamente.' });
         }

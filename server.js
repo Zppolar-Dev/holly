@@ -990,46 +990,5 @@ app.get('/server/:guildId', discordAuth.authenticateToken, async (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`🌐 Servidor web rodando na porta ${PORT}`);
-    
-    // Try to start bot if token is available
-    if (process.env.DISCORD_BOT_TOKEN) {
-        try {
-            // Try different paths for bot
-            let bot = null;
-            const botPaths = [
-                './bot/index',
-                path.join(__dirname, 'bot', 'index'),
-                '../bot/index',
-                path.join(__dirname, '..', 'bot', 'index')
-            ];
-            
-            for (const botPath of botPaths) {
-                try {
-                    bot = require(botPath);
-                    if (bot) {
-                        console.log(`✅ Bot carregado de: ${botPath}`);
-                        break;
-                    }
-                } catch (err) {
-                    // Try next path
-                    continue;
-                }
-            }
-            
-            if (bot) {
-                app.setBotClient(bot);
-            } else {
-                console.warn('⚠️  Bot não pôde ser encontrado em nenhum dos caminhos testados');
-                console.log('💡 Para iniciar o bot separadamente, execute: cd bot && npm start');
-            }
-        } catch (error) {
-            console.warn('⚠️  Bot não pôde ser iniciado:', error.message);
-            if (error.stack) {
-                console.warn('   Stack:', error.stack.split('\n').slice(0, 3).join('\n'));
-            }
-            console.log('💡 Para iniciar o bot separadamente, execute: cd bot && npm start');
-        }
-    } else {
-        console.log('💡 Para iniciar o bot, configure DISCORD_BOT_TOKEN no .env');
-    }
+    console.log('💡 Bot roda separadamente - não tentando carregar bot no servidor web');
 });

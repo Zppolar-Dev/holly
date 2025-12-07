@@ -166,6 +166,24 @@ async function initializeDatabase() {
             ON administrators(user_id)
         `);
 
+        // Create user_sessions table for persisting Discord OAuth sessions
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS user_sessions (
+                user_id VARCHAR(20) PRIMARY KEY,
+                access_token TEXT NOT NULL,
+                refresh_token TEXT NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        `);
+
+        // Create index for faster session queries
+        await pool.query(`
+            CREATE INDEX IF NOT EXISTS idx_user_sessions_expires_at 
+            ON user_sessions(expires_at)
+        `);
+
         console.log('✅ Tabelas do banco de dados inicializadas');
         return true;
     } catch (error) {
@@ -526,14 +544,124 @@ async function getServerPermissions(guildId) {
     }
 }
 
+// Administrator management functions
+async function isAdministrator(userId) {
+    try {
+        const result = await pool.query(
+            'SELECT user_id FROM administrators WHERE user_id = $1',
+            [userId]
+        );
+        return result.rows.length > 0;
+    } catch (error) {
+        console.error('Erro ao verificar administrador:', error);
+        return false;
+    }
+}
+
+async function addAdministrator(userId, addedBy, role = 'admin') {
+    try {
+        await pool.query(
+            'INSERT INTO administrators (user_id, added_by, role) VALUES ($1, $2, $3) ON CONFLICT (user_id) DO UPDATE SET role = EXCLUDED.role',
+            [userId, addedBy, role]
+        );
+        return true;
+    } catch (error) {
+        console.error('Erro ao adicionar administrador:', error);
+        return false;
+    }
+}
+
+async function removeAdministrator(userId) {
+    try {
+        const result = await pool.query(
+            'DELETE FROM administrators WHERE user_id = $1',
+            [userId]
+        );
+        return result.rowCount > 0;
+    } catch (error) {
+        console.error('Erro ao remover administrador:', error);
+        return false;
+    }
+}
+
+async function getAllAdministrators() {
+    try {
+        const result = await pool.query(
+            'SELECT user_id, added_by, role, added_at FROM administrators ORDER BY added_at DESC'
+        );
+        return result.rows;
+    } catch (error) {
+        console.error('Erro ao buscar administradores:', error);
+        return [];
+    }
+}
+
+// Session management functions
+async function getSession(userId) {
+    try {
+        const result = await pool.query(
+            'SELECT access_token, refresh_token, expires_at FROM user_sessions WHERE user_id = $1',
+            [userId]
+        );
+        
+        if (result.rows.length === 0) {
+            return null;
+        }
+        
+        const row = result.rows[0];
+        return {
+            access_token: row.access_token,
+            refresh_token: row.refresh_token,
+            expires_at: row.expires_at.getTime() // Convert to timestamp
+        };
+    } catch (error) {
+        console.error('Erro ao buscar sessão:', error);
+        return null;
+    }
+}
+
+async function setSession(userId, accessToken, refreshToken, expiresAt) {
+    try {
+        await pool.query(
+            `INSERT INTO user_sessions (user_id, access_token, refresh_token, expires_at, updated_at)
+             VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+             ON CONFLICT (user_id) 
+             DO UPDATE SET 
+                 access_token = EXCLUDED.access_token,
+                 refresh_token = EXCLUDED.refresh_token,
+                 expires_at = EXCLUDED.expires_at,
+                 updated_at = CURRENT_TIMESTAMP`,
+            [userId, accessToken, refreshToken, new Date(expiresAt)]
+        );
+        return true;
+    } catch (error) {
+        console.error('Erro ao salvar sessão:', error);
+        return false;
+    }
+}
+
+async function deleteSession(userId) {
+    try {
+        await pool.query(
+            'DELETE FROM user_sessions WHERE user_id = $1',
+            [userId]
+        );
+        return true;
+    } catch (error) {
+        console.error('Erro ao deletar sessão:', error);
+        return false;
+    }
+}
+
 module.exports = {
     pool,
     initializeDatabase,
+    testConnection,
     getServerConfig,
+    createDefaultConfig,
     setServerPrefix,
     setServerNickname,
     updateServerConfig,
-    setModuleStatus,
     trackCommand,
     getServerStats,
     getAllServers,
@@ -541,6 +669,13 @@ module.exports = {
     hasPermission,
     addPermission,
     removePermission,
-    getServerPermissions
+    getServerPermissions,
+    isAdministrator,
+    addAdministrator,
+    removeAdministrator,
+    getAllAdministrators,
+    getSession,
+    setSession,
+    deleteSession
 };
 

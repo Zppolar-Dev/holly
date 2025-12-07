@@ -205,9 +205,10 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 return user;
             } else if (res.status === 401) {
-                // Token expired - redirect to login
-                console.warn('Token expirado, redirecionando para login...');
-                window.location.href = '/dashboard?error=session_expired';
+                // Token expired or session lost - don't redirect, just show login option
+                console.warn('⚠️ Token expirado ou sessão perdida - mostrando opção de login');
+                // Setup dropdown to show login option
+                setupUserDropdown(null);
                 return null;
             } else {
                 console.error('Erro ao carregar informações do usuário:', res.status, res.statusText);
@@ -579,17 +580,22 @@ document.addEventListener('DOMContentLoaded', async function() {
     async function init() {
         showLoading(true);
 
-        // Load user info first (this handles auth check and redirects if needed)
+        // Always setup user dropdown first (even if not authenticated)
+        // This ensures the dropdown is configured regardless of auth state
+        setupUserDropdown(null);
+
+        // Load user info (this handles auth check)
         const user = await loadUserInfo();
         
-        // If user is null, it means token expired and we should have redirected
-        // But just in case, check again
+        // If user is null, it means token expired or session lost
+        // But don't redirect immediately - let user see the page and try to login
         if (!user) {
+            console.warn('⚠️ Usuário não autenticado - mostrando opção de login');
+            // Setup dropdown to show login option (already done above, but ensure it's set)
+            setupUserDropdown(null);
             showLoading(false);
-            // loadUserInfo should have already redirected, but if not, redirect now
-            setTimeout(() => {
-                window.location.href = '/dashboard?error=session_expired';
-            }, 1000);
+            // Don't redirect - let user see the page and login if needed
+            // The page will show login option in dropdown
             return;
         }
 
