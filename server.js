@@ -368,11 +368,25 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
                 }
             }
         } else {
-            // Bot client not available (bot running separately) - log for debugging
-            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário.`);
+            // Bot client not available (bot running separately) - check cache first
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Verificando cache...`);
+            
+            // Check cache for channels from bot
+            const cached = channelsCache.get(guildId);
+            if (cached && (Date.now() - cached.timestamp) < CHANNELS_CACHE_TTL) {
+                // Filter only text channels from cached data
+                const textChannels = cached.channels
+                    .filter(ch => ch.isText || ch.type === 0 || ch.type === 5)
+                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                console.log(`✅ Canais carregados do cache (enviados pelo bot): ${textChannels.length} canais`);
+                return res.json(textChannels);
+            }
+            
+            console.log(`⚠️ Canais não encontrados no cache. Usando token do usuário como fallback...`);
+            // Note: Bot should send channels periodically, but if not in cache, we'll try user token as fallback
         }
 
-        // Fallback: try with user token (required when bot runs separately)
+        // Fallback: try with user token (required when bot runs separately and cache is empty)
         try {
             let token = await discordAuth.getValidAccessToken(req.user.user_id);
             if (!token) {
@@ -576,6 +590,40 @@ app.setBotClient = (client) => {
         }, 60000); // Sync every minute
     }
 };
+
+// In-memory cache for channels (guildId -> { channels, timestamp })
+const channelsCache = new Map();
+const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Endpoint for bot to send channels (protected with secret token)
+app.post('/api/bot/channels', express.json(), async (req, res) => {
+    const { secret, guildId, channels } = req.body;
+    
+    // Verify secret token
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de enviar canais com secret inválido');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (!guildId || !channels) {
+        return res.status(400).json({ error: 'guildId e channels são obrigatórios' });
+    }
+    
+    try {
+        // Cache channels
+        channelsCache.set(guildId, {
+            channels: channels,
+            timestamp: Date.now()
+        });
+        
+        console.log(`✅ Canais recebidos do bot para servidor ${guildId}: ${channels.length} canais`);
+        res.json({ success: true, message: 'Canais recebidos com sucesso' });
+    } catch (error) {
+        console.error('Erro ao processar canais do bot:', error);
+        res.status(500).json({ error: 'Erro ao processar canais' });
+    }
+});
 
 // Endpoint for bot to sync data (protected with secret token)
 app.post('/api/bot/sync', express.json(), async (req, res) => {
