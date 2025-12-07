@@ -12,6 +12,18 @@ const dataStore = require('./server/dataStore');
 // Owner ID (same as in auth.js)
 const OWNER_ID = '909204567042981978';
 
+// Check if using database
+let useDatabase = false;
+let db = null;
+try {
+    if (process.env.DATABASE_URL || process.env.DB_HOST) {
+        db = require('./server/database');
+        useDatabase = true;
+    }
+} catch (error) {
+    console.warn('⚠️  Banco de dados não disponível, usando JSON');
+}
+
 // Check if user is administrator (owner or added admin)
 async function checkAdministrator(req, res, next) {
     const userId = req.user?.user_id;
@@ -819,7 +831,7 @@ app.get('/server/:guildId', discordAuth.authenticateToken, async (req, res) => {
         if (useDatabase && db && db.hasPermission) {
             hasPerm = await db.hasPermission(guildId, userId);
         } else if (dataStore.hasPermission) {
-            hasPerm = dataStore.hasPermission(guildId, userId);
+            hasPerm = await dataStore.hasPermission(guildId, userId);
         }
         
         if (!isOwner && !hasPerm) {
