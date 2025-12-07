@@ -349,7 +349,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         // Update preview automatically
-        updateMainPreview('join');
+        setTimeout(() => {
+            updateMainPreview('join');
+        }, 100);
 
         // Leave notifications
         if (UI.notifyLeaveEnabled) {
@@ -367,7 +369,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         // Update preview automatically
-        updateMainPreview('leave');
+        setTimeout(() => {
+            updateMainPreview('leave');
+        }, 100);
 
         // Modules
         const modules = config.modules || {};
@@ -800,7 +804,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             showLoading(false);
             // Don't redirect - let user see the page and login if needed
             // The page will show login option in dropdown
-            return;
+            return Promise.resolve();
         }
 
         // User is authenticated, continue loading
@@ -820,6 +824,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         initTheme();
 
         showLoading(false);
+        return Promise.resolve();
     }
 
     // ========== MODAL DE EDIÇÃO DE MENSAGEM ==========
@@ -1367,9 +1372,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (previewSection) {
             if (hasText || hasEmbed) {
                 previewSection.style.display = 'block';
+                previewSection.style.visibility = 'visible';
             } else {
                 previewSection.style.display = 'none';
             }
+        } else {
+            console.warn(`⚠️ Preview section não encontrada para type: ${type}`);
         }
     }
     
@@ -1574,21 +1582,65 @@ document.addEventListener('DOMContentLoaded', async function() {
         setupModalListeners();
     };
 
-    // Use event delegation for edit buttons (works even if buttons are added later)
+    // Setup edit buttons directly - multiple approaches to ensure it works
+    function setupEditButtons() {
+        console.log('🔧 Configurando botões de edição...');
+        
+        const editJoinBtn = document.getElementById('edit-join-message');
+        const editLeaveBtn = document.getElementById('edit-leave-message');
+        
+        console.log('📌 Botão join:', editJoinBtn ? 'ENCONTRADO' : 'NÃO ENCONTRADO');
+        console.log('📌 Botão leave:', editLeaveBtn ? 'ENCONTRADO' : 'NÃO ENCONTRADO');
+        
+        if (editJoinBtn) {
+            // Remove old listeners
+            const newBtn = editJoinBtn.cloneNode(true);
+            editJoinBtn.parentNode.replaceChild(newBtn, editJoinBtn);
+            
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('✅ Clique no botão edit-join-message');
+                openMessageEditModal('join');
+            });
+        }
+        
+        if (editLeaveBtn) {
+            // Remove old listeners
+            const newBtn = editLeaveBtn.cloneNode(true);
+            editLeaveBtn.parentNode.replaceChild(newBtn, editLeaveBtn);
+            
+            newBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('✅ Clique no botão edit-leave-message');
+                openMessageEditModal('leave');
+            });
+        }
+    }
+    
+    // Use event delegation as backup
     document.addEventListener('click', (e) => {
-        if (e.target.closest('#edit-join-message')) {
+        const target = e.target.closest('#edit-join-message, #edit-leave-message');
+        if (target) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('🖱️ Clique detectado no botão edit-join-message (delegation)');
-            openMessageEditModal('join');
-        } else if (e.target.closest('#edit-leave-message')) {
-            e.preventDefault();
-            e.stopPropagation();
-            console.log('🖱️ Clique detectado no botão edit-leave-message (delegation)');
-            openMessageEditModal('leave');
+            const type = target.id === 'edit-join-message' ? 'join' : 'leave';
+            console.log(`🖱️ Clique via delegation: ${type}`);
+            openMessageEditModal(type);
         }
     });
 
-    init();
+    // Setup buttons after init
+    init().then(() => {
+        setTimeout(() => {
+            setupEditButtons();
+        }, 500);
+    }).catch(() => {
+        // If init doesn't return a promise, setup buttons anyway
+        setTimeout(() => {
+            setupEditButtons();
+        }, 1000);
+    });
 });
 

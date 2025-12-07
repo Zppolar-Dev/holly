@@ -2822,12 +2822,13 @@ html, body {
 .message-preview-section {
     width: 100%;
     margin-top: 1rem;
-    background: #36393f;
+    background: #36393f !important;
     border-radius: 8px;
     padding: 1rem;
     border: 1px solid rgba(0, 0, 0, 0.2);
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     min-height: 80px;
+    display: block !important;
 }
 
 /* Discord window background */
@@ -2865,6 +2866,19 @@ html, body {
     word-wrap: break-word;
     background: transparent;
     color: #dcddde;
+}
+
+/* Force colors in preview section */
+.message-preview-section .discord-message {
+    color: #dcddde !important;
+}
+
+.message-preview-section .discord-message-content {
+    color: #dcddde !important;
+}
+
+.message-preview-section .discord-message-content > div {
+    color: #dcddde !important;
 }
 
 .discord-message-sidebar {
