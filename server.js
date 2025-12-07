@@ -353,38 +353,70 @@ app.post('/api/server/:guildId/nickname', discordAuth.authenticateToken, checkSe
 app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
     try {
-        // Try to get channels via bot client first (most reliable)
+        // Try to get channels via bot client first (most reliable and doesn't need user token)
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild && guild.channels && guild.channels.cache) {
                 const channels = Array.from(guild.channels.cache.values())
                     .filter(ch => ch && ch.isTextBased && ch.isTextBased())
                     .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
-                return res.json(channels);
+                
+                if (channels.length > 0) {
+                    console.log(`✅ Canais carregados via bot client: ${channels.length} canais`);
+                    return res.json(channels);
+                }
             }
         }
 
-        // Fallback: try with user token (only if bot is not available)
+        // Fallback: try with user token (only if bot is not available or bot doesn't have access)
         try {
             const token = await discordAuth.getValidAccessToken(req.user.user_id);
             if (token) {
                 const channelsRes = await axios.get(`https://discord.com/api/guilds/${guildId}/channels`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 10000
                 });
-                const textChannels = channelsRes.data.filter(ch => ch.type === 0);
+                const textChannels = channelsRes.data
+                    .filter(ch => ch.type === 0 || ch.type === 5) // TEXT_CHANNEL or NEWS_CHANNEL
+                    .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                
+                console.log(`✅ Canais carregados via token do usuário: ${textChannels.length} canais`);
                 return res.json(textChannels);
+            } else {
+                console.warn('⚠️ Token do usuário não disponível para buscar canais');
             }
-        } catch (tokenError) {
-            console.error('Erro ao buscar canais com token do usuário:', tokenError.message);
-            // Continue to return empty array
+        } catch (err) {
+            // If it's a 401, the token might be expired
+            if (err.response && err.response.status === 401) {
+                console.warn('⚠️ Token do usuário expirado ou inválido (401)');
+                console.warn('   Tentando usar bot client...');
+                
+                // Try bot client one more time if available
+                if (botClient && botClient.guilds && botClient.guilds.cache) {
+                    const guild = botClient.guilds.cache.get(guildId);
+                    if (guild && guild.channels && guild.channels.cache) {
+                        const channels = Array.from(guild.channels.cache.values())
+                            .filter(ch => ch && ch.isTextBased && ch.isTextBased())
+                            .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                        return res.json(channels);
+                    }
+                }
+                
+                // Return empty array - user can refresh the page to get new token
+                console.warn('   Retornando lista vazia. O usuário pode atualizar a página para obter novo token.');
+            } else if (err.code === 'ECONNABORTED') {
+                console.warn('⚠️ Timeout ao buscar canais com token do usuário');
+            } else {
+                console.error('Erro ao buscar canais com token do usuário:', err.message || err);
+            }
         }
 
-        // If bot is not in server or token failed, return empty array
+        // If both methods fail, return empty array (user can refresh)
+        console.warn('⚠️ Não foi possível carregar canais. Retornando lista vazia.');
         res.json([]);
     } catch (error) {
-        console.error('Erro ao buscar canais:', error.message);
-        // Return empty array instead of error to allow page to load
-        res.json([]);
+        console.error('Erro ao buscar canais:', error);
+        res.status(500).json({ error: 'Erro ao buscar canais' });
     }
 });
 
