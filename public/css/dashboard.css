@@ -1015,8 +1015,9 @@ textarea:focus-visible {
 
 .servers-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     gap: 1.5rem;
+    width: 100%;
 }
 
 .server-card {
@@ -1031,8 +1032,20 @@ textarea:focus-visible {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: flex-start;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    min-height: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.server-card .btn {
+    margin-top: auto;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .server-card:hover {
@@ -1051,10 +1064,17 @@ textarea:focus-visible {
     background: linear-gradient(135deg, rgba(138, 79, 255, 0.1), transparent);
     opacity: 0;
     transition: all var(--transition-speed) ease;
+    pointer-events: none;
+    z-index: 0;
 }
 
 .server-card:hover::after {
     opacity: 1;
+}
+
+.server-card > * {
+    position: relative;
+    z-index: 1;
 }
 
 .server-card.placeholder {
@@ -1089,6 +1109,9 @@ textarea:focus-visible {
     color: var(--primary-color);
     font-weight: 600;
     transition: all var(--transition-speed) ease;
+    width: 100%;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 .server-card:hover h3 {
@@ -1110,6 +1133,8 @@ textarea:focus-visible {
     background-color: rgba(138, 79, 255, 0.05);
     border-radius: var(--border-radius-sm);
     font-size: 0.85rem;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .server-stats p {
