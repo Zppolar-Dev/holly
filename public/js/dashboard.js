@@ -281,6 +281,39 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Scroll
         window.addEventListener('scroll', handleScroll);
+
+        // Botões de adicionar servidor
+        const addServerBtns = document.querySelectorAll('#add-server-btn, #header-add-server-btn');
+        addServerBtns.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    window.open(`https://discord.com/oauth2/authorize?client_id=${CONFIG.CLIENT_ID}&scope=bot&permissions=8`, '_blank');
+                });
+            }
+        });
+
+        // Botão de atualizar lista de servidores
+        const refreshServersBtn = document.getElementById('refresh-servers-btn');
+        if (refreshServersBtn) {
+            refreshServersBtn.addEventListener('click', async () => {
+                refreshServersBtn.disabled = true;
+                refreshServersBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando...';
+                
+                try {
+                    await checkAuth();
+                    if (STATE.user) {
+                        await updateServersUI();
+                        showNotification('Lista de servidores atualizada!', 'success');
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar servidores:', error);
+                    showNotification('Erro ao atualizar lista de servidores', 'error');
+                } finally {
+                    refreshServersBtn.disabled = false;
+                    refreshServersBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Atualizar';
+                }
+            });
+        }
     }
 
     // Mostrar/Ocultar loading (melhorado)
@@ -434,11 +467,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Atualizar status
         updateUserStatus('online');
 
-        // Atualizar botão de login
-        if (UI.loginBtn) {
-            UI.loginBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
-            UI.loginBtn.onclick = logout;
-            UI.loginBtn.setAttribute('aria-label', 'Sair da conta');
+        // Configurar dropdown de logout (remover duplicado)
+        if (UI.userDropdown) {
+            const dropdownMenu = UI.userDropdown.querySelector('.dropdown-menu');
+            if (dropdownMenu) {
+                // Remover botão de logout existente se houver
+                const existingLogout = dropdownMenu.querySelector('a:last-child');
+                if (existingLogout && existingLogout.querySelector('.fa-sign-out-alt')) {
+                    existingLogout.remove();
+                }
+                
+                // Adicionar botão de logout funcional
+                const logoutBtn = document.createElement('a');
+                logoutBtn.href = '#';
+                logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
+                logoutBtn.onclick = (e) => {
+                    e.preventDefault();
+                    logout();
+                };
+                dropdownMenu.appendChild(logoutBtn);
+            }
         }
     }
 
@@ -576,7 +624,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             let iconHTML = '';
             if (guild.icon) {
                 const iconUrl = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
-                iconHTML = `<img src="${iconUrl}" alt="${guild.name}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" onerror="this.onerror=null; this.style.display='none'; const parent = this.parentElement; parent.innerHTML='${guild.name.charAt(0).replace(/'/g, "\\'")}'; parent.style.backgroundColor='var(--primary-dark)'; parent.style.color='white'; parent.style.fontSize='1.5rem'; parent.style.display='flex'; parent.style.alignItems='center'; parent.style.justifyContent='center'; parent.style.width='80px'; parent.style.height='80px'; parent.style.borderRadius='50%';" />`;
+                iconHTML = `<img src="${iconUrl}" alt="${guild.name}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; const parent = this.parentElement; parent.innerHTML='${guild.name.charAt(0).replace(/'/g, "\\'")}'; parent.style.backgroundColor='var(--primary-dark)'; parent.style.color='white'; parent.style.fontSize='1.5rem'; parent.style.display='flex'; parent.style.alignItems='center'; parent.style.justifyContent='center'; parent.style.width='80px'; parent.style.height='80px'; parent.style.borderRadius='50%';" />`;
             } else {
                 iconHTML = guild.name.charAt(0);
             }

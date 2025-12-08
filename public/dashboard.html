@@ -44,7 +44,6 @@
                         <div class="dropdown-menu">
                             <a href="#" id="login-btn"><i class="fab fa-discord"></i> Login com Discord</a>
                             <a href="#"><i class="fas fa-cog"></i> Configurações</a>
-                            <a href="#"><i class="fas fa-sign-out-alt"></i> Sair</a>
                         </div>
                     </div>
                 </div>
@@ -134,7 +133,7 @@
                         <span class="notification-badge">3</span>
                     </div>
                     <div class="quick-actions">
-                        <button class="btn primary-btn">
+                        <button class="btn primary-btn" id="header-add-server-btn">
                             <i class="fas fa-plus"></i> Adicionar Servidor
                         </button>
                     </div>
@@ -189,7 +188,7 @@
                 </div>
             </div>
             
-            <div class="dashboard-section">
+            <div>
                 <div class="section-header">
                     <h2>Meus Servidores</h2>
                     <div class="section-actions">
@@ -197,10 +196,10 @@
                             <input type="text" placeholder="Pesquisar servidores...">
                             <i class="fas fa-search"></i>
                         </div>
-                        <button class="btn secondary-btn">
+                        <button class="btn secondary-btn" id="refresh-servers-btn">
                             <i class="fas fa-sync-alt"></i> Atualizar
                         </button>
-                        <button class="btn primary-btn">
+                        <button class="btn primary-btn" id="add-server-btn">
                             <i class="fas fa-plus"></i> Adicionar
                         </button>
                     </div>
@@ -220,37 +219,7 @@
                 </div>
             </div>
             
-            <div class="dashboard-row">
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2>Atividade Recente</h2>
-                        <div class="time-filter">
-                            <button class="active">24h</button>
-                            <button>7d</button>
-                            <button>30d</button>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <canvas id="activityChart"></canvas>
-                    </div>
-                </div>
-                
-                <div class="dashboard-section">
-                    <div class="section-header">
-                        <h2>Comandos Populares</h2>
-                        <div class="view-all">
-                            <a href="#">Ver todos <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-                    
-                    <div class="chart-container">
-                        <canvas id="commandsChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="dashboard-section">
+            <div>
                 <div class="section-header">
                     <h2>Notificações Recentes</h2>
                     <div class="section-actions">
