@@ -1124,6 +1124,40 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
             });
             
+            // Parse Discord markdown formatting (order matters!)
+            // 1. Code blocks first (```language\ncode\n```) - must be before inline code
+            processedText = processedText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>');
+                return `<div class="discord-code-block"><span class="discord-code-block-lang">${lang || ''}</span><code>${escapedCode}</code></div>`;
+            });
+            
+            // 2. Inline code (`code`) - must be before bold/italic
+            processedText = processedText.replace(/`([^`\n]+)`/g, (match, code) => {
+                const escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                return `<code class="discord-inline-code">${escapedCode}</code>`;
+            });
+            
+            // 3. Strikethrough (~~text~~) - before bold/italic
+            processedText = processedText.replace(/~~([^~]+)~~/g, '<span class="discord-strikethrough">$1</span>');
+            
+            // 4. Bold (**text** or __text__) - before italic to avoid conflicts
+            processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong class="discord-bold">$1</strong>');
+            processedText = processedText.replace(/__(?![_*])([^_]+)__/g, '<strong class="discord-bold">$1</strong>');
+            
+            // 5. Italic (*text* or _text_) - after bold
+            processedText = processedText.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="discord-italic">$1</em>');
+            processedText = processedText.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em class="discord-italic">$1</em>');
+            
+            // 6. Replace newlines with <br> (last, after all other processing)
+            processedText = processedText.replace(/\n/g, '<br>');
+            
             return processedText
                 .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
                 .replace(/\{username\}/g, userName)
@@ -1453,6 +1487,40 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
             });
             
+            // Parse Discord markdown formatting (order matters!)
+            // 1. Code blocks first (```language\ncode\n```) - must be before inline code
+            processedText = processedText.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
+                const escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/\n/g, '<br>');
+                return `<div class="discord-code-block"><span class="discord-code-block-lang">${lang || ''}</span><code>${escapedCode}</code></div>`;
+            });
+            
+            // 2. Inline code (`code`) - must be before bold/italic
+            processedText = processedText.replace(/`([^`\n]+)`/g, (match, code) => {
+                const escapedCode = code
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
+                return `<code class="discord-inline-code">${escapedCode}</code>`;
+            });
+            
+            // 3. Strikethrough (~~text~~) - before bold/italic
+            processedText = processedText.replace(/~~([^~]+)~~/g, '<span class="discord-strikethrough">$1</span>');
+            
+            // 4. Bold (**text** or __text__) - before italic to avoid conflicts
+            processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong class="discord-bold">$1</strong>');
+            processedText = processedText.replace(/__(?![_*])([^_]+)__/g, '<strong class="discord-bold">$1</strong>');
+            
+            // 5. Italic (*text* or _text_) - after bold
+            processedText = processedText.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em class="discord-italic">$1</em>');
+            processedText = processedText.replace(/(?<!_)_([^_]+)_(?!_)/g, '<em class="discord-italic">$1</em>');
+            
+            // 6. Replace newlines with <br> (last, after all other processing)
+            processedText = processedText.replace(/\n/g, '<br>');
+            
             return processedText
                 .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
                 .replace(/\{username\}/g, userName)
@@ -1768,8 +1836,8 @@ document.addEventListener('DOMContentLoaded', async function() {
     let guildEmojis = [];
     let emojiPickerTarget = null;
     
-    async function loadGuildEmojis() {
-        if (guildEmojis.length > 0) return guildEmojis;
+    async function loadGuildEmojis(forceRefresh = false) {
+        if (guildEmojis.length > 0 && !forceRefresh) return guildEmojis;
         
         try {
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/emojis`, {
@@ -1817,8 +1885,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
         
-        // Load emojis
-        const emojis = await loadGuildEmojis();
+        // Load emojis (force refresh to get latest)
+        const emojis = await loadGuildEmojis(true);
         
         if (emojis.length === 0) {
             container.innerHTML = `

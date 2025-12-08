@@ -1546,6 +1546,62 @@ textarea:focus-visible {
     object-fit: contain;
 }
 
+/* Discord markdown formatting */
+.discord-bold {
+    font-weight: 700;
+}
+
+.discord-italic {
+    font-style: italic;
+}
+
+.discord-strikethrough {
+    text-decoration: line-through;
+}
+
+.discord-inline-code {
+    background: rgba(0, 0, 0, 0.3);
+    color: #e3e3e3;
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9em;
+}
+
+.discord-code-block {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    font-family: 'Consolas', 'Courier New', monospace;
+    font-size: 0.9em;
+    line-height: 1.4;
+    overflow-x: auto;
+}
+
+.discord-code-block-lang {
+    display: block;
+    color: #72767d;
+    font-size: 0.8em;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+}
+
+.discord-code-block code {
+    color: #e3e3e3;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+[data-theme="light"] .discord-inline-code,
+[data-theme="light"] .discord-code-block {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .discord-code-block code {
+    color: #2c2f33;
+}
+
 /* Emoji picker button */
 .emoji-picker-btn {
     position: absolute;
