@@ -168,6 +168,17 @@ async function initializeDatabase() {
 
         // Create user_sessions table for persisting Discord OAuth sessions
         await pool.query(`
+            CREATE TABLE IF NOT EXISTS guild_cache (
+                guild_id VARCHAR(255) PRIMARY KEY,
+                channels JSONB DEFAULT '[]'::jsonb,
+                roles JSONB DEFAULT '[]'::jsonb,
+                emojis JSONB DEFAULT '[]'::jsonb,
+                channels_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                roles_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                emojis_updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+            
             CREATE TABLE IF NOT EXISTS user_sessions (
                 user_id VARCHAR(20) PRIMARY KEY,
                 access_token TEXT NOT NULL,
@@ -653,6 +664,70 @@ async function deleteSession(userId) {
     }
 }
 
+// Guild cache functions
+async function updateGuildCache(guildId, type, data) {
+    try {
+        const column = type === 'channels' ? 'channels' : type === 'roles' ? 'roles' : 'emojis';
+        const timestampColumn = `${column}_updated_at`;
+        
+        // Get current cache
+        const current = await pool.query(
+            'SELECT * FROM guild_cache WHERE guild_id = $1',
+            [guildId]
+        );
+        
+        if (current.rows.length === 0) {
+            // Create new cache entry
+            await pool.query(
+                `INSERT INTO guild_cache (guild_id, ${column}, ${timestampColumn})
+                 VALUES ($1, $2, CURRENT_TIMESTAMP)`,
+                [guildId, JSON.stringify(data)]
+            );
+        } else {
+            // Compare and update only if changed
+            const currentData = current.rows[0][column] || [];
+            const currentDataStr = JSON.stringify(currentData.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
+            const newDataStr = JSON.stringify(data.sort((a, b) => (a.id || '').localeCompare(b.id || '')));
+            
+            if (currentDataStr !== newDataStr) {
+                await pool.query(
+                    `UPDATE guild_cache 
+                     SET ${column} = $1, ${timestampColumn} = CURRENT_TIMESTAMP
+                     WHERE guild_id = $2`,
+                    [JSON.stringify(data), guildId]
+                );
+                console.log(`✅ Cache ${type} atualizado para servidor ${guildId}: ${data.length} itens`);
+                return true; // Changed
+            }
+            return false; // No changes
+        }
+        return true;
+    } catch (error) {
+        console.error(`Erro ao atualizar cache ${type}:`, error);
+        return false;
+    }
+}
+
+async function getGuildCache(guildId, type) {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM guild_cache WHERE guild_id = $1',
+            [guildId]
+        );
+        
+        if (result.rows.length === 0) {
+            return [];
+        }
+        
+        const column = type === 'channels' ? 'channels' : type === 'roles' ? 'roles' : 'emojis';
+        const data = result.rows[0][column];
+        return Array.isArray(data) ? data : [];
+    } catch (error) {
+        console.error(`Erro ao buscar cache ${type}:`, error);
+        return [];
+    }
+}
+
 module.exports = {
     pool,
     initializeDatabase,
@@ -677,6 +752,8 @@ module.exports = {
     getAllAdministrators,
     getSession,
     setSession,
-    deleteSession
+    deleteSession,
+    updateGuildCache,
+    getGuildCache
 };
 

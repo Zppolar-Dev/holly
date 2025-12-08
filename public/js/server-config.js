@@ -1111,7 +1111,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Replace role mentions (<@&roleId>) with role names
             processedText = processedText.replace(/<@&(\d+)>/g, (match, roleId) => {
-                const role = guildRoles.find(r => r.id === roleId);
+                const role = (typeof guildRoles !== 'undefined' && guildRoles && guildRoles.length > 0) 
+                    ? guildRoles.find(r => r.id === roleId) 
+                    : null;
                 const roleName = role ? role.name : 'cargo-desconhecido';
                 return `<span class="discord-mention">@${roleName}</span>`;
             });
@@ -1432,7 +1434,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Replace role mentions (<@&roleId>) with role names
             processedText = processedText.replace(/<@&(\d+)>/g, (match, roleId) => {
-                const role = guildRoles.find(r => r.id === roleId);
+                const role = (typeof guildRoles !== 'undefined' && guildRoles && guildRoles.length > 0) 
+                    ? guildRoles.find(r => r.id === roleId) 
+                    : null;
                 const roleName = role ? role.name : 'cargo-desconhecido';
                 return `<span class="discord-mention">@${roleName}</span>`;
             });

@@ -372,14 +372,32 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
             console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Verificando cache...`);
             
             // Check cache for channels from bot
+            // Check memory cache first
             const cached = channelsCache.get(guildId);
             if (cached && (Date.now() - cached.timestamp) < CHANNELS_CACHE_TTL) {
                 // Filter only text channels from cached data
                 const textChannels = cached.channels
                     .filter(ch => ch.isText || ch.type === 0 || ch.type === 5)
                     .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
-                console.log(`✅ Canais carregados do cache (enviados pelo bot): ${textChannels.length} canais`);
+                console.log(`✅ Canais carregados do cache em memória: ${textChannels.length} canais`);
                 return res.json(textChannels);
+            }
+            
+            // Check database cache
+            if (useDatabase && db && db.getGuildCache) {
+                const dbChannels = await db.getGuildCache(guildId, 'channels');
+                if (dbChannels && dbChannels.length > 0) {
+                    const textChannels = dbChannels
+                        .filter(ch => ch.isText || ch.type === 0 || ch.type === 5)
+                        .map(ch => ({ id: ch.id, name: ch.name, type: ch.type }));
+                    console.log(`✅ Canais carregados do cache do banco de dados: ${textChannels.length} canais`);
+                    // Also update memory cache
+                    channelsCache.set(guildId, {
+                        channels: dbChannels,
+                        timestamp: Date.now()
+                    });
+                    return res.json(textChannels);
+                }
             }
             
             console.log(`⚠️ Canais não encontrados no cache. Usando token do usuário como fallback...`);
@@ -484,11 +502,16 @@ app.post('/api/bot/roles', express.json(), async (req, res) => {
     }
     
     try {
-        // Cache roles
+        // Cache roles in memory
         rolesCache.set(guildId, {
             roles: roles,
             timestamp: Date.now()
         });
+        
+        // Save to database cache
+        if (useDatabase && db && db.updateGuildCache) {
+            await db.updateGuildCache(guildId, 'roles', roles);
+        }
         
         console.log(`✅ Cargos recebidos do bot para servidor ${guildId}: ${roles.length} cargos`);
         res.json({ success: true, message: 'Cargos recebidos com sucesso' });
@@ -514,11 +537,16 @@ app.post('/api/bot/emojis', express.json(), async (req, res) => {
     }
     
     try {
-        // Cache emojis
+        // Cache emojis in memory
         emojisCache.set(guildId, {
             emojis: emojis,
             timestamp: Date.now()
         });
+        
+        // Save to database cache
+        if (useDatabase && db && db.updateGuildCache) {
+            await db.updateGuildCache(guildId, 'emojis', emojis);
+        }
         
         console.log(`✅ Emojis recebidos do bot para servidor ${guildId}: ${emojis.length} emojis`);
         res.json({ success: true, message: 'Emojis recebidos com sucesso' });
@@ -768,11 +796,16 @@ app.post('/api/bot/channels', express.json(), async (req, res) => {
     }
     
     try {
-        // Cache channels
+        // Cache channels in memory
         channelsCache.set(guildId, {
             channels: channels,
             timestamp: Date.now()
         });
+        
+        // Save to database cache
+        if (useDatabase && db && db.updateGuildCache) {
+            await db.updateGuildCache(guildId, 'channels', channels);
+        }
         
         console.log(`✅ Canais recebidos do bot para servidor ${guildId}: ${channels.length} canais`);
         res.json({ success: true, message: 'Canais recebidos com sucesso' });
