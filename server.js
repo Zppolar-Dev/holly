@@ -468,6 +468,66 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
     }
 });
 
+// Endpoint for bot to send roles (protected with secret token)
+app.post('/api/bot/roles', express.json(), async (req, res) => {
+    const { secret, guildId, roles } = req.body;
+    
+    // Verify secret token
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de enviar cargos com secret inválido');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (!guildId || !roles) {
+        return res.status(400).json({ error: 'guildId e roles são obrigatórios' });
+    }
+    
+    try {
+        // Cache roles
+        rolesCache.set(guildId, {
+            roles: roles,
+            timestamp: Date.now()
+        });
+        
+        console.log(`✅ Cargos recebidos do bot para servidor ${guildId}: ${roles.length} cargos`);
+        res.json({ success: true, message: 'Cargos recebidos com sucesso' });
+    } catch (error) {
+        console.error('Erro ao processar cargos do bot:', error);
+        res.status(500).json({ error: 'Erro ao processar cargos' });
+    }
+});
+
+// Endpoint for bot to send emojis (protected with secret token)
+app.post('/api/bot/emojis', express.json(), async (req, res) => {
+    const { secret, guildId, emojis } = req.body;
+    
+    // Verify secret token
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de enviar emojis com secret inválido');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    if (!guildId || !emojis) {
+        return res.status(400).json({ error: 'guildId e emojis são obrigatórios' });
+    }
+    
+    try {
+        // Cache emojis
+        emojisCache.set(guildId, {
+            emojis: emojis,
+            timestamp: Date.now()
+        });
+        
+        console.log(`✅ Emojis recebidos do bot para servidor ${guildId}: ${emojis.length} emojis`);
+        res.json({ success: true, message: 'Emojis recebidos com sucesso' });
+    } catch (error) {
+        console.error('Erro ao processar emojis do bot:', error);
+        res.status(500).json({ error: 'Erro ao processar emojis' });
+    }
+});
+
 // Get server roles
 app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
