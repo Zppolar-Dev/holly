@@ -468,6 +468,71 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
     }
 });
 
+// Get server roles
+app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
+    const { guildId } = req.params;
+    try {
+        // Try to get roles via bot client first
+        if (botClient && botClient.guilds && botClient.guilds.cache) {
+            const guild = botClient.guilds.cache.get(guildId);
+            if (guild && guild.roles && guild.roles.cache) {
+                const roles = Array.from(guild.roles.cache.values())
+                    .filter(role => role.id !== guildId) // Exclude @everyone
+                    .map(role => ({ id: role.id, name: role.name }));
+                
+                if (roles.length > 0) {
+                    return res.json(roles);
+                }
+            }
+        }
+        
+        // Fallback: try with user token
+        try {
+            let token = await discordAuth.getValidAccessToken(req.user.user_id);
+            if (!token) {
+                return res.status(401).json({ error: 'Token não disponível' });
+            }
+            
+            const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 10000
+            });
+            
+            const roles = rolesRes.data
+                .filter(role => role.id !== guildId) // Exclude @everyone
+                .map(role => ({ id: role.id, name: role.name }));
+            
+            return res.json(roles);
+        } catch (apiErr) {
+            if (apiErr.response?.status === 401) {
+                // Try to refresh token
+                try {
+                    const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
+                    if (newToken) {
+                        const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
+                            headers: { Authorization: `Bearer ${newToken}` },
+                            timeout: 10000
+                        });
+                        
+                        const roles = rolesRes.data
+                            .filter(role => role.id !== guildId)
+                            .map(role => ({ id: role.id, name: role.name }));
+                        
+                        return res.json(roles);
+                    }
+                } catch (refreshErr) {
+                    console.error('Erro ao renovar token para buscar cargos:', refreshErr.message);
+                }
+            }
+            console.error('Erro ao buscar cargos:', apiErr.message);
+            return res.status(500).json({ error: 'Erro ao buscar cargos' });
+        }
+    } catch (error) {
+        console.error('Erro ao buscar cargos:', error);
+        res.status(500).json({ error: 'Erro ao buscar cargos' });
+    }
+});
+
 // Update notification settings
 app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;

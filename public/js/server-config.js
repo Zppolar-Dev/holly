@@ -1160,14 +1160,28 @@ document.addEventListener('DOMContentLoaded', async function() {
         let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${color};"></div>`;
         embedHTML += '<div class="discord-embed-content">';
         
+        // Helper to replace placeholders in URLs
+        const replaceVarsInUrl = (url) => {
+            if (!url) return '';
+            const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            const userId = '1069819161057968218';
+            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
+            
+            return url
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon);
+        };
+        
         // Author
         if (authorName) {
             embedHTML += '<div class="discord-embed-author">';
             if (authorIcon) {
-                embedHTML += `<img src="${authorIcon}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
+                const iconUrl = replaceVarsInUrl(authorIcon);
+                embedHTML += `<img src="${iconUrl}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
             }
             if (authorUrl) {
-                embedHTML += `<a href="${authorUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(authorName)}</a>`;
+                embedHTML += `<a href="${replaceVarsInUrl(authorUrl)}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(authorName)}</a>`;
             } else {
                 embedHTML += replaceVars(authorName);
             }
@@ -1177,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Title
         if (title) {
             if (titleUrl) {
-                embedHTML += `<div class="discord-embed-title"><a href="${titleUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(title)}</a></div>`;
+                embedHTML += `<div class="discord-embed-title"><a href="${replaceVarsInUrl(titleUrl)}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(title)}</a></div>`;
             } else {
                 embedHTML += `<div class="discord-embed-title">${replaceVars(title)}</div>`;
             }
@@ -1211,19 +1225,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Thumbnail
         if (thumbnail) {
-            embedHTML += `<div class="discord-embed-thumbnail"><img src="${thumbnail}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
+            const thumbnailUrl = replaceVarsInUrl(thumbnail);
+            embedHTML += `<div class="discord-embed-thumbnail"><img src="${thumbnailUrl}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
         }
         
         // Image
         if (image) {
-            embedHTML += `<div class="discord-embed-image"><img src="${image}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
+            const imageUrl = replaceVarsInUrl(image);
+            embedHTML += `<div class="discord-embed-image"><img src="${imageUrl}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
         }
         
         // Footer
         if (footerText) {
             embedHTML += '<div class="discord-embed-footer">';
             if (footerIcon) {
-                embedHTML += `<img src="${footerIcon}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
+                const footerIconUrl = replaceVarsInUrl(footerIcon);
+                embedHTML += `<img src="${footerIconUrl}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
             }
             embedHTML += `<span>${replaceVars(footerText)}</span>`;
             embedHTML += '</div>';
@@ -1727,7 +1744,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (lastTrigger !== -1) {
                 const textAfterTrigger = textBeforeCursor.substring(lastTrigger + 1);
                 // Only show autocomplete if there's no space after trigger
-                if (!textAfterTrigger.includes(' ') && !textAfterTrigger.includes('\n')) {
+                if (!textAfterTrigger.includes(' ') && !textAfterTrigger.includes('\n') && !textAfterTrigger.includes('>')) {
                     currentQuery = textAfterTrigger.toLowerCase();
                     const type = lastHash > lastAt ? 'channel' : 'role';
                     showAutocomplete(input, type, currentQuery, lastTrigger);
@@ -1771,7 +1788,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        function showAutocomplete(input, type, query, triggerPos) {
+        async function showAutocomplete(input, type, query, triggerPos) {
             if (!autocompleteDiv) {
                 autocompleteDiv = document.createElement('div');
                 autocompleteDiv.className = 'autocomplete-dropdown';
@@ -1779,7 +1796,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 document.body.appendChild(autocompleteDiv);
             }
             
-            const items = type === 'channel' ? getChannels(query) : getRoles(query);
+            const items = type === 'channel' ? getChannels(query) : await getRoles(query);
             
             if (items.length === 0) {
                 hideAutocomplete();
@@ -1794,13 +1811,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Position autocomplete
             const rect = input.getBoundingClientRect();
-            autocompleteDiv.style.top = `${rect.bottom + window.scrollY}px`;
+            autocompleteDiv.style.top = `${rect.bottom + window.scrollY + 5}px`;
             autocompleteDiv.style.left = `${rect.left + window.scrollX}px`;
             autocompleteDiv.style.width = `${Math.max(rect.width, 200)}px`;
             autocompleteDiv.style.display = 'block';
             
             // Add click handlers
-            autocompleteDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+            autocompleteDiv.querySelectorAll('.autocomplete-item').forEach((item, index) => {
+                if (index === 0) item.classList.add('selected');
                 item.addEventListener('click', () => selectAutocompleteItem(input, item));
             });
         }
@@ -1808,7 +1826,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         function getChannels(query) {
             if (!guildChannels || guildChannels.length === 0) return [];
             return guildChannels
-                .filter(ch => ch.isText && ch.name.toLowerCase().includes(query))
+                .filter(ch => (ch.isText || ch.type === 0 || ch.type === 5) && ch.name && ch.name.toLowerCase().includes(query))
                 .slice(0, 10)
                 .map(ch => ({
                     value: `<#${ch.id}>`,
@@ -1817,10 +1835,32 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }));
         }
         
-        function getRoles(query) {
-            // TODO: Fetch roles from API
-            // For now, return empty array
-            return [];
+        let guildRoles = [];
+        
+        async function getRoles(query) {
+            if (guildRoles.length === 0) {
+                // Fetch roles from API
+                try {
+                    const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/roles`, {
+                        credentials: 'include'
+                    });
+                    if (res.ok) {
+                        guildRoles = await res.json();
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar cargos:', error);
+                }
+            }
+            
+            if (!guildRoles || guildRoles.length === 0) return [];
+            return guildRoles
+                .filter(role => role.name && role.name.toLowerCase().includes(query) && role.id !== guildId) // Exclude @everyone
+                .slice(0, 10)
+                .map(role => ({
+                    value: `<@&${role.id}>`,
+                    display: `@ ${role.name}`,
+                    icon: '<span style="color: #80848e;">@</span>'
+                }));
         }
         
         function selectAutocompleteItem(input, item) {
