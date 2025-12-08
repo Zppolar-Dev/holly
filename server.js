@@ -472,7 +472,7 @@ app.get('/api/server/:guildId/channels', discordAuth.authenticateToken, checkSer
 app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
     try {
-        // Try to get roles via bot client first
+        // Try to get roles via bot client first (most reliable and doesn't need user token)
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild && guild.roles && guild.roles.cache) {
@@ -481,55 +481,71 @@ app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServer
                     .map(role => ({ id: role.id, name: role.name }));
                 
                 if (roles.length > 0) {
+                    console.log(`✅ Cargos carregados via bot client: ${roles.length} cargos`);
                     return res.json(roles);
                 }
             }
+        } else {
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário...`);
         }
         
-        // Fallback: try with user token
+        // Fallback: try with user token (required when bot runs separately)
         try {
             let token = await discordAuth.getValidAccessToken(req.user.user_id);
             if (!token) {
+                console.warn('⚠️ Token do usuário não disponível para buscar cargos');
                 return res.status(401).json({ error: 'Token não disponível' });
             }
             
-            const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
-                headers: { Authorization: `Bearer ${token}` },
-                timeout: 10000
-            });
-            
-            const roles = rolesRes.data
-                .filter(role => role.id !== guildId) // Exclude @everyone
-                .map(role => ({ id: role.id, name: role.name }));
-            
-            return res.json(roles);
-        } catch (apiErr) {
-            if (apiErr.response?.status === 401) {
-                // Try to refresh token
-                try {
-                    const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
-                    if (newToken) {
-                        const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
-                            headers: { Authorization: `Bearer ${newToken}` },
-                            timeout: 10000
-                        });
-                        
-                        const roles = rolesRes.data
-                            .filter(role => role.id !== guildId)
-                            .map(role => ({ id: role.id, name: role.name }));
-                        
-                        return res.json(roles);
+            // Try to fetch roles
+            try {
+                const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    timeout: 10000
+                });
+                
+                const roles = rolesRes.data
+                    .filter(role => role.id !== guildId) // Exclude @everyone
+                    .map(role => ({ id: role.id, name: role.name }));
+                
+                console.log(`✅ Cargos carregados via token do usuário: ${roles.length} cargos`);
+                return res.json(roles);
+            } catch (apiErr) {
+                // If it's a 401, try to refresh token and retry
+                if (apiErr.response?.status === 401) {
+                    console.log('⚠️ Token do usuário expirado ou inválido (401) - tentando renovar...');
+                    try {
+                        const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
+                        if (newToken && newToken !== token) {
+                            const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
+                                headers: { Authorization: `Bearer ${newToken}` },
+                                timeout: 10000
+                            });
+                            
+                            const roles = rolesRes.data
+                                .filter(role => role.id !== guildId)
+                                .map(role => ({ id: role.id, name: role.name }));
+                            
+                            console.log(`✅ Cargos carregados via token renovado: ${roles.length} cargos`);
+                            return res.json(roles);
+                        }
+                    } catch (refreshErr) {
+                        console.error('Erro ao renovar token para buscar cargos:', refreshErr.message);
                     }
-                } catch (refreshErr) {
-                    console.error('Erro ao renovar token para buscar cargos:', refreshErr.message);
                 }
+                console.error('Erro ao buscar cargos com token do usuário:', apiErr.message);
+                // Return empty array instead of error to prevent page breakage
+                return res.json([]);
             }
-            console.error('Erro ao buscar cargos:', apiErr.message);
-            return res.status(500).json({ error: 'Erro ao buscar cargos' });
+        } catch (error) {
+            console.error('Erro ao buscar cargos:', error);
+            // Return empty array instead of error to prevent page breakage
+            return res.json([]);
         }
     } catch (error) {
         console.error('Erro ao buscar cargos:', error);
-        res.status(500).json({ error: 'Erro ao buscar cargos' });
+        // Return empty array instead of error to prevent page breakage
+        res.json([]);
     }
 });
 
