@@ -1727,13 +1727,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
-        // Setup emoji picker buttons
-        document.querySelectorAll('.emoji-picker-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        // Setup emoji picker buttons (use event delegation for dynamically added buttons)
+        document.addEventListener('click', (e) => {
+            const btn = e.target.closest('.emoji-picker-btn');
+            if (btn) {
                 e.preventDefault();
+                e.stopPropagation();
                 const targetId = btn.dataset.target;
-                openEmojiPicker(targetId);
-            });
+                console.log('🎨 Botão de emoji clicado, target:', targetId);
+                if (targetId) {
+                    openEmojiPicker(targetId);
+                } else {
+                    console.warn('⚠️ Botão de emoji sem data-target');
+                }
+            }
         });
         
         // Setup scroll indicators for modal body
@@ -1771,7 +1778,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         const overlay = document.getElementById('emoji-sidebar-overlay');
         const container = document.getElementById('emoji-picker-container');
         
-        if (!sidebar || !container) return;
+        if (!sidebar) {
+            console.error('❌ Sidebar não encontrada!');
+            return;
+        }
+        if (!container) {
+            console.error('❌ Container não encontrado!');
+            return;
+        }
+        console.log('✅ Sidebar e container encontrados');
         
         // Show loading
         container.innerHTML = `
