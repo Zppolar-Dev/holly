@@ -1727,8 +1727,129 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         });
         
+        // Setup emoji picker buttons
+        document.querySelectorAll('.emoji-picker-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = btn.dataset.target;
+                openEmojiPicker(targetId);
+            });
+        });
+        
         // Setup scroll indicators for modal body
         setupScrollIndicators();
+    }
+    
+    // Emoji picker system
+    let guildEmojis = [];
+    let emojiPickerTarget = null;
+    
+    async function loadGuildEmojis() {
+        if (guildEmojis.length > 0) return guildEmojis;
+        
+        try {
+            const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/emojis`, {
+                credentials: 'include'
+            });
+            
+            if (res.ok) {
+                guildEmojis = await res.json();
+                return guildEmojis;
+            } else {
+                console.warn('Erro ao buscar emojis:', res.status, res.statusText);
+                return [];
+            }
+        } catch (error) {
+            console.error('Erro ao buscar emojis:', error);
+            return [];
+        }
+    }
+    
+    async function openEmojiPicker(targetId) {
+        emojiPickerTarget = targetId;
+        const modal = document.getElementById('emoji-picker-modal');
+        const container = document.getElementById('emoji-picker-container');
+        
+        if (!modal || !container) return;
+        
+        // Show loading
+        container.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; color: var(--text-light); padding: 2rem;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Carregando emojis...</p>
+            </div>
+        `;
+        
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Load emojis
+        const emojis = await loadGuildEmojis();
+        
+        if (emojis.length === 0) {
+            container.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; color: var(--text-light); padding: 2rem;">
+                    <i class="fas fa-frown"></i>
+                    <p>Nenhum emoji encontrado neste servidor</p>
+                </div>
+            `;
+            return;
+        }
+        
+        // Render emojis
+        container.innerHTML = emojis.map(emoji => `
+            <button 
+                type="button" 
+                class="emoji-item" 
+                data-emoji="${emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`}"
+                title="${emoji.name}"
+                style="background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; aspect-ratio: 1;"
+                onmouseover="this.style.background='var(--primary-color)'; this.style.borderColor='var(--primary-color)';"
+                onmouseout="this.style.background='transparent'; this.style.borderColor='var(--border-color)';"
+            >
+                <img src="${emoji.url}" alt="${emoji.name}" style="width: 32px; height: 32px; object-fit: contain;">
+            </button>
+        `).join('');
+        
+        // Add click handlers
+        container.querySelectorAll('.emoji-item').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const emoji = btn.dataset.emoji;
+                insertEmoji(emoji);
+            });
+        });
+    }
+    
+    function insertEmoji(emoji) {
+        if (!emojiPickerTarget) return;
+        
+        const target = document.getElementById(emojiPickerTarget);
+        if (!target) return;
+        
+        const cursorPos = target.selectionStart || target.value.length;
+        const textBefore = target.value.substring(0, cursorPos);
+        const textAfter = target.value.substring(cursorPos);
+        
+        target.value = textBefore + emoji + textAfter;
+        target.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+        target.focus();
+        
+        // Update preview
+        updateModalPreview();
+        
+        // Close modal
+        closeEmojiPicker();
+    }
+    
+    function closeEmojiPicker() {
+        const modal = document.getElementById('emoji-picker-modal');
+        if (modal) {
+            modal.classList.remove('active');
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        emojiPickerTarget = null;
     }
     
     // Setup scroll indicators for modal
@@ -1801,14 +1922,29 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Check for # (channel) or @ (role)
             const lastHash = textBeforeCursor.lastIndexOf('#');
             const lastAt = textBeforeCursor.lastIndexOf('@');
-            const lastTrigger = Math.max(lastHash, lastAt);
             
-            if (lastTrigger !== -1) {
+            // Determine which trigger is more recent and valid
+            let lastTrigger = -1;
+            let type = null;
+            
+            if (lastHash !== -1 && lastAt !== -1) {
+                // Both found, use the one that's closer to cursor
+                lastTrigger = Math.max(lastHash, lastAt);
+                type = lastHash > lastAt ? 'channel' : 'role';
+            } else if (lastHash !== -1) {
+                lastTrigger = lastHash;
+                type = 'channel';
+            } else if (lastAt !== -1) {
+                lastTrigger = lastAt;
+                type = 'role';
+            }
+            
+            if (lastTrigger !== -1 && type) {
                 const textAfterTrigger = textBeforeCursor.substring(lastTrigger + 1);
-                // Only show autocomplete if there's no space after trigger
-                if (!textAfterTrigger.includes(' ') && !textAfterTrigger.includes('\n') && !textAfterTrigger.includes('>')) {
+                // Only show autocomplete if there's no space after trigger and not already a mention
+                if (!textAfterTrigger.includes(' ') && !textAfterTrigger.includes('\n') && !textAfterTrigger.includes('>') && !textAfterTrigger.includes('&')) {
                     currentQuery = textAfterTrigger.toLowerCase();
-                    const type = lastHash > lastAt ? 'channel' : 'role';
+                    console.log('🔍 Autocomplete triggered:', { type, query: currentQuery, lastHash, lastAt, lastTrigger });
                     showAutocomplete(input, type, currentQuery, lastTrigger);
                 } else {
                     hideAutocomplete();
@@ -1858,7 +1994,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 document.body.appendChild(autocompleteDiv);
             }
             
-            const items = type === 'channel' ? getChannels(query) : await getRoles(query);
+            let items = [];
+            if (type === 'channel') {
+                items = getChannels(query);
+            } else if (type === 'role') {
+                items = await getRoles(query);
+            }
+            console.log('📋 Items encontrados:', items.length, 'tipo:', type);
             
             if (items.length === 0) {
                 hideAutocomplete();
@@ -1917,16 +2059,21 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 if (!guildRoles || guildRoles.length === 0) return [];
                 
-                const filtered = guildRoles
-                    .filter(role => role && role.name && role.id && role.id !== guildId && role.name.toLowerCase().includes(query.toLowerCase()))
+                // If query is empty, return all roles (up to 10)
+                // Otherwise filter by name
+                let filtered = guildRoles.filter(role => role && role.name && role.id && role.id !== guildId);
+                
+                if (query && query.trim()) {
+                    filtered = filtered.filter(role => role.name.toLowerCase().includes(query.toLowerCase()));
+                }
+                
+                return filtered
                     .slice(0, 10)
                     .map(role => ({
                         value: `<@&${role.id}>`,
                         display: `@ ${role.name}`,
                         icon: '<span style="color: #80848e;">@</span>'
                     }));
-                
-                return filtered;
             } catch (error) {
                 console.error('Erro ao buscar cargos:', error);
                 return [];

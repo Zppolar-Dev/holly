@@ -341,12 +341,17 @@
                         <!-- Mensagem de Texto -->
                         <div id="text-message-section" class="form-group">
                             <label for="message-text">Mensagem de Texto (Opcional)</label>
-                            <textarea 
-                                id="message-text" 
-                                class="form-input" 
-                                rows="4"
-                                placeholder="Seja bem-vindo {user}!"
-                            ></textarea>
+                            <div style="position: relative;">
+                                <textarea 
+                                    id="message-text" 
+                                    class="form-input" 
+                                    rows="4"
+                                    placeholder="Seja bem-vindo {user}!"
+                                ></textarea>
+                                <button type="button" class="emoji-picker-btn" data-target="message-text" title="Adicionar emoji">
+                                    <i class="fas fa-smile"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Configurações de Embed -->
@@ -400,12 +405,17 @@
                             <!-- Descrição -->
                             <div class="form-group">
                                 <label for="embed-description">Descrição</label>
-                                <textarea 
-                                    id="embed-description" 
-                                    class="form-input" 
-                                    rows="3"
-                                    placeholder="Descrição do embed"
-                                ></textarea>
+                                <div style="position: relative;">
+                                    <textarea 
+                                        id="embed-description" 
+                                        class="form-input" 
+                                        rows="3"
+                                        placeholder="Descrição do embed. Suporta placeholders."
+                                    ></textarea>
+                                    <button type="button" class="emoji-picker-btn" data-target="embed-description" title="Adicionar emoji">
+                                        <i class="fas fa-smile"></i>
+                                    </button>
+                                </div>
                             </div>
                             
                             <!-- Fields -->
@@ -514,6 +524,24 @@
             <div class="modal-footer" style="padding: 1rem 1.5rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; gap: 1rem;">
                 <button class="btn secondary-btn" id="cancel-message-edit">Cancelar</button>
                 <button class="btn primary-btn" id="save-message-edit">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Emoji Picker Modal -->
+    <div class="modal" id="emoji-picker-modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Emojis do Servidor</h3>
+                <button class="close-modal" id="close-emoji-modal">&times;</button>
+            </div>
+            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                <div id="emoji-picker-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 0.5rem; padding: 1rem;">
+                    <div style="text-align: center; color: var(--text-light); padding: 2rem;">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Carregando emojis...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

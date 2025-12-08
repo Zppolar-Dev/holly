@@ -549,6 +549,87 @@ app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServer
     }
 });
 
+// Get server emojis
+app.get('/api/server/:guildId/emojis', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
+    const { guildId } = req.params;
+    try {
+        // Try to get emojis via bot client first
+        if (botClient && botClient.guilds && botClient.guilds.cache) {
+            const guild = botClient.guilds.cache.get(guildId);
+            if (guild && guild.emojis && guild.emojis.cache) {
+                const emojis = Array.from(guild.emojis.cache.values())
+                    .map(emoji => ({
+                        id: emoji.id,
+                        name: emoji.name,
+                        animated: emoji.animated,
+                        url: emoji.url,
+                        identifier: emoji.identifier
+                    }));
+                
+                if (emojis.length > 0) {
+                    console.log(`✅ Emojis carregados via bot client: ${emojis.length} emojis`);
+                    return res.json(emojis);
+                }
+            }
+        } else {
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário...`);
+        }
+        
+        // Fallback: try with user token
+        try {
+            let token = await discordAuth.getValidAccessToken(req.user.user_id);
+            if (!token) {
+                return res.status(401).json({ error: 'Token não disponível' });
+            }
+            
+            const emojisRes = await axios.get(`https://discord.com/api/guilds/${guildId}/emojis`, {
+                headers: { Authorization: `Bearer ${token}` },
+                timeout: 10000
+            });
+            
+            const emojis = emojisRes.data.map(emoji => ({
+                id: emoji.id,
+                name: emoji.name,
+                animated: emoji.animated,
+                url: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? 'gif' : 'png'}?size=64`,
+                identifier: emoji.animated ? `a:${emoji.name}:${emoji.id}` : `${emoji.name}:${emoji.id}`
+            }));
+            
+            console.log(`✅ Emojis carregados via token do usuário: ${emojis.length} emojis`);
+            return res.json(emojis);
+        } catch (apiErr) {
+            if (apiErr.response?.status === 401) {
+                try {
+                    const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
+                    if (newToken) {
+                        const emojisRes = await axios.get(`https://discord.com/api/guilds/${guildId}/emojis`, {
+                            headers: { Authorization: `Bearer ${newToken}` },
+                            timeout: 10000
+                        });
+                        
+                        const emojis = emojisRes.data.map(emoji => ({
+                            id: emoji.id,
+                            name: emoji.name,
+                            animated: emoji.animated,
+                            url: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? 'gif' : 'png'}?size=64`,
+                            identifier: emoji.animated ? `a:${emoji.name}:${emoji.id}` : `${emoji.name}:${emoji.id}`
+                        }));
+                        
+                        return res.json(emojis);
+                    }
+                } catch (refreshErr) {
+                    console.error('Erro ao renovar token para buscar emojis:', refreshErr.message);
+                }
+            }
+            console.error('Erro ao buscar emojis:', apiErr.message);
+            return res.json([]);
+        }
+    } catch (error) {
+        console.error('Erro ao buscar emojis:', error);
+        res.json([]);
+    }
+});
+
 // Update notification settings
 app.post('/api/server/:guildId/notifications', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
