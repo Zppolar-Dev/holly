@@ -486,61 +486,20 @@ app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServer
                 }
             }
         } else {
-            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário...`);
-        }
-        
-        // Fallback: try with user token (required when bot runs separately)
-        try {
-            let token = await discordAuth.getValidAccessToken(req.user.user_id);
-            if (!token) {
-                console.warn('⚠️ Token do usuário não disponível para buscar cargos');
-                return res.status(401).json({ error: 'Token não disponível' });
-            }
+            // Bot client not available (bot running separately) - check cache first
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Verificando cache...`);
             
-            // Try to fetch roles
-            try {
-                const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                    timeout: 10000
-                });
-                
-                const roles = rolesRes.data
+            // Check cache for roles from bot
+            const cached = rolesCache.get(guildId);
+            if (cached && (Date.now() - cached.timestamp) < ROLES_CACHE_TTL) {
+                const roles = cached.roles
                     .filter(role => role.id !== guildId) // Exclude @everyone
                     .map(role => ({ id: role.id, name: role.name }));
-                
-                console.log(`✅ Cargos carregados via token do usuário: ${roles.length} cargos`);
+                console.log(`✅ Cargos carregados do cache (enviados pelo bot): ${roles.length} cargos`);
                 return res.json(roles);
-            } catch (apiErr) {
-                // If it's a 401, try to refresh token and retry
-                if (apiErr.response?.status === 401) {
-                    console.log('⚠️ Token do usuário expirado ou inválido (401) - tentando renovar...');
-                    try {
-                        const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
-                        if (newToken && newToken !== token) {
-                            const rolesRes = await axios.get(`https://discord.com/api/guilds/${guildId}/roles`, {
-                                headers: { Authorization: `Bearer ${newToken}` },
-                                timeout: 10000
-                            });
-                            
-                            const roles = rolesRes.data
-                                .filter(role => role.id !== guildId)
-                                .map(role => ({ id: role.id, name: role.name }));
-                            
-                            console.log(`✅ Cargos carregados via token renovado: ${roles.length} cargos`);
-                            return res.json(roles);
-                        }
-                    } catch (refreshErr) {
-                        console.error('Erro ao renovar token para buscar cargos:', refreshErr.message);
-                    }
-                }
-                console.error('Erro ao buscar cargos com token do usuário:', apiErr.message);
-                // Return empty array instead of error to prevent page breakage
-                return res.json([]);
             }
-        } catch (error) {
-            console.error('Erro ao buscar cargos:', error);
-            // Return empty array instead of error to prevent page breakage
-            return res.json([]);
+            
+            console.log(`⚠️ Cargos não encontrados no cache. Retornando lista vazia.`);
         }
     } catch (error) {
         console.error('Erro ao buscar cargos:', error);
@@ -553,7 +512,7 @@ app.get('/api/server/:guildId/roles', discordAuth.authenticateToken, checkServer
 app.get('/api/server/:guildId/emojis', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
     try {
-        // Try to get emojis via bot client first
+        // Try to get emojis via bot client first (most reliable and doesn't need user token)
         if (botClient && botClient.guilds && botClient.guilds.cache) {
             const guild = botClient.guilds.cache.get(guildId);
             if (guild && guild.emojis && guild.emojis.cache) {
@@ -572,58 +531,28 @@ app.get('/api/server/:guildId/emojis', discordAuth.authenticateToken, checkServe
                 }
             }
         } else {
-            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Usando token do usuário...`);
+            // Bot client not available (bot running separately) - check cache first
+            console.log(`ℹ️  Bot client não disponível (bot rodando separadamente). Verificando cache...`);
+            
+            // Check cache for emojis from bot
+            const cached = emojisCache.get(guildId);
+            if (cached && (Date.now() - cached.timestamp) < EMOJIS_CACHE_TTL) {
+                const emojis = cached.emojis.map(emoji => ({
+                    id: emoji.id,
+                    name: emoji.name,
+                    animated: emoji.animated,
+                    url: emoji.url || `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? 'gif' : 'png'}?size=64`,
+                    identifier: emoji.identifier || (emoji.animated ? `a:${emoji.name}:${emoji.id}` : `${emoji.name}:${emoji.id}`)
+                }));
+                console.log(`✅ Emojis carregados do cache (enviados pelo bot): ${emojis.length} emojis`);
+                return res.json(emojis);
+            }
+            
+            console.log(`⚠️ Emojis não encontrados no cache. Retornando lista vazia.`);
         }
         
-        // Fallback: try with user token
-        try {
-            let token = await discordAuth.getValidAccessToken(req.user.user_id);
-            if (!token) {
-                return res.status(401).json({ error: 'Token não disponível' });
-            }
-            
-            const emojisRes = await axios.get(`https://discord.com/api/guilds/${guildId}/emojis`, {
-                headers: { Authorization: `Bearer ${token}` },
-                timeout: 10000
-            });
-            
-            const emojis = emojisRes.data.map(emoji => ({
-                id: emoji.id,
-                name: emoji.name,
-                animated: emoji.animated,
-                url: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? 'gif' : 'png'}?size=64`,
-                identifier: emoji.animated ? `a:${emoji.name}:${emoji.id}` : `${emoji.name}:${emoji.id}`
-            }));
-            
-            console.log(`✅ Emojis carregados via token do usuário: ${emojis.length} emojis`);
-            return res.json(emojis);
-        } catch (apiErr) {
-            if (apiErr.response?.status === 401) {
-                try {
-                    const newToken = await discordAuth.getValidAccessToken(req.user.user_id);
-                    if (newToken) {
-                        const emojisRes = await axios.get(`https://discord.com/api/guilds/${guildId}/emojis`, {
-                            headers: { Authorization: `Bearer ${newToken}` },
-                            timeout: 10000
-                        });
-                        
-                        const emojis = emojisRes.data.map(emoji => ({
-                            id: emoji.id,
-                            name: emoji.name,
-                            animated: emoji.animated,
-                            url: `https://cdn.discordapp.com/emojis/${emoji.id}.${emoji.animated ? 'gif' : 'png'}?size=64`,
-                            identifier: emoji.animated ? `a:${emoji.name}:${emoji.id}` : `${emoji.name}:${emoji.id}`
-                        }));
-                        
-                        return res.json(emojis);
-                    }
-                } catch (refreshErr) {
-                    console.error('Erro ao renovar token para buscar emojis:', refreshErr.message);
-                }
-            }
-            console.error('Erro ao buscar emojis:', apiErr.message);
-            return res.json([]);
-        }
+        // Return empty array if bot is not available and cache is empty
+        return res.json([]);
     } catch (error) {
         console.error('Erro ao buscar emojis:', error);
         res.json([]);
@@ -757,7 +686,11 @@ app.setBotClient = (client) => {
 
 // In-memory cache for channels (guildId -> { channels, timestamp })
 const channelsCache = new Map();
+const rolesCache = new Map();
+const emojisCache = new Map();
 const CHANNELS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const ROLES_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const EMOJIS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 // Endpoint for bot to send channels (protected with secret token)
 app.post('/api/bot/channels', express.json(), async (req, res) => {

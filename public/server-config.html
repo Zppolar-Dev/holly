@@ -528,23 +528,22 @@
         </div>
     </div>
 
-    <!-- Emoji Picker Modal -->
-    <div class="modal" id="emoji-picker-modal">
-        <div class="modal-content" style="max-width: 500px;">
-            <div class="modal-header">
-                <h3>Emojis do Servidor</h3>
-                <button class="close-modal" id="close-emoji-modal">&times;</button>
-            </div>
-            <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
-                <div id="emoji-picker-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(50px, 1fr)); gap: 0.5rem; padding: 1rem;">
-                    <div style="text-align: center; color: var(--text-light); padding: 2rem;">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        <p>Carregando emojis...</p>
-                    </div>
-                </div>
+    <!-- Emoji Picker Sidebar -->
+    <div class="emoji-sidebar" id="emoji-picker-sidebar">
+        <div class="emoji-sidebar-header">
+            <h3>Emojis do Servidor</h3>
+            <button class="close-emoji-sidebar" id="close-emoji-sidebar" title="Fechar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="emoji-sidebar-body" id="emoji-picker-container">
+            <div style="text-align: center; color: var(--text-light); padding: 2rem;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Carregando emojis...</p>
             </div>
         </div>
     </div>
+    <div class="emoji-sidebar-overlay" id="emoji-sidebar-overlay"></div>
 
     <script src="/js/server-config.js"></script>
 </body>

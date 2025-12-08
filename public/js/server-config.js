@@ -1767,10 +1767,11 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     async function openEmojiPicker(targetId) {
         emojiPickerTarget = targetId;
-        const modal = document.getElementById('emoji-picker-modal');
+        const sidebar = document.getElementById('emoji-picker-sidebar');
+        const overlay = document.getElementById('emoji-sidebar-overlay');
         const container = document.getElementById('emoji-picker-container');
         
-        if (!modal || !container) return;
+        if (!sidebar || !container) return;
         
         // Show loading
         container.innerHTML = `
@@ -1780,8 +1781,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
         
-        modal.style.display = 'flex';
-        modal.classList.add('active');
+        sidebar.classList.add('active');
+        if (overlay) overlay.classList.add('active');
         document.body.style.overflow = 'hidden';
         
         // Load emojis
@@ -1804,11 +1805,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 class="emoji-item" 
                 data-emoji="${emoji.animated ? `<a:${emoji.name}:${emoji.id}>` : `<:${emoji.name}:${emoji.id}>`}"
                 title="${emoji.name}"
-                style="background: transparent; border: 1px solid var(--border-color); border-radius: 4px; padding: 0.5rem; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; justify-content: center; aspect-ratio: 1;"
-                onmouseover="this.style.background='var(--primary-color)'; this.style.borderColor='var(--primary-color)';"
-                onmouseout="this.style.background='transparent'; this.style.borderColor='var(--border-color)';"
             >
-                <img src="${emoji.url}" alt="${emoji.name}" style="width: 32px; height: 32px; object-fit: contain;">
+                <img src="${emoji.url}" alt="${emoji.name}">
             </button>
         `).join('');
         
@@ -1843,12 +1841,15 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     function closeEmojiPicker() {
-        const modal = document.getElementById('emoji-picker-modal');
-        if (modal) {
-            modal.classList.remove('active');
-            modal.style.display = 'none';
-            document.body.style.overflow = '';
+        const sidebar = document.getElementById('emoji-picker-sidebar');
+        const overlay = document.getElementById('emoji-sidebar-overlay');
+        if (sidebar) {
+            sidebar.classList.remove('active');
         }
+        if (overlay) {
+            overlay.classList.remove('active');
+        }
+        document.body.style.overflow = '';
         emojiPickerTarget = null;
     }
     
