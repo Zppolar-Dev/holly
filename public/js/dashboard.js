@@ -632,13 +632,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             let iconHTML = '';
             if (guild.icon) {
                 const iconUrl = `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=128`;
-                iconHTML = `<img src="${iconUrl}" alt="${guild.name}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; const parent = this.parentElement; parent.innerHTML='${guild.name.charAt(0).replace(/'/g, "\\'")}'; parent.style.backgroundColor='var(--primary-dark)'; parent.style.color='white'; parent.style.fontSize='1.5rem'; parent.style.display='flex'; parent.style.alignItems='center'; parent.style.justifyContent='center'; parent.style.width='80px'; parent.style.height='80px'; parent.style.borderRadius='50%';" />`;
+                iconHTML = `<img src="${iconUrl}" alt="${guild.name}" loading="lazy" onerror="this.onerror=null; this.style.display='none'; const parent = this.parentElement; parent.innerHTML='${guild.name.charAt(0).replace(/'/g, "\\'")}'; parent.style.backgroundColor='var(--primary-dark)'; parent.style.color='white'; parent.style.fontSize='2rem'; parent.style.fontWeight='600'; parent.style.display='flex'; parent.style.alignItems='center'; parent.style.justifyContent='center';" />`;
             } else {
                 iconHTML = guild.name.charAt(0);
             }
             
             serverCard.innerHTML = `
-                <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;' : 'background: transparent;'}">
+                <div class="server-icon">
                     ${iconHTML}
                 </div>
                 <h3>${guild.name}</h3>
