@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     let serverConfig = null;
     let guildChannels = [];
     let serverInfo = null; // Store server info globally
+    let currentUser = null; // Store current user data globally
 
     // UI Elements
     const UI = {
@@ -225,6 +226,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 
                 // Setup user dropdown with user data
                 setupUserDropdown(user);
+                
+                // Store user data globally for previews
+                currentUser = user;
                 
                 return user;
             } else if (res.status === 401) {
@@ -1086,29 +1090,41 @@ document.addEventListener('DOMContentLoaded', async function() {
             const now = new Date();
             const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const channelSelect = currentEditType === 'join' ? UI.notifyJoinChannel : UI.notifyLeaveChannel;
-            let channelName = 'general';
-            if (channelSelect && channelSelect.value) {
-                const selectedOption = channelSelect.options[channelSelect.selectedIndex];
-                if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
-            }
+            
+            // Get user data
+            const userName = currentUser?.username || 'Usuario';
+            const userId = currentUser?.id || '000000000000000000';
+            const userAvatar = currentUser?.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
+                : '/images/holly.gif';
             
             // Get server icon
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
-            const userId = '1069819161057968218';
-            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
             
-            return text
-                .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
-                .replace(/\{username\}/g, 'UsuarioTeste')
+            // Replace channel mentions (<#channelId>) with channel names
+            let processedText = text.replace(/<#(\d+)>/g, (match, channelId) => {
+                const channel = guildChannels.find(ch => ch.id === channelId);
+                const channelName = channel ? channel.name : 'canal-desconhecido';
+                return `<span class="discord-mention">#${channelName}</span>`;
+            });
+            
+            // Replace role mentions (<@&roleId>) with role names
+            processedText = processedText.replace(/<@&(\d+)>/g, (match, roleId) => {
+                const role = guildRoles.find(r => r.id === roleId);
+                const roleName = role ? role.name : 'cargo-desconhecido';
+                return `<span class="discord-mention">@${roleName}</span>`;
+            });
+            
+            return processedText
+                .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
+                .replace(/\{username\}/g, userName)
                 .replace(/\{user\.avatar\}/g, userAvatar)
                 .replace(/\{user\.id\}/g, userId)
                 .replace(/\{server\.icon\}/g, serverIcon)
                 .replace(/\{time\}/g, time)
                 .replace(/\{date\}/g, date)
                 .replace(/\{server\}/g, serverName)
-                .replace(/\{members\}/g, '100')
-                .replace(/\{channel\}/g, `<span class="discord-mention">#${channelName}</span>`);
+                .replace(/\{members\}/g, '100');
         };
         
         // Update simple message preview
@@ -1164,8 +1180,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const replaceVarsInUrl = (url) => {
             if (!url) return '';
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
-            const userId = '1069819161057968218';
-            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
+            const userId = currentUser?.id || '000000000000000000';
+            const userAvatar = currentUser?.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
+                : '/images/holly.gif';
             
             return url
                 .replace(/\{user\.avatar\}/g, userAvatar)
@@ -1393,29 +1411,41 @@ document.addEventListener('DOMContentLoaded', async function() {
             const now = new Date();
             const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
             const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const channelSelect = type === 'join' ? UI.notifyJoinChannel : UI.notifyLeaveChannel;
-            let channelName = 'general';
-            if (channelSelect && channelSelect.value) {
-                const selectedOption = channelSelect.options[channelSelect.selectedIndex];
-                if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
-            }
+            
+            // Get user data
+            const userName = currentUser?.username || 'Usuario';
+            const userId = currentUser?.id || '000000000000000000';
+            const userAvatar = currentUser?.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
+                : '/images/holly.gif';
             
             // Get server icon
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
-            const userId = '1069819161057968218';
-            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
             
-            return text
-                .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
-                .replace(/\{username\}/g, 'UsuarioTeste')
+            // Replace channel mentions (<#channelId>) with channel names
+            let processedText = text.replace(/<#(\d+)>/g, (match, channelId) => {
+                const channel = guildChannels.find(ch => ch.id === channelId);
+                const channelName = channel ? channel.name : 'canal-desconhecido';
+                return `<span class="discord-mention">#${channelName}</span>`;
+            });
+            
+            // Replace role mentions (<@&roleId>) with role names
+            processedText = processedText.replace(/<@&(\d+)>/g, (match, roleId) => {
+                const role = guildRoles.find(r => r.id === roleId);
+                const roleName = role ? role.name : 'cargo-desconhecido';
+                return `<span class="discord-mention">@${roleName}</span>`;
+            });
+            
+            return processedText
+                .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
+                .replace(/\{username\}/g, userName)
                 .replace(/\{user\.avatar\}/g, userAvatar)
                 .replace(/\{user\.id\}/g, userId)
                 .replace(/\{server\.icon\}/g, serverIcon)
                 .replace(/\{time\}/g, time)
                 .replace(/\{date\}/g, date)
                 .replace(/\{server\}/g, serverName)
-                .replace(/\{members\}/g, '100')
-                .replace(/\{channel\}/g, `<span class="discord-mention">#${channelName}</span>`);
+                .replace(/\{members\}/g, '100');
         };
         
         // Update simple message
@@ -1468,6 +1498,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         const color = embed.color || '#5865f2';
         
+        // Helper to replace placeholders in URLs (defined before use)
+        const replaceVarsInUrl = (url) => {
+            if (!url) return '';
+            const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            const userId = currentUser?.id || '000000000000000000';
+            const userAvatar = currentUser?.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
+                : '/images/holly.gif';
+            
+            return url
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon);
+        };
+        
         // Build embed HTML
         let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${color};"></div>`;
         embedHTML += '<div class="discord-embed-content">';
@@ -1476,10 +1521,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (embed.author && embed.author.name) {
             embedHTML += '<div class="discord-embed-author">';
             if (embed.author.icon_url) {
-                embedHTML += `<img src="${embed.author.icon_url}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
+                const authorIconUrl = replaceVarsInUrl(embed.author.icon_url);
+                embedHTML += `<img src="${authorIconUrl}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
             }
             if (embed.author.url) {
-                embedHTML += `<a href="${embed.author.url}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.author.name)}</a>`;
+                const authorUrl = replaceVarsInUrl(embed.author.url);
+                embedHTML += `<a href="${authorUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.author.name)}</a>`;
             } else {
                 embedHTML += replaceVars(embed.author.name);
             }
@@ -1489,7 +1536,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Title
         if (embed.title) {
             if (embed.titleUrl) {
-                embedHTML += `<div class="discord-embed-title"><a href="${embed.titleUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.title)}</a></div>`;
+                const titleUrl = replaceVarsInUrl(embed.titleUrl);
+                embedHTML += `<div class="discord-embed-title"><a href="${titleUrl}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.title)}</a></div>`;
             } else {
                 embedHTML += `<div class="discord-embed-title">${replaceVars(embed.title)}</div>`;
             }
@@ -1516,22 +1564,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Thumbnail
         if (embed.thumbnail && embed.thumbnail.url) {
-            embedHTML += `<div class="discord-embed-thumbnail"><img src="${embed.thumbnail.url}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
+            const thumbnailUrl = replaceVarsInUrl(embed.thumbnail.url);
+            embedHTML += `<div class="discord-embed-thumbnail"><img src="${thumbnailUrl}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
         }
         
         // Image
         if (embed.image && embed.image.url) {
-            embedHTML += `<div class="discord-embed-image"><img src="${embed.image.url}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
+            const imageUrl = replaceVarsInUrl(embed.image.url);
+            embedHTML += `<div class="discord-embed-image"><img src="${imageUrl}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
         }
         
         // Footer
         if (embed.footer && embed.footer.text) {
             embedHTML += '<div class="discord-embed-footer">';
             if (embed.footer.icon_url) {
-                embedHTML += `<img src="${embed.footer.icon_url}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
+                const footerIconUrl = replaceVarsInUrl(embed.footer.icon_url);
+                embedHTML += `<img src="${footerIconUrl}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
             }
             embedHTML += `<span>${replaceVars(embed.footer.text)}</span>`;
             embedHTML += '</div>';
+        }
+        
+        // Author icon
+        if (embed.author && embed.author.icon_url) {
+            // Author was already added, but we need to update the icon URL
+            const authorIconUrl = replaceVarsInUrl(embed.author.icon_url);
+            // Find the author icon in the HTML and update it
+            embedHTML = embedHTML.replace(
+                /<img src="[^"]*" alt="Author" class="discord-embed-author-icon"/g,
+                `<img src="${authorIconUrl}" alt="Author" class="discord-embed-author-icon"`
+            );
         }
         
         embedHTML += '</div>';
@@ -1838,29 +1900,37 @@ document.addEventListener('DOMContentLoaded', async function() {
         let guildRoles = [];
         
         async function getRoles(query) {
-            if (guildRoles.length === 0) {
-                // Fetch roles from API
-                try {
+            try {
+                if (guildRoles.length === 0) {
+                    // Fetch roles from API
                     const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/roles`, {
                         credentials: 'include'
                     });
                     if (res.ok) {
-                        guildRoles = await res.json();
+                        const roles = await res.json();
+                        guildRoles = Array.isArray(roles) ? roles : [];
+                    } else {
+                        console.warn('Erro ao buscar cargos:', res.status, res.statusText);
+                        return [];
                     }
-                } catch (error) {
-                    console.error('Erro ao buscar cargos:', error);
                 }
+                
+                if (!guildRoles || guildRoles.length === 0) return [];
+                
+                const filtered = guildRoles
+                    .filter(role => role && role.name && role.id && role.id !== guildId && role.name.toLowerCase().includes(query.toLowerCase()))
+                    .slice(0, 10)
+                    .map(role => ({
+                        value: `<@&${role.id}>`,
+                        display: `@ ${role.name}`,
+                        icon: '<span style="color: #80848e;">@</span>'
+                    }));
+                
+                return filtered;
+            } catch (error) {
+                console.error('Erro ao buscar cargos:', error);
+                return [];
             }
-            
-            if (!guildRoles || guildRoles.length === 0) return [];
-            return guildRoles
-                .filter(role => role.name && role.name.toLowerCase().includes(query) && role.id !== guildId) // Exclude @everyone
-                .slice(0, 10)
-                .map(role => ({
-                    value: `<@&${role.id}>`,
-                    display: `@ ${role.name}`,
-                    icon: '<span style="color: #80848e;">@</span>'
-                }));
         }
         
         function selectAutocompleteItem(input, item) {
