@@ -467,17 +467,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Atualizar status
         updateUserStatus('online');
 
-        // Configurar dropdown de logout (remover duplicado)
+        // Configurar dropdown corretamente quando logado
         if (UI.userDropdown) {
             const dropdownMenu = UI.userDropdown.querySelector('.dropdown-menu');
             if (dropdownMenu) {
-                // Remover botão de logout existente se houver
-                const existingLogout = dropdownMenu.querySelector('a:last-child');
-                if (existingLogout && existingLogout.querySelector('.fa-sign-out-alt')) {
-                    existingLogout.remove();
+                // Esconder botão de login
+                const loginBtn = dropdownMenu.querySelector('#login-btn');
+                if (loginBtn) {
+                    loginBtn.style.display = 'none';
                 }
                 
-                // Adicionar botão de logout funcional
+                // Remover botões de logout existentes
+                const existingLogouts = dropdownMenu.querySelectorAll('a[href="#"]');
+                existingLogouts.forEach(btn => {
+                    if (btn.querySelector('.fa-sign-out-alt')) {
+                        btn.remove();
+                    }
+                });
+                
+                // Adicionar apenas um botão de logout funcional
                 const logoutBtn = document.createElement('a');
                 logoutBtn.href = '#';
                 logoutBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Sair';
@@ -630,7 +638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             serverCard.innerHTML = `
-                <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem;' : ''}">
+                <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;' : ''}">
                     ${iconHTML}
                 </div>
                 <h3>${guild.name}</h3>
@@ -639,34 +647,17 @@ document.addEventListener('DOMContentLoaded', async function() {
             `;
             
             UI.serversGrid.appendChild(serverCard);
-
+            
             // Add click handler to the button (only if bot is present)
             if (botPresent) {
-                const actionBtn = serverCard.querySelector('.manage-btn');
-                if (actionBtn) {
-                    actionBtn.addEventListener('click', async (e) => {
+                const manageBtn = serverCard.querySelector('.manage-btn');
+                if (manageBtn) {
+                    manageBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        e.stopImmediatePropagation();
                         e.preventDefault();
-                        
-                        console.log('🔧 Botão Configurar clicado para:', guild.name, guild.id);
-                        
-                        // Redirect to server config page
                         window.location.href = `/server/${guild.id}`;
-                    }, true);
+                    });
                 }
-
-                // Add click handler to card (only if bot is present)
-                serverCard.addEventListener('click', async (e) => {
-                    // Don't trigger if clicking the button or any element inside it
-                    if (e.target.closest('.manage-btn') || e.target.classList.contains('manage-btn')) {
-                        return;
-                    }
-                    
-                    console.log('📋 Card clicado, abrindo configurações do servidor:', guild.id);
-                    // Redirect to server config page
-                    window.location.href = `/server/${guild.id}`;
-                });
             }
         });
     }
@@ -819,6 +810,31 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Mostrar UI para usuários não autenticados (melhorado)
     function showUnauthenticatedUI() {
+        // Configurar dropdown quando não logado
+        if (UI.userDropdown) {
+            const dropdownMenu = UI.userDropdown.querySelector('.dropdown-menu');
+            if (dropdownMenu) {
+                // Mostrar botão de login
+                const loginBtn = dropdownMenu.querySelector('#login-btn');
+                if (loginBtn) {
+                    loginBtn.style.display = 'block';
+                    loginBtn.onclick = (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        window.location.href = `${CONFIG.API_BASE_URL}/auth/discord`;
+                    };
+                }
+                
+                // Remover todos os botões de logout
+                const allLinks = dropdownMenu.querySelectorAll('a');
+                allLinks.forEach(link => {
+                    if (link.querySelector('.fa-sign-out-alt')) {
+                        link.remove();
+                    }
+                });
+            }
+        }
+        
         if (UI.userAvatar) {
             UI.userAvatar.src = CONFIG.DEFAULT_AVATAR;
             UI.userAvatar.alt = 'Avatar padrão';
