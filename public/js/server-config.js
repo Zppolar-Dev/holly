@@ -1118,6 +1118,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                 return `<span class="discord-mention">@${roleName}</span>`;
             });
             
+            // Replace emoji mentions (<:name:id> or <a:name:id>)
+            processedText = processedText.replace(/<(a?):([^:]+):(\d+)>/g, (match, animated, emojiName, emojiId) => {
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${animated ? 'gif' : 'png'}?size=32`;
+                return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
+            });
+            
             return processedText
                 .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
                 .replace(/\{username\}/g, userName)
@@ -1439,6 +1445,12 @@ document.addEventListener('DOMContentLoaded', async function() {
                     : null;
                 const roleName = role ? role.name : 'cargo-desconhecido';
                 return `<span class="discord-mention">@${roleName}</span>`;
+            });
+            
+            // Replace emoji mentions (<:name:id> or <a:name:id>)
+            processedText = processedText.replace(/<(a?):([^:]+):(\d+)>/g, (match, animated, emojiName, emojiId) => {
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${animated ? 'gif' : 'png'}?size=32`;
+                return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
             });
             
             return processedText
@@ -1845,18 +1857,26 @@ document.addEventListener('DOMContentLoaded', async function() {
         const target = document.getElementById(emojiPickerTarget);
         if (!target) return;
         
-        const cursorPos = target.selectionStart || target.value.length;
+        // Get current cursor position (use selectionStart for textarea)
+        const cursorPos = target.selectionStart !== undefined ? target.selectionStart : target.value.length;
         const textBefore = target.value.substring(0, cursorPos);
         const textAfter = target.value.substring(cursorPos);
         
+        // Insert emoji at cursor position
         target.value = textBefore + emoji + textAfter;
-        target.setSelectionRange(cursorPos + emoji.length, cursorPos + emoji.length);
+        
+        // Set cursor position after the inserted emoji
+        const newCursorPos = cursorPos + emoji.length;
+        target.setSelectionRange(newCursorPos, newCursorPos);
         target.focus();
+        
+        // Trigger input event to update preview
+        target.dispatchEvent(new Event('input', { bubbles: true }));
         
         // Update preview
         updateModalPreview();
         
-        // Close modal
+        // Close sidebar
         closeEmojiPicker();
     }
     
@@ -2070,11 +2090,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         function getChannels(query) {
             if (!guildChannels || guildChannels.length === 0) return [];
             return guildChannels
-                .filter(ch => (ch.isText || ch.type === 0 || ch.type === 5) && ch.name && ch.name.toLowerCase().includes(query))
+                .filter(ch => (ch.isText || ch.type === 0 || ch.type === 5) && ch.name && ch.name.toLowerCase().includes(query.toLowerCase()))
                 .slice(0, 10)
                 .map(ch => ({
                     value: `<#${ch.id}>`,
-                    display: `# ${ch.name}`,
+                    display: ch.name,
                     icon: '<span style="color: #80848e;">#</span>'
                 }));
         }
@@ -2109,7 +2129,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     .slice(0, 10)
                     .map(role => ({
                         value: `<@&${role.id}>`,
-                        display: `@ ${role.name}`,
+                        display: role.name,
                         icon: '<span style="color: #80848e;">@</span>'
                     }));
             } catch (error) {
@@ -2120,19 +2140,40 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         function selectAutocompleteItem(input, item) {
             const value = input.value;
-            const cursorPos = input.selectionStart;
+            const cursorPos = input.selectionStart || input.value.length;
             const textBeforeCursor = value.substring(0, cursorPos);
             const textAfterCursor = value.substring(cursorPos);
             
             const lastHash = textBeforeCursor.lastIndexOf('#');
             const lastAt = textBeforeCursor.lastIndexOf('@');
-            const lastTrigger = Math.max(lastHash, lastAt);
+            
+            // Determine which trigger is more recent
+            let lastTrigger = -1;
+            if (lastHash !== -1 && lastAt !== -1) {
+                lastTrigger = Math.max(lastHash, lastAt);
+            } else if (lastHash !== -1) {
+                lastTrigger = lastHash;
+            } else if (lastAt !== -1) {
+                lastTrigger = lastAt;
+            }
             
             if (lastTrigger !== -1) {
-                const newValue = value.substring(0, lastTrigger) + item.dataset.value + ' ' + textAfterCursor;
+                // Remove the trigger (# or @) and everything after it until cursor
+                const textBeforeTrigger = value.substring(0, lastTrigger);
+                const mentionValue = item.dataset.value; // Already includes <#id> or <@&id>
+                
+                // Build new value: text before trigger + mention + space + text after cursor
+                const newValue = textBeforeTrigger + mentionValue + ' ' + textAfterCursor;
                 input.value = newValue;
-                input.setSelectionRange(lastTrigger + item.dataset.value.length + 1, lastTrigger + item.dataset.value.length + 1);
+                
+                // Set cursor position after the inserted mention
+                const newCursorPos = lastTrigger + mentionValue.length + 1;
+                input.setSelectionRange(newCursorPos, newCursorPos);
                 input.focus();
+                
+                // Trigger input event to update preview
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                
                 updateModalPreview();
             }
             
