@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     let serverConfig = null;
     let guildChannels = [];
+    let guildRoles = []; // Store roles globally
     let serverInfo = null; // Store server info globally
     let currentUser = null; // Store current user data globally
 
@@ -1868,6 +1869,25 @@ document.addEventListener('DOMContentLoaded', async function() {
         emojiPickerTarget = null;
     }
     
+    // Setup close button for emoji sidebar (use event delegation)
+    document.addEventListener('click', (e) => {
+        // Check if clicked on close button or its icon
+        const closeBtn = e.target.closest('#close-emoji-sidebar');
+        const closeBtnClass = e.target.closest('.close-emoji-sidebar');
+        if (closeBtn || closeBtnClass || e.target.id === 'close-emoji-sidebar' || e.target.closest('#close-emoji-sidebar i')) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🔴 Botão de fechar clicado');
+            closeEmojiPicker();
+            return;
+        }
+        // Close emoji picker on overlay click
+        if (e.target.id === 'emoji-sidebar-overlay') {
+            console.log('🔴 Overlay clicado');
+            closeEmojiPicker();
+        }
+    });
+    
     // Setup scroll indicators for modal
     function setupScrollIndicators() {
         const modalBody = document.querySelector('#message-edit-modal .modal-body');
@@ -2054,8 +2074,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     icon: '<span style="color: #80848e;">#</span>'
                 }));
         }
-        
-        let guildRoles = [];
         
         async function getRoles(query) {
             try {
