@@ -638,7 +638,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             
             serverCard.innerHTML = `
-                <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;' : ''}">
+                <div class="server-icon" style="${!guild.icon ? 'background-color: var(--primary-dark); color: white; font-size: 1.5rem; display: flex; align-items: center; justify-content: center;' : 'background: transparent;'}">
                     ${iconHTML}
                 </div>
                 <h3>${guild.name}</h3>
