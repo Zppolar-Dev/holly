@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     let serverConfig = null;
     let guildChannels = [];
+    let serverInfo = null; // Store server info globally
 
     // UI Elements
     const UI = {
@@ -895,6 +896,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Force reflow
         void modal.offsetHeight;
+        
+        // Setup scroll indicators after modal is shown
+        setTimeout(() => {
+            setupScrollIndicators();
+        }, 100);
     }
     
     // Close modal
@@ -902,6 +908,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const modal = document.getElementById('message-edit-modal');
         if (modal) {
             modal.classList.remove('active');
+            modal.style.display = 'none';
+            modal.style.visibility = 'hidden';
+            modal.style.opacity = '0';
+            modal.style.pointerEvents = 'none';
             document.body.style.overflow = '';
         }
     }
@@ -1083,9 +1093,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
             }
             
+            // Get server icon
+            const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            const userId = '1069819161057968218';
+            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
+            
             return text
                 .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
                 .replace(/\{username\}/g, 'UsuarioTeste')
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon)
                 .replace(/\{time\}/g, time)
                 .replace(/\{date\}/g, date)
                 .replace(/\{server\}/g, serverName)
@@ -1365,9 +1383,17 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (selectedOption) channelName = selectedOption.textContent.replace('# ', '');
             }
             
+            // Get server icon
+            const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            const userId = '1069819161057968218';
+            const userAvatar = `https://cdn.discordapp.com/avatars/${userId}/a_avatar.png?size=64`;
+            
             return text
                 .replace(/\{user\}/g, '<span class="discord-mention">@UsuarioTeste</span>')
                 .replace(/\{username\}/g, 'UsuarioTeste')
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon)
                 .replace(/\{time\}/g, time)
                 .replace(/\{date\}/g, date)
                 .replace(/\{server\}/g, serverName)
@@ -1609,6 +1635,225 @@ document.addEventListener('DOMContentLoaded', async function() {
             const input = document.getElementById(id);
             if (input) {
                 input.addEventListener('input', updateModalPreview);
+            }
+        });
+        
+        // Setup autocomplete for channels (#) and roles (@) in message text
+        const messageTextInput = document.getElementById('message-text');
+        const embedDescriptionInput = document.getElementById('embed-description');
+        
+        [messageTextInput, embedDescriptionInput].forEach(input => {
+            if (input) {
+                setupAutocomplete(input);
+            }
+        });
+        
+        // Setup scroll indicators for modal body
+        setupScrollIndicators();
+    }
+    
+    // Setup scroll indicators for modal
+    function setupScrollIndicators() {
+        const modalBody = document.querySelector('#message-edit-modal .modal-body');
+        if (!modalBody) return;
+        
+        const topIndicator = modalBody.querySelector('.scroll-indicator-top');
+        const bottomIndicator = modalBody.querySelector('.scroll-indicator-bottom');
+        
+        if (!topIndicator || !bottomIndicator) return;
+        
+        function updateScrollIndicators() {
+            const { scrollTop, scrollHeight, clientHeight } = modalBody;
+            const isScrollable = scrollHeight > clientHeight;
+            
+            if (!isScrollable) {
+                topIndicator.style.display = 'none';
+                bottomIndicator.style.display = 'none';
+                return;
+            }
+            
+            // Show top indicator if scrolled down
+            if (scrollTop > 10) {
+                topIndicator.style.display = 'block';
+                topIndicator.style.opacity = '1';
+            } else {
+                topIndicator.style.opacity = '0';
+                setTimeout(() => {
+                    if (modalBody.scrollTop <= 10) {
+                        topIndicator.style.display = 'none';
+                    }
+                }, 200);
+            }
+            
+            // Show bottom indicator if not scrolled to bottom
+            if (scrollTop < scrollHeight - clientHeight - 10) {
+                bottomIndicator.style.display = 'block';
+                bottomIndicator.style.opacity = '1';
+            } else {
+                bottomIndicator.style.opacity = '0';
+                setTimeout(() => {
+                    if (modalBody.scrollTop >= scrollHeight - clientHeight - 10) {
+                        bottomIndicator.style.display = 'none';
+                    }
+                }, 200);
+            }
+        }
+        
+        // Update on scroll
+        modalBody.addEventListener('scroll', updateScrollIndicators);
+        
+        // Update on resize
+        window.addEventListener('resize', updateScrollIndicators);
+        
+        // Initial update
+        setTimeout(updateScrollIndicators, 100);
+    }
+    
+    // Autocomplete system for channels (#) and roles (@)
+    function setupAutocomplete(input) {
+        let autocompleteDiv = null;
+        let currentQuery = '';
+        
+        input.addEventListener('input', (e) => {
+            const value = e.target.value;
+            const cursorPos = e.target.selectionStart;
+            const textBeforeCursor = value.substring(0, cursorPos);
+            
+            // Check for # (channel) or @ (role)
+            const lastHash = textBeforeCursor.lastIndexOf('#');
+            const lastAt = textBeforeCursor.lastIndexOf('@');
+            const lastTrigger = Math.max(lastHash, lastAt);
+            
+            if (lastTrigger !== -1) {
+                const textAfterTrigger = textBeforeCursor.substring(lastTrigger + 1);
+                // Only show autocomplete if there's no space after trigger
+                if (!textAfterTrigger.includes(' ') && !textAfterTrigger.includes('\n')) {
+                    currentQuery = textAfterTrigger.toLowerCase();
+                    const type = lastHash > lastAt ? 'channel' : 'role';
+                    showAutocomplete(input, type, currentQuery, lastTrigger);
+                } else {
+                    hideAutocomplete();
+                }
+            } else {
+                hideAutocomplete();
+            }
+        });
+        
+        input.addEventListener('keydown', (e) => {
+            if (autocompleteDiv && autocompleteDiv.style.display !== 'none') {
+                const items = autocompleteDiv.querySelectorAll('.autocomplete-item');
+                const selected = autocompleteDiv.querySelector('.autocomplete-item.selected');
+                
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (selected) {
+                        selected.classList.remove('selected');
+                        const next = selected.nextElementSibling || items[0];
+                        if (next) next.classList.add('selected');
+                    } else if (items[0]) {
+                        items[0].classList.add('selected');
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (selected) {
+                        selected.classList.remove('selected');
+                        const prev = selected.previousElementSibling || items[items.length - 1];
+                        if (prev) prev.classList.add('selected');
+                    } else if (items[items.length - 1]) {
+                        items[items.length - 1].classList.add('selected');
+                    }
+                } else if (e.key === 'Enter' && selected) {
+                    e.preventDefault();
+                    selectAutocompleteItem(input, selected);
+                } else if (e.key === 'Escape') {
+                    hideAutocomplete();
+                }
+            }
+        });
+        
+        function showAutocomplete(input, type, query, triggerPos) {
+            if (!autocompleteDiv) {
+                autocompleteDiv = document.createElement('div');
+                autocompleteDiv.className = 'autocomplete-dropdown';
+                autocompleteDiv.style.cssText = 'position: absolute; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 4px; max-height: 200px; overflow-y: auto; z-index: 10000; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: none;';
+                document.body.appendChild(autocompleteDiv);
+            }
+            
+            const items = type === 'channel' ? getChannels(query) : getRoles(query);
+            
+            if (items.length === 0) {
+                hideAutocomplete();
+                return;
+            }
+            
+            autocompleteDiv.innerHTML = items.map(item => 
+                `<div class="autocomplete-item" data-value="${item.value}" data-display="${item.display}">
+                    ${item.icon || ''} ${item.display}
+                </div>`
+            ).join('');
+            
+            // Position autocomplete
+            const rect = input.getBoundingClientRect();
+            autocompleteDiv.style.top = `${rect.bottom + window.scrollY}px`;
+            autocompleteDiv.style.left = `${rect.left + window.scrollX}px`;
+            autocompleteDiv.style.width = `${Math.max(rect.width, 200)}px`;
+            autocompleteDiv.style.display = 'block';
+            
+            // Add click handlers
+            autocompleteDiv.querySelectorAll('.autocomplete-item').forEach(item => {
+                item.addEventListener('click', () => selectAutocompleteItem(input, item));
+            });
+        }
+        
+        function getChannels(query) {
+            if (!guildChannels || guildChannels.length === 0) return [];
+            return guildChannels
+                .filter(ch => ch.isText && ch.name.toLowerCase().includes(query))
+                .slice(0, 10)
+                .map(ch => ({
+                    value: `<#${ch.id}>`,
+                    display: `# ${ch.name}`,
+                    icon: '<span style="color: #80848e;">#</span>'
+                }));
+        }
+        
+        function getRoles(query) {
+            // TODO: Fetch roles from API
+            // For now, return empty array
+            return [];
+        }
+        
+        function selectAutocompleteItem(input, item) {
+            const value = input.value;
+            const cursorPos = input.selectionStart;
+            const textBeforeCursor = value.substring(0, cursorPos);
+            const textAfterCursor = value.substring(cursorPos);
+            
+            const lastHash = textBeforeCursor.lastIndexOf('#');
+            const lastAt = textBeforeCursor.lastIndexOf('@');
+            const lastTrigger = Math.max(lastHash, lastAt);
+            
+            if (lastTrigger !== -1) {
+                const newValue = value.substring(0, lastTrigger) + item.dataset.value + ' ' + textAfterCursor;
+                input.value = newValue;
+                input.setSelectionRange(lastTrigger + item.dataset.value.length + 1, lastTrigger + item.dataset.value.length + 1);
+                input.focus();
+                updateModalPreview();
+            }
+            
+            hideAutocomplete();
+        }
+        
+        function hideAutocomplete() {
+            if (autocompleteDiv) {
+                autocompleteDiv.style.display = 'none';
+            }
+        }
+        
+        // Hide autocomplete when clicking outside
+        document.addEventListener('click', (e) => {
+            if (autocompleteDiv && !autocompleteDiv.contains(e.target) && e.target !== input) {
+                hideAutocomplete();
             }
         });
     }

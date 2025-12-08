@@ -1457,6 +1457,35 @@ textarea:focus-visible {
 
 .modal-body {
     padding: 1.5rem;
+    /* Hide scrollbar but keep functionality */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE and Edge */
+}
+
+.modal-body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
+
+/* Scroll indicators */
+.scroll-indicator-top,
+.scroll-indicator-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 20px;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.2s ease;
+}
+
+.scroll-indicator-top {
+    top: 0;
+    background: linear-gradient(to bottom, var(--card-bg), transparent);
+}
+
+.scroll-indicator-bottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--card-bg), transparent);
 }
 
 .form-group {
