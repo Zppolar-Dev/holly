@@ -22,61 +22,98 @@ const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
  * Initialize TikTok polling system
  */
 function initTikTokPolling(database, bot) {
+    console.log('\n' + '='.repeat(60));
+    console.log('🎵 INICIALIZANDO SISTEMA DE POLLING TIKTOK');
+    console.log('='.repeat(60));
+    
     db = database;
     botClient = bot;
     
+    console.log(`📊 Status da inicialização:`);
+    console.log(`   - Database: ${db ? '✅ Disponível' : '❌ Não disponível'}`);
+    console.log(`   - Bot Client: ${botClient ? '✅ Disponível' : '❌ Não disponível'}`);
+    
     if (!db) {
-        console.warn('⚠️ TikTok polling não iniciado: banco de dados não disponível');
+        console.error('❌ ERRO: TikTok polling não iniciado - banco de dados não disponível');
+        console.log('='.repeat(60) + '\n');
         return;
     }
     
     if (!botClient) {
-        console.warn('⚠️ TikTok polling não iniciado: bot client não disponível');
+        console.error('❌ ERRO: TikTok polling não iniciado - bot client não disponível');
+        console.log('='.repeat(60) + '\n');
         return;
     }
     
-    console.log('🎵 Sistema de polling TikTok inicializado (método alternativo)');
+    console.log(`✅ Sistema de polling TikTok inicializado (método alternativo)`);
     console.log(`   - Intervalo de polling: ${POLLING_INTERVAL / 1000 / 60} minutos`);
-    console.log(`   - Banco de dados: ${db ? '✅' : '❌'}`);
-    console.log(`   - Bot client: ${botClient ? '✅' : '❌'}`);
+    console.log(`   - Banco de dados: ✅`);
+    console.log(`   - Bot client: ✅`);
+    
+    // Clear any existing interval
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        console.log('   - Intervalo anterior limpo');
+    }
     
     // Start polling immediately, then every 2 minutes
-    console.log('🔄 Executando primeira verificação do TikTok...');
-    checkTikTokUpdates().catch(err => {
+    console.log('\n🔄 Executando primeira verificação do TikTok...');
+    checkTikTokUpdates().then(() => {
+        console.log('✅ Primeira verificação concluída');
+    }).catch(err => {
         console.error('❌ Erro na primeira verificação do TikTok:', err.message);
+        console.error(err.stack);
     });
     
     pollingInterval = setInterval(() => {
+        console.log(`\n⏰ Executando verificação periódica do TikTok (a cada ${POLLING_INTERVAL / 1000 / 60} minutos)...`);
         checkTikTokUpdates().catch(err => {
             console.error('❌ Erro no polling do TikTok:', err.message);
+            console.error(err.stack);
         });
     }, POLLING_INTERVAL);
     
     console.log(`✅ Polling TikTok configurado para executar a cada ${POLLING_INTERVAL / 1000 / 60} minutos`);
+    console.log('='.repeat(60) + '\n');
 }
 
 /**
  * Check for TikTok updates for all enabled servers
  */
 async function checkTikTokUpdates() {
+    const startTime = Date.now();
+    console.log('\n' + '-'.repeat(60));
+    console.log('🔍 INICIANDO VERIFICAÇÃO DO TIKTOK');
+    console.log('-'.repeat(60));
+    
     try {
         if (!db || !db.getTikTokEnabledServers) {
-            console.warn('⚠️ TikTok polling: banco de dados não disponível');
+            console.error('❌ ERRO: TikTok polling - banco de dados não disponível');
+            console.log(`   - db: ${db ? '✅' : '❌'}`);
+            console.log(`   - getTikTokEnabledServers: ${db && db.getTikTokEnabledServers ? '✅' : '❌'}`);
             return;
         }
         
+        console.log('📊 Buscando servidores com TikTok habilitado...');
         const servers = await db.getTikTokEnabledServers();
+        console.log(`   - Servidores encontrados: ${servers.length}`);
         
         if (servers.length === 0) {
             console.log('ℹ️ Nenhum servidor com TikTok habilitado encontrado');
+            console.log('   Verifique se há servidores com TikTok habilitado no banco de dados');
+            console.log('-'.repeat(60) + '\n');
             return;
         }
         
-        console.log(`🔍 Verificando ${servers.length} perfil(is) TikTok...`);
+        console.log(`\n🔍 Verificando ${servers.length} perfil(is) TikTok...`);
+        console.log('   Servidores:');
+        servers.forEach((server, index) => {
+            console.log(`   ${index + 1}. Servidor ${server.guildId} - @${server.tiktok?.username || 'N/A'} (Video: ${server.tiktok?.notifyVideo ? '✅' : '❌'}, Live: ${server.tiktok?.notifyLive ? '✅' : '❌'})`);
+        });
         
         for (const server of servers) {
             try {
-                console.log(`📡 Verificando servidor ${server.guildId} - @${server.tiktok?.username || 'N/A'}`);
+                console.log(`\n📡 Verificando servidor ${server.guildId} - @${server.tiktok?.username || 'N/A'}`);
                 await checkServerTikTok(server);
                 // Pequeno delay entre requisições para evitar rate limit
                 await new Promise(resolve => setTimeout(resolve, 2000));
@@ -86,10 +123,13 @@ async function checkTikTokUpdates() {
             }
         }
         
-        console.log('✅ Verificação TikTok concluída');
+        const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+        console.log(`\n✅ Verificação TikTok concluída em ${duration}s`);
+        console.log('-'.repeat(60) + '\n');
     } catch (error) {
-        console.error('❌ Erro ao verificar atualizações do TikTok:', error.message);
+        console.error('❌ ERRO CRÍTICO ao verificar atualizações do TikTok:', error.message);
         console.error(error.stack);
+        console.log('-'.repeat(60) + '\n');
     }
 }
 

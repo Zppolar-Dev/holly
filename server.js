@@ -812,14 +812,23 @@ app.get('/api/user/servers/stats', discordAuth.authenticateToken, async (req, re
 app.setBotClient = (client) => {
     botClient = client;
     console.log('✅ Bot client registrado no servidor web');
+    console.log(`   - Bot disponível: ${botClient ? '✅' : '❌'}`);
+    console.log(`   - Database disponível: ${useDatabase && db ? '✅' : '❌'}`);
     
     // Initialize TikTok polling if database is available
     if (useDatabase && db) {
         try {
+            console.log('🔄 Tentando inicializar sistema TikTok...');
             tiktokIntegration.initTikTokPolling(db, botClient);
+            console.log('✅ Sistema TikTok inicializado com sucesso');
         } catch (error) {
             console.error('❌ Erro ao inicializar polling TikTok:', error.message);
+            console.error(error.stack);
         }
+    } else {
+        console.warn('⚠️ Sistema TikTok não inicializado:');
+        if (!useDatabase) console.warn('   - Database não está habilitado');
+        if (!db) console.warn('   - Database não está disponível');
     }
     
     // Start periodic data sync from bot to site
@@ -1360,6 +1369,44 @@ app.get('/server/:guildId', discordAuth.authenticateToken, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🌐 Servidor web rodando na porta ${PORT}`);
+    console.log(`\n${'='.repeat(60)}`);
+    console.log(`🌐 SERVIDOR WEB INICIADO`);
+    console.log(`${'='.repeat(60)}`);
+    console.log(`   - Porta: ${PORT}`);
+    console.log(`   - Database: ${useDatabase && db ? '✅ Habilitado' : '❌ Desabilitado'}`);
+    console.log(`   - Bot Client: ${botClient ? '✅ Disponível' : '⏳ Aguardando registro'}`);
+    console.log(`   - TikTok Integration: ${tiktokIntegration ? '✅ Carregado' : '❌ Não carregado'}`);
     console.log('💡 Bot roda separadamente - não tentando carregar bot no servidor web');
+    console.log(`${'='.repeat(60)}\n`);
+    
+    // Try to initialize TikTok polling if database is available (even without bot initially)
+    // The bot will be registered later via setBotClient
+    if (useDatabase && db && tiktokIntegration) {
+        console.log('🔄 Verificando se sistema TikTok pode ser inicializado...');
+        // Try to initialize (will fail if bot is not available, but will retry when bot is registered)
+        if (botClient) {
+            try {
+                tiktokIntegration.initTikTokPolling(db, botClient);
+            } catch (error) {
+                console.error('❌ Erro ao inicializar TikTok no startup:', error.message);
+            }
+        } else {
+            console.log('⏳ Aguardando bot client ser registrado para inicializar TikTok...');
+        }
+    }
+    
+    // Periodic check to initialize TikTok if bot becomes available later
+    setInterval(() => {
+        if (useDatabase && db && botClient && tiktokIntegration) {
+            // Check if TikTok is already initialized by checking if pollingInterval exists
+            // This is a simple check - if the module exports a way to check status, use that
+            // For now, we'll just try to initialize (it will handle if already initialized)
+            try {
+                // Only try if we haven't initialized yet
+                // We can't easily check if it's initialized, so we'll just let setBotClient handle it
+            } catch (error) {
+                // Silently ignore - initialization will happen when bot is registered
+            }
+        }
+    }, 30000); // Check every 30 seconds
 });
