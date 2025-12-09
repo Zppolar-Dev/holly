@@ -408,6 +408,8 @@ async function getLatestVideoAlternative(username) {
  */
 async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
     try {
+        console.log(`📤 Enviando notificação TikTok (${type}) para servidor ${guildId}...`);
+        
         if (!botClient || !botClient.guilds) {
             console.warn('⚠️ Bot client não disponível para enviar notificação TikTok');
             return;
@@ -415,15 +417,20 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
         
         const guild = botClient.guilds.cache.get(guildId);
         if (!guild) {
-            console.warn(`⚠️ Servidor ${guildId} não encontrado`);
+            console.warn(`⚠️ Servidor ${guildId} não encontrado no cache do bot`);
             return;
         }
+        
+        console.log(`✅ Servidor encontrado: ${guild.name}`);
         
         const channel = guild.channels.cache.get(tiktokConfig.channelId);
         if (!channel) {
             console.warn(`⚠️ Canal ${tiktokConfig.channelId} não encontrado no servidor ${guildId}`);
+            console.log(`   Canais disponíveis: ${guild.channels.cache.map(c => `${c.name} (${c.id})`).join(', ')}`);
             return;
         }
+        
+        console.log(`✅ Canal encontrado: ${channel.name} (${channel.id})`);
         
         const { EmbedBuilder } = require('discord.js');
         
@@ -559,12 +566,20 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
                 embeds: embed ? [embed] : []
             };
             
+            console.log(`📨 Enviando mensagem para canal ${channel.name}...`);
+            console.log(`   - Conteúdo: ${messageOptions.content ? messageOptions.content.substring(0, 100) + '...' : 'Nenhum'}`);
+            console.log(`   - Embeds: ${messageOptions.embeds.length}`);
+            
             const sentMessage = await channel.send(messageOptions);
+            console.log(`✅ Mensagem enviada com sucesso! ID: ${sentMessage.id}`);
             
             // Delete after specified time
             if (tiktokConfig.videoDeleteAfter && tiktokConfig.videoDeleteAfter > 0) {
+                console.log(`⏰ Mensagem será deletada em ${tiktokConfig.videoDeleteAfter} segundos`);
                 setTimeout(() => {
-                    sentMessage.delete().catch(() => {});
+                    sentMessage.delete().catch((err) => {
+                        console.error(`❌ Erro ao deletar mensagem:`, err.message);
+                    });
                 }, tiktokConfig.videoDeleteAfter * 1000);
             }
             
@@ -650,19 +665,28 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
                 embeds: embed ? [embed] : []
             };
             
+            console.log(`📨 Enviando mensagem de live para canal ${channel.name}...`);
+            console.log(`   - Conteúdo: ${messageOptions.content ? messageOptions.content.substring(0, 100) + '...' : 'Nenhum'}`);
+            console.log(`   - Embeds: ${messageOptions.embeds.length}`);
+            
             const sentMessage = await channel.send(messageOptions);
+            console.log(`✅ Mensagem de live enviada com sucesso! ID: ${sentMessage.id}`);
             
             // Delete after specified time
             if (tiktokConfig.liveDeleteAfter && tiktokConfig.liveDeleteAfter > 0) {
+                console.log(`⏰ Mensagem será deletada em ${tiktokConfig.liveDeleteAfter} segundos`);
                 setTimeout(() => {
-                    sentMessage.delete().catch(() => {});
+                    sentMessage.delete().catch((err) => {
+                        console.error(`❌ Erro ao deletar mensagem:`, err.message);
+                    });
                 }, tiktokConfig.liveDeleteAfter * 1000);
             }
         }
         
         console.log(`✅ Notificação TikTok enviada para servidor ${guildId} (${type})`);
     } catch (error) {
-        console.error(`❌ Erro ao enviar notificação TikTok para servidor ${guildId}:`, error.message);
+        console.error(`❌ Erro ao enviar notificação TikTok para servidor ${guildId} (${type}):`, error.message);
+        console.error(error.stack);
     }
 }
 

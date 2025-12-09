@@ -1503,7 +1503,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const previewSimple = document.getElementById('modal-preview-simple');
         const previewEmbed = document.getElementById('modal-preview-embed');
         
-        // Replace variables helper
+        // Replace variables helper - supports TikTok placeholders based on currentEditType
         const replaceVars = (text) => {
             if (!text) return '';
             const serverName = UI.serverName?.textContent || 'Server';
@@ -1520,6 +1520,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             // Get server icon
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            
+            // Get TikTok config if editing TikTok messages
+            const tiktokConfig = serverConfig?.tiktok || {};
+            const tiktokUsername = tiktokConfig.username || 'usuario';
+            const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
             
             // Replace channel mentions (<#channelId>) with channel names
             let processedText = text.replace(/<#(\d+)>/g, (match, channelId) => {
@@ -1542,6 +1547,47 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${animated ? 'gif' : 'png'}?size=32`;
                 return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
             });
+            
+            // Base replacements (always available)
+            processedText = processedText
+                .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
+                .replace(/\{username\}/g, (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') ? tiktokUsername : userName)
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon)
+                .replace(/\{time\}/g, time)
+                .replace(/\{date\}/g, date)
+                .replace(/\{server\}/g, serverName)
+                .replace(/\{members\}/g, '100');
+            
+            // TikTok-specific replacements
+            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+                // Profile placeholders (available for both video and live)
+                processedText = processedText
+                    .replace(/\{profile\.name\}/g, tiktokUsername)
+                    .replace(/\{profile\.url\}/g, tiktokProfileUrl)
+                    .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png')
+                    .replace(/\{profile\.followers\}/g, '1.2M')
+                    .replace(/\{profile\.videos\}/g, '150');
+                
+                // Video-specific placeholders (only for tiktok-video)
+                if (currentEditType === 'tiktok-video') {
+                    processedText = processedText
+                        .replace(/\{video\.title\}/g, 'Novo Vídeo do TikTok')
+                        .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
+                        .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA')
+                        .replace(/\{video\.id\}/g, '1234567890')
+                        .replace(/\{video\.description\}/g, 'Descrição do vídeo');
+                }
+                
+                // Live-specific placeholders (only for tiktok-live)
+                if (currentEditType === 'tiktok-live') {
+                    processedText = processedText
+                        .replace(/\{live\.title\}/g, 'Live em andamento')
+                        .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`)
+                        .replace(/\{live\.viewers\}/g, '1.5K');
+                }
+            }
             
             // Parse Discord markdown formatting (order matters!)
             // 1. Code blocks first (```language\ncode\n```) - must be before inline code
@@ -1577,16 +1623,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // 6. Replace newlines with <br> (last, after all other processing)
             processedText = processedText.replace(/\n/g, '<br>');
             
-            return processedText
-                .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
-                .replace(/\{username\}/g, userName)
-                .replace(/\{user\.avatar\}/g, userAvatar)
-                .replace(/\{user\.id\}/g, userId)
-                .replace(/\{server\.icon\}/g, serverIcon)
-                .replace(/\{time\}/g, time)
-                .replace(/\{date\}/g, date)
-                .replace(/\{server\}/g, serverName)
-                .replace(/\{members\}/g, '100');
+            return processedText;
         };
         
         // Update simple message preview
@@ -1638,7 +1675,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${color};"></div>`;
         embedHTML += '<div class="discord-embed-content">';
         
-        // Helper to replace placeholders in URLs
+        // Helper to replace placeholders in URLs - supports TikTok placeholders
         const replaceVarsInUrl = (url) => {
             if (!url) return '';
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
@@ -1647,10 +1684,33 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
                 : '/images/holly.gif';
             
-            return url
+            let processedUrl = url
                 .replace(/\{user\.avatar\}/g, userAvatar)
                 .replace(/\{user\.id\}/g, userId)
                 .replace(/\{server\.icon\}/g, serverIcon);
+            
+            // TikTok-specific URL replacements
+            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+                const tiktokConfig = serverConfig?.tiktok || {};
+                const tiktokUsername = tiktokConfig.username || 'usuario';
+                const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
+                
+                processedUrl = processedUrl
+                    .replace(/\{username\}/g, tiktokUsername)
+                    .replace(/\{profile\.url\}/g, tiktokProfileUrl)
+                    .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png');
+                
+                if (currentEditType === 'tiktok-video') {
+                    processedUrl = processedUrl
+                        .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
+                        .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA');
+                } else if (currentEditType === 'tiktok-live') {
+                    processedUrl = processedUrl
+                        .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`);
+                }
+            }
+            
+            return processedUrl;
         };
         
         // Author
