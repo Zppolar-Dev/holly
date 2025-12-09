@@ -450,28 +450,37 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
     try {
         console.log(`📤 Enviando notificação TikTok (${type}) para servidor ${guildId}...`);
         
-        if (!botClient || !botClient.guilds) {
-            console.warn('⚠️ Bot client não disponível para enviar notificação TikTok');
-            return;
+        // Since bot and web server are separate processes, we need to make HTTP request to bot
+        // Check if bot is registered/active
+        if (!botClient || !botClient.active) {
+            console.warn('⚠️ Bot não está registrado/ativo. Tentando enviar via HTTP...');
+            // Try to send via HTTP to bot endpoint
+            return await sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data);
         }
         
-        const guild = botClient.guilds.cache.get(guildId);
-        if (!guild) {
-            console.warn(`⚠️ Servidor ${guildId} não encontrado no cache do bot`);
-            return;
+        // If bot client has guilds (direct access), use it
+        if (botClient.guilds && botClient.guilds.cache) {
+            const guild = botClient.guilds.cache.get(guildId);
+            if (!guild) {
+                console.warn(`⚠️ Servidor ${guildId} não encontrado no cache do bot`);
+                return await sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data);
+            }
+            
+            console.log(`✅ Servidor encontrado: ${guild.name}`);
+            
+            const channel = guild.channels.cache.get(tiktokConfig.channelId);
+            if (!channel) {
+                console.warn(`⚠️ Canal ${tiktokConfig.channelId} não encontrado no servidor ${guildId}`);
+                return await sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data);
+            }
+            
+            console.log(`✅ Canal encontrado: ${channel.name} (${channel.id})`);
+        } else {
+            // Bot is registered but we don't have direct access - use HTTP
+            return await sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data);
         }
         
-        console.log(`✅ Servidor encontrado: ${guild.name}`);
-        
-        const channel = guild.channels.cache.get(tiktokConfig.channelId);
-        if (!channel) {
-            console.warn(`⚠️ Canal ${tiktokConfig.channelId} não encontrado no servidor ${guildId}`);
-            console.log(`   Canais disponíveis: ${guild.channels.cache.map(c => `${c.name} (${c.id})`).join(', ')}`);
-            return;
-        }
-        
-        console.log(`✅ Canal encontrado: ${channel.name} (${channel.id})`);
-        
+        // If we reach here, we have direct access to bot client
         const { EmbedBuilder } = require('discord.js');
         
         // Helper function to format numbers (e.g., 1200000 -> 1.2M)
@@ -747,6 +756,84 @@ function stopTikTokPolling() {
 async function forceCheckTikTokUpdates() {
     console.log('🔄 Verificação manual do TikTok solicitada...');
     await checkTikTokUpdates();
+}
+
+/**
+ * Send TikTok notification via HTTP to bot (when bot and web server are separate processes)
+ */
+async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) {
+    try {
+        // Since bot and web server are separate, we need the bot to have an HTTP endpoint
+        // For now, we'll use the website URL and the bot should have a route to handle this
+        // The bot needs to implement: POST /api/tiktok/notify
+        const websiteUrl = process.env.WEBSITE_URL || 'https://dash-holly.com';
+        const syncSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+        
+        const http = require('http');
+        const https = require('https');
+        const httpModule = websiteUrl.startsWith('https') ? https : http;
+        
+        // Prepare notification data
+        const notificationData = {
+            secret: syncSecret,
+            guildId: guildId,
+            type: type,
+            config: tiktokConfig,
+            data: data
+        };
+        
+        // Try to send to bot endpoint (bot needs to implement this)
+        // For now, we'll try the website URL - the bot should proxy or handle this
+        const url = new URL(`${websiteUrl}/api/tiktok/notify`);
+        const postData = JSON.stringify(notificationData);
+        
+        const options = {
+            hostname: url.hostname,
+            port: url.port || (url.protocol === 'https:' ? 443 : 80),
+            path: url.pathname,
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData)
+            },
+            timeout: 10000
+        };
+        
+        await new Promise((resolve, reject) => {
+            const req = httpModule.request(options, (res) => {
+                let responseData = '';
+                res.on('data', (chunk) => { responseData += chunk; });
+                res.on('end', () => {
+                    if (res.statusCode === 200 || res.statusCode === 201) {
+                        console.log(`✅ Notificação TikTok enviada via HTTP`);
+                        resolve();
+                    } else {
+                        console.warn(`⚠️ Resposta HTTP ${res.statusCode} ao enviar notificação TikTok`);
+                        reject(new Error(`HTTP ${res.statusCode}: ${responseData.substring(0, 100)}`));
+                    }
+                });
+            });
+            
+            req.on('error', (error) => {
+                console.warn(`⚠️ Erro ao enviar notificação TikTok via HTTP: ${error.message}`);
+                console.warn(`   ⚠️ Bot precisa implementar endpoint /api/tiktok/notify`);
+                reject(error);
+            });
+            
+            req.on('timeout', () => {
+                req.destroy();
+                console.warn(`⚠️ Timeout ao enviar notificação TikTok via HTTP`);
+                reject(new Error('Timeout'));
+            });
+            
+            req.write(postData);
+            req.end();
+        });
+        
+    } catch (error) {
+        console.error(`❌ Erro ao enviar notificação TikTok via HTTP:`, error.message);
+        console.error(`   ⚠️ NOTA: Bot precisa implementar endpoint POST /api/tiktok/notify para receber notificações`);
+    }
 }
 
 module.exports = {

@@ -758,6 +758,43 @@ app.post('/api/server/:guildId/tiktok/check', discordAuth.authenticateToken, che
     }
 });
 
+// Endpoint for bot to receive TikTok notifications (when bot and web server are separate)
+// This endpoint receives the notification data and the bot should call it to send the message
+app.post('/api/tiktok/notify', express.json(), async (req, res) => {
+    const { secret, guildId, type, config, data } = req.body;
+    
+    // Verify secret token
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de enviar notificação TikTok com secret inválido');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    try {
+        console.log(`📨 Recebida requisição para enviar notificação TikTok (${type}) para servidor ${guildId}`);
+        
+        // If we have direct bot client access, use it
+        if (botClient && botClient.guilds && botClient.guilds.cache) {
+            const guild = botClient.guilds.cache.get(guildId);
+            if (guild) {
+                const channel = guild.channels.cache.get(config.channelId);
+                if (channel) {
+                    // Use the existing sendTikTokNotification function
+                    await tiktokIntegration.checkServerTikTok({ guildId, tiktok: config });
+                    return res.json({ success: true, message: 'Notificação processada' });
+                }
+            }
+        }
+        
+        // If no direct access, return error - bot needs to handle this
+        console.warn('⚠️ Bot client não disponível para enviar notificação TikTok diretamente');
+        res.status(503).json({ error: 'Bot client não disponível - bot precisa implementar endpoint para enviar mensagens' });
+    } catch (error) {
+        console.error('Erro ao processar notificação TikTok:', error);
+        res.status(500).json({ error: 'Erro ao processar notificação' });
+    }
+});
+
 // Check if user is admin
 app.get('/api/user/is-admin', discordAuth.authenticateToken, async (req, res) => {
     const userId = req.user?.user_id;
@@ -929,6 +966,46 @@ app.post('/api/bot/request-channels', discordAuth.authenticateToken, async (req,
 });
 
 // Endpoint for bot to sync data (protected with secret token)
+// Endpoint for bot to register itself
+app.post('/api/bot/register', express.json(), async (req, res) => {
+    const { secret } = req.body;
+    
+    // Verify secret token
+    const expectedSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
+    if (secret !== expectedSecret) {
+        console.warn('⚠️ Tentativa de registro com secret inválido');
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // Mark bot as active (we can't pass the client object, but we know bot is running)
+    console.log('\n' + '='.repeat(60));
+    console.log('🤖 BOT REGISTRADO NO SERVIDOR WEB');
+    console.log('='.repeat(60));
+    
+    // Since bot and web server are separate processes, we can't pass the client object
+    // But we can mark that bot is active and try to initialize TikTok
+    // The TikTok system will need to work differently - it should make HTTP requests to the bot
+    // For now, let's just mark bot as active
+    botClient = { active: true, registered: true }; // Placeholder object
+    
+    // Try to initialize TikTok if database is available
+    if (useDatabase && db) {
+        try {
+            console.log('🔄 Tentando inicializar sistema TikTok após registro do bot...');
+            // Note: TikTok will need bot client to send messages, but since they're separate processes,
+            // we'll need to modify TikTok to make HTTP requests to bot instead
+            // For now, we'll initialize with a placeholder
+            tiktokIntegration.initTikTokPolling(db, botClient);
+        } catch (error) {
+            console.error('❌ Erro ao inicializar TikTok após registro:', error.message);
+        }
+    }
+    
+    console.log('='.repeat(60) + '\n');
+    
+    res.json({ success: true, message: 'Bot registrado com sucesso' });
+});
+
 app.post('/api/bot/sync', express.json(), async (req, res) => {
     const { secret, guilds, stats } = req.body;
     
@@ -937,6 +1014,22 @@ app.post('/api/bot/sync', express.json(), async (req, res) => {
     if (secret !== expectedSecret) {
         console.warn('⚠️ Tentativa de sincronização com secret inválido');
         return res.status(401).json({ error: 'Unauthorized' });
+    }
+    
+    // If bot is syncing, it means bot is active - try to register if not already registered
+    if (!botClient || !botClient.active) {
+        console.log('🤖 Bot detectado via sync - marcando como ativo...');
+        botClient = { active: true, registered: true };
+        
+        // Try to initialize TikTok if not already initialized
+        if (useDatabase && db) {
+            try {
+                console.log('🔄 Tentando inicializar sistema TikTok após detecção do bot...');
+                tiktokIntegration.initTikTokPolling(db, botClient);
+            } catch (error) {
+                console.error('❌ Erro ao inicializar TikTok:', error.message);
+            }
+        }
     }
     
     try {
