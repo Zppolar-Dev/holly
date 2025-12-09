@@ -98,9 +98,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load server configuration
     async function loadServerConfig() {
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+            
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/config`, {
-                credentials: 'include'
+                credentials: 'include',
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (!res.ok) {
                 throw new Error('Erro ao carregar configuração');
@@ -109,8 +116,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             serverConfig = await res.json();
             return serverConfig;
         } catch (error) {
-            console.error('Erro ao carregar configuração:', error);
-            showNotification('Erro ao carregar configurações do servidor', 'error');
+            if (error.name === 'AbortError') {
+                console.error('Timeout ao carregar configuração');
+            } else {
+                console.error('Erro ao carregar configuração:', error);
+            }
+            try {
+                showNotification('Erro ao carregar configurações do servidor', 'error');
+            } catch (notifError) {
+                console.error('Erro ao mostrar notificação:', notifError);
+            }
             return null;
         }
     }
@@ -125,14 +140,25 @@ document.addEventListener('DOMContentLoaded', async function() {
                 if (leaveSelect) leaveSelect.innerHTML = '<option value="">Carregando canais...</option>';
             }
 
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+            
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/channels`, {
-                credentials: 'include'
+                credentials: 'include',
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const channels = await res.json();
                 const textChannels = channels.filter(ch => ch.type === 0); // Only text channels
-                populateChannels(textChannels);
+                try {
+                    populateChannels(textChannels);
+                } catch (error) {
+                    console.error('Erro ao popular canais:', error);
+                }
                 return textChannels;
             } else {
                 const joinSelect = UI.notifyJoinChannel;
@@ -142,7 +168,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             return [];
         } catch (error) {
-            console.error('Erro ao carregar canais:', error);
+            if (error.name === 'AbortError') {
+                console.error('Timeout ao carregar canais');
+            } else {
+                console.error('Erro ao carregar canais:', error);
+            }
             const joinSelect = UI.notifyJoinChannel;
             const leaveSelect = UI.notifyLeaveChannel;
             if (joinSelect) joinSelect.innerHTML = '<option value="">Erro ao carregar canais</option>';
@@ -154,9 +184,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load server info
     async function loadServerInfo() {
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+            
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/user/guilds`, {
-                credentials: 'include'
+                credentials: 'include',
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const guilds = await res.json();
@@ -178,7 +215,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
             return null;
         } catch (error) {
-            console.error('Erro ao carregar informações do servidor:', error);
+            if (error.name === 'AbortError') {
+                console.error('Timeout ao carregar informações do servidor');
+            } else {
+                console.error('Erro ao carregar informações do servidor:', error);
+            }
             return null;
         }
     }
@@ -186,9 +227,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Load user info
     async function loadUserInfo() {
         try {
+            // Add timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+            
             const res = await fetch(`${CONFIG.API_BASE_URL}/api/user`, {
-                credentials: 'include'
+                credentials: 'include',
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
 
             if (res.ok) {
                 const user = await res.json();
@@ -254,25 +302,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Setup user dropdown
     function setupUserDropdown(user) {
-        const userDropdown = document.getElementById('userDropdown');
-        if (!userDropdown) return;
-        
-        const dropdownToggle = userDropdown.querySelector('.dropdown-toggle');
-        const loginBtn = document.getElementById('login-btn');
-        const logoutBtn = userDropdown.querySelector('a[href="#"]:last-child');
-        
-        // Remove existing event listeners by cloning
-        const newToggle = dropdownToggle.cloneNode(true);
-        dropdownToggle.parentNode.replaceChild(newToggle, dropdownToggle);
-        
-        if (newToggle) {
-            newToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                userDropdown.classList.toggle('active');
-            });
-        }
-        
-        if (user) {
+        try {
+            const userDropdown = document.getElementById('userDropdown');
+            if (!userDropdown) return;
+            
+            const dropdownToggle = userDropdown.querySelector('.dropdown-toggle');
+            if (!dropdownToggle) return;
+            
+            const loginBtn = document.getElementById('login-btn');
+            const logoutBtn = userDropdown.querySelector('a[href="#"]:last-child');
+            
+            // Remove existing event listeners by cloning
+            try {
+                const newToggle = dropdownToggle.cloneNode(true);
+                dropdownToggle.parentNode.replaceChild(newToggle, dropdownToggle);
+                
+                if (newToggle) {
+                    newToggle.addEventListener('click', (e) => {
+                        try {
+                            e.stopPropagation();
+                            userDropdown.classList.toggle('active');
+                        } catch (error) {
+                            console.error('Erro ao alternar dropdown:', error);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Erro ao clonar toggle:', error);
+                // Continue mesmo se falhar
+            }
+            
+            if (user) {
             // User is logged in
             if (loginBtn) {
                 loginBtn.style.display = 'none';
@@ -305,23 +365,35 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (logoutBtn) {
                 logoutBtn.style.display = 'none';
             }
-        }
-        
-        // Close dropdown when clicking outside (only add once)
-        const clickHandler = (e) => {
-            if (userDropdown && !userDropdown.contains(e.target)) {
-                userDropdown.classList.remove('active');
             }
-        };
-        
-        // Remove old listener if exists
-        document.removeEventListener('click', clickHandler);
-        document.addEventListener('click', clickHandler);
+            
+            // Close dropdown when clicking outside (only add once)
+            if (!userDropdown._clickOutsideListener) {
+                const clickOutsideHandler = (e) => {
+                    try {
+                        if (userDropdown && !userDropdown.contains(e.target)) {
+                            userDropdown.classList.remove('active');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao fechar dropdown:', error);
+                    }
+                };
+                document.addEventListener('click', clickOutsideHandler);
+                userDropdown._clickOutsideListener = clickOutsideHandler;
+            }
+        } catch (error) {
+            console.error('Erro crítico em setupUserDropdown:', error);
+            // Não relançar o erro para não travar a página
+        }
     }
 
     // Populate form with config
     function populateForm(config) {
-        if (!config) return;
+        try {
+            if (!config) {
+                console.warn('⚠️ Config não fornecido para populateForm');
+                return;
+            }
 
         // Prefix
         if (UI.prefixInput) {
@@ -341,13 +413,20 @@ document.addEventListener('DOMContentLoaded', async function() {
 
         // Join notifications
         // Populate TikTok configuration
-        const tiktokConfig = serverConfig.tiktok || {
+        const tiktokConfig = config.tiktok || {
             enabled: false,
             username: '',
             channelId: '',
             notifyVideo: true,
             notifyLive: true
         };
+        
+        // Update serverConfig for use in other functions
+        if (!serverConfig) {
+            serverConfig = config;
+        } else {
+            serverConfig.tiktok = tiktokConfig;
+        }
         
         const tiktokEnabled = document.getElementById('tiktok-enabled');
         const tiktokConfigDiv = document.getElementById('tiktok-config');
@@ -421,55 +500,100 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Modules
         const modules = config.modules || {};
         document.querySelectorAll('[data-module]').forEach(checkbox => {
-            const moduleName = checkbox.dataset.module;
-            checkbox.checked = modules[moduleName] !== false;
+            try {
+                const moduleName = checkbox.dataset.module;
+                checkbox.checked = modules[moduleName] !== false;
+            } catch (error) {
+                console.warn('Erro ao configurar módulo:', error);
+            }
         });
+        } catch (error) {
+            console.error('Erro crítico em populateForm:', error);
+            // Não relançar o erro para não travar a página
+        }
     }
 
     // Populate channels dropdown
     // Populate TikTok channel select
     function populateTiktokChannel(channels) {
-        const tiktokChannel = document.getElementById('tiktok-channel');
-        if (!tiktokChannel) return;
-        
-        const currentValue = tiktokChannel.value;
-        tiktokChannel.innerHTML = '<option value="">Selecione um canal...</option>';
-        
-        channels.forEach(channel => {
-            const option = document.createElement('option');
-            option.value = channel.id;
-            option.textContent = `# ${channel.name}`;
-            if (channel.id === currentValue) {
-                option.selected = true;
+        try {
+            if (!channels || !Array.isArray(channels)) {
+                return;
             }
-            tiktokChannel.appendChild(option);
-        });
+            
+            const tiktokChannel = document.getElementById('tiktok-channel');
+            if (!tiktokChannel) return;
+            
+            const currentValue = tiktokChannel.value;
+            tiktokChannel.innerHTML = '<option value="">Selecione um canal...</option>';
+            
+            channels.forEach(channel => {
+                try {
+                    if (!channel || !channel.id || !channel.name) return;
+                    
+                    const option = document.createElement('option');
+                    option.value = channel.id;
+                    option.textContent = `# ${channel.name}`;
+                    if (channel.id === currentValue) {
+                        option.selected = true;
+                    }
+                    tiktokChannel.appendChild(option);
+                } catch (error) {
+                    console.warn('Erro ao adicionar canal TikTok:', error);
+                }
+            });
+        } catch (error) {
+            console.error('Erro crítico em populateTiktokChannel:', error);
+            // Não relançar o erro para não travar a página
+        }
     }
 
     function populateChannels(channels) {
-        guildChannels = channels;
-        
-        const joinSelect = UI.notifyJoinChannel;
-        const leaveSelect = UI.notifyLeaveChannel;
-
-        [joinSelect, leaveSelect].forEach(select => {
-            if (!select) return;
-            
-            // Clear existing options except first
-            while (select.options.length > 1) {
-                select.remove(1);
+        try {
+            if (!channels || !Array.isArray(channels)) {
+                console.warn('⚠️ Canais inválidos para popular');
+                return;
             }
+            
+            guildChannels = channels;
+            
+            const joinSelect = UI.notifyJoinChannel;
+            const leaveSelect = UI.notifyLeaveChannel;
 
-            channels.forEach(channel => {
-                const option = document.createElement('option');
-                option.value = channel.id;
-                option.textContent = `# ${channel.name}`;
-                select.appendChild(option);
+            [joinSelect, leaveSelect].forEach(select => {
+                try {
+                    if (!select) return;
+                    
+                    // Clear existing options except first
+                    while (select.options.length > 1) {
+                        select.remove(1);
+                    }
+
+                    channels.forEach(channel => {
+                        try {
+                            const option = document.createElement('option');
+                            option.value = channel.id;
+                            option.textContent = `# ${channel.name}`;
+                            select.appendChild(option);
+                        } catch (error) {
+                            console.warn('Erro ao adicionar canal:', error);
+                        }
+                    });
+                } catch (error) {
+                    console.error('Erro ao popular select:', error);
+                }
             });
-        });
-        
-        // Also populate TikTok channel
-        populateTiktokChannel(channels);
+            
+            // Also populate TikTok channel
+            try {
+                populateTiktokChannel(channels);
+            } catch (error) {
+                console.warn('Erro ao popular canal TikTok:', error);
+            }
+        } catch (error) {
+            console.error('Erro crítico em populateChannels:', error);
+            // Não relançar o erro para não travar a página
+        }
     }
 
     // Toggle notification config visibility
@@ -729,10 +853,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Event listeners
     function setupEventListeners() {
+        try {
         // Notification toggles
         if (UI.notifyJoinEnabled) {
             UI.notifyJoinEnabled.addEventListener('change', (e) => {
-                toggleNotificationConfig('join', e.target.checked);
+                try {
+                    toggleNotificationConfig('join', e.target.checked);
+                } catch (error) {
+                    console.error('Erro ao alternar configuração de join:', error);
+                }
             });
         }
 
@@ -878,23 +1007,47 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         }
 
-        // Update populateChannels to also populate TikTok channel
-        const originalPopulateChannels = populateChannels;
-        populateChannels = function(channels) {
-            originalPopulateChannels(channels);
-            populateTiktokChannel(channels);
-        };
+        // Update populateChannels to also populate TikTok channel (only if not already wrapped)
+        if (typeof populateChannels === 'function' && !populateChannels._tiktokWrapped) {
+            const originalPopulateChannels = populateChannels;
+            populateChannels = function(channels) {
+                try {
+                    originalPopulateChannels(channels);
+                    populateTiktokChannel(channels);
+                } catch (error) {
+                    console.error('Erro ao popular canais:', error);
+                    // Continue mesmo se falhar
+                }
+            };
+            populateChannels._tiktokWrapped = true;
+        }
 
         // Save button
         if (UI.saveBtn) {
-            UI.saveBtn.addEventListener('click', saveConfig);
+            UI.saveBtn.addEventListener('click', (e) => {
+                try {
+                    e.preventDefault();
+                    saveConfig();
+                } catch (error) {
+                    console.error('Erro ao salvar configurações:', error);
+                    showNotification('Erro ao salvar configurações', 'error');
+                }
+            });
         }
 
         // Cancel button
         if (UI.cancelBtn) {
             UI.cancelBtn.addEventListener('click', () => {
-                window.location.href = '/dashboard';
+                try {
+                    window.location.href = '/dashboard';
+                } catch (error) {
+                    console.error('Erro ao redirecionar:', error);
+                }
             });
+        }
+        } catch (error) {
+            console.error('Erro crítico em setupEventListeners:', error);
+            // Não relançar o erro para não travar a página
         }
     }
     
@@ -963,45 +1116,114 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Initialize
     async function init() {
-        showLoading(true);
-
-        // Always setup user dropdown first (even if not authenticated)
-        // This ensures the dropdown is configured regardless of auth state
-        setupUserDropdown(null);
-
-        // Load user info (this handles auth check)
-        const user = await loadUserInfo();
-        
-        // If user is null, it means token expired or session lost
-        // But don't redirect immediately - let user see the page and try to login
-        if (!user) {
-            console.warn('⚠️ Usuário não autenticado - mostrando opção de login');
-            // Setup dropdown to show login option (already done above, but ensure it's set)
-            setupUserDropdown(null);
+        // Safety timeout - always hide loading after 30 seconds
+        const safetyTimeout = setTimeout(() => {
+            console.warn('⚠️ Timeout de segurança: escondendo loading');
             showLoading(false);
-            // Don't redirect - let user see the page and login if needed
-            // The page will show login option in dropdown
-            return Promise.resolve();
+        }, 30000);
+        
+        try {
+            showLoading(true);
+
+            // Always setup user dropdown first (even if not authenticated)
+            // This ensures the dropdown is configured regardless of auth state
+            try {
+                setupUserDropdown(null);
+            } catch (error) {
+                console.error('Erro ao configurar dropdown:', error);
+            }
+
+            // Load user info (this handles auth check)
+            let user;
+            try {
+                user = await loadUserInfo();
+            } catch (error) {
+                console.error('Erro ao carregar informações do usuário:', error);
+                clearTimeout(safetyTimeout);
+                showLoading(false);
+                return;
+            }
+            
+            // If user is null, it means token expired or session lost
+            // But don't redirect immediately - let user see the page and try to login
+            if (!user) {
+                console.warn('⚠️ Usuário não autenticado - mostrando opção de login');
+                // Setup dropdown to show login option (already done above, but ensure it's set)
+                try {
+                    setupUserDropdown(null);
+                } catch (error) {
+                    console.error('Erro ao configurar dropdown:', error);
+                }
+                clearTimeout(safetyTimeout);
+                showLoading(false);
+                // Don't redirect - let user see the page and login if needed
+                // The page will show login option in dropdown
+                return;
+            }
+
+            // User is authenticated, continue loading
+            let config, serverInfo;
+            try {
+                [config, serverInfo] = await Promise.all([
+                    loadServerConfig().catch(err => {
+                        console.error('Erro ao carregar configuração:', err);
+                        return null;
+                    }),
+                    loadServerInfo().catch(err => {
+                        console.error('Erro ao carregar informações do servidor:', err);
+                        return null;
+                    })
+                ]);
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                showLoading(false);
+                showNotification('Erro ao carregar configurações. Tente recarregar a página.', 'error');
+                return;
+            }
+
+            // Load channels after config is loaded
+            try {
+                await loadGuildChannels(true);
+            } catch (error) {
+                console.error('Erro ao carregar canais:', error);
+                // Continue mesmo se falhar ao carregar canais
+            }
+
+            if (config) {
+                try {
+                    populateForm(config);
+                } catch (error) {
+                    console.error('Erro ao popular formulário:', error);
+                    // Continue mesmo se falhar
+                }
+            }
+
+            try {
+                setupEventListeners();
+            } catch (error) {
+                console.error('Erro ao configurar event listeners:', error);
+                // Continue mesmo se falhar
+            }
+
+            try {
+                initTheme();
+            } catch (error) {
+                console.error('Erro ao inicializar tema:', error);
+                // Continue mesmo se falhar
+            }
+
+            clearTimeout(safetyTimeout);
+            showLoading(false);
+        } catch (error) {
+            console.error('Erro crítico na inicialização:', error);
+            clearTimeout(safetyTimeout);
+            showLoading(false);
+            try {
+                showNotification('Erro ao carregar página. Tente recarregar.', 'error');
+            } catch (notifError) {
+                console.error('Erro ao mostrar notificação:', notifError);
+            }
         }
-
-        // User is authenticated, continue loading
-        const [config, serverInfo] = await Promise.all([
-            loadServerConfig(),
-            loadServerInfo()
-        ]);
-
-        // Load channels after config is loaded
-        await loadGuildChannels(true);
-
-        if (config) {
-            populateForm(config);
-        }
-
-        setupEventListeners();
-        initTheme();
-
-        showLoading(false);
-        return Promise.resolve();
     }
 
     // ========== MODAL DE EDIÇÃO DE MENSAGEM ==========
@@ -1766,20 +1988,32 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
     
     function updateMainPreview(type) {
-        const notification = type === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
-        const previewSimple = document.getElementById(`${type}-preview-simple`);
-        const previewEmbed = document.getElementById(`${type}-preview-embed`);
-        
-        // Find preview section by traversing up from previewSimple
-        const previewSection = previewSimple?.closest('.message-preview-section');
-        
-        if (!previewSimple && !previewEmbed) {
-            console.warn(`⚠️ Preview elements not found for type: ${type}`);
-            return;
-        }
-        
-        const hasText = notification.message && notification.message.trim();
-        const hasEmbed = notification.embed && (notification.embed.title || notification.embed.description);
+        try {
+            if (!serverConfig || !serverConfig.notifications) {
+                console.warn('⚠️ serverConfig ou notifications não disponível');
+                return;
+            }
+            
+            const notification = type === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
+            
+            if (!notification) {
+                console.warn(`⚠️ Notificação não encontrada para tipo: ${type}`);
+                return;
+            }
+            
+            const previewSimple = document.getElementById(`${type}-preview-simple`);
+            const previewEmbed = document.getElementById(`${type}-preview-embed`);
+            
+            // Find preview section by traversing up from previewSimple
+            const previewSection = previewSimple?.closest('.message-preview-section');
+            
+            if (!previewSimple && !previewEmbed) {
+                console.warn(`⚠️ Preview elements not found for type: ${type}`);
+                return;
+            }
+            
+            const hasText = notification.message && notification.message.trim();
+            const hasEmbed = notification.embed && (notification.embed.title || notification.embed.description);
         
         // Replace variables helper
         const replaceVars = (text) => {
@@ -1908,6 +2142,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         } else {
             console.warn(`⚠️ Preview section não encontrada para type: ${type}`);
+        }
+        } catch (error) {
+            console.error(`Erro ao atualizar preview para ${type}:`, error);
         }
     }
     
@@ -2668,13 +2905,27 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     // Setup buttons after init
     init().then(() => {
-        setTimeout(() => {
-            setupEditButtons();
-        }, 500);
-    }).catch(() => {
+        try {
+            setTimeout(() => {
+                try {
+                    setupEditButtons();
+                } catch (error) {
+                    console.error('Erro ao configurar botões de edição:', error);
+                }
+            }, 500);
+        } catch (error) {
+            console.error('Erro após inicialização:', error);
+        }
+    }).catch((error) => {
+        console.error('Erro na inicialização:', error);
+        showLoading(false);
         // If init doesn't return a promise, setup buttons anyway
         setTimeout(() => {
-            setupEditButtons();
+            try {
+                setupEditButtons();
+            } catch (err) {
+                console.error('Erro ao configurar botões:', err);
+            }
         }, 1000);
     });
 });
