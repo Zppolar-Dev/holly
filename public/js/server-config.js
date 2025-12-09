@@ -2262,9 +2262,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Edit message buttons
         const editJoinBtn = document.getElementById('edit-join-message');
         const editLeaveBtn = document.getElementById('edit-leave-message');
+        const editTiktokVideoBtn = document.getElementById('edit-tiktok-video-message');
+        const editTiktokLiveBtn = document.getElementById('edit-tiktok-live-message');
         
         console.log('📌 Botão join encontrado:', !!editJoinBtn);
         console.log('📌 Botão leave encontrado:', !!editLeaveBtn);
+        console.log('📌 Botão tiktok-video encontrado:', !!editTiktokVideoBtn);
+        console.log('📌 Botão tiktok-live encontrado:', !!editTiktokLiveBtn);
         
         if (editJoinBtn) {
             editJoinBtn.addEventListener('click', (e) => {
@@ -2285,14 +2289,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         if (editTiktokVideoBtn) {
-            editTiktokVideoBtn.addEventListener('click', () => {
+            editTiktokVideoBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log('🖱️ Clique no botão edit-tiktok-video-message');
                 openMessageEditModal('tiktok-video');
             });
         }
 
         if (editTiktokLiveBtn) {
-            editTiktokLiveBtn.addEventListener('click', () => {
+            editTiktokLiveBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log('🖱️ Clique no botão edit-tiktok-live-message');
                 openMessageEditModal('tiktok-live');
             });
