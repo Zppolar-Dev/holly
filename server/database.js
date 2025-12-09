@@ -130,6 +130,17 @@ async function initializeDatabase() {
             CREATE INDEX IF NOT EXISTS idx_servers_updated_at ON servers(updated_at)
         `);
 
+        // Add TikTok integration column if it doesn't exist
+        await pool.query(`
+            DO $$ 
+            BEGIN
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
+                              WHERE table_name='servers' AND column_name='tiktok_config') THEN
+                    ALTER TABLE servers ADD COLUMN tiktok_config JSONB DEFAULT '{"enabled": false, "username": "", "channelId": "", "notifyVideo": true, "notifyLive": true, "lastVideoId": null, "lastLiveStatus": false}'::jsonb;
+                END IF;
+            END $$;
+        `);
+
         // Create server_permissions table for managing who can configure servers
         await pool.query(`
             CREATE TABLE IF NOT EXISTS server_permissions (
@@ -240,6 +251,16 @@ async function getServerConfig(guildId) {
             }
         }
         
+        const tiktokConfig = row.tiktok_config || {
+            enabled: false,
+            username: '',
+            channelId: '',
+            notifyVideo: true,
+            notifyLive: true,
+            lastVideoId: null,
+            lastLiveStatus: false
+        };
+        
         return {
             prefix: row.prefix,
             nickname: stats.nickname || null,
@@ -250,6 +271,7 @@ async function getServerConfig(guildId) {
                 memberLeave: { enabled: false, channelId: null, message: '', useEmbed: false, embed: null }
             },
             modules: row.modules,
+            tiktok: tiktokConfig,
             stats: {
                 ...stats,
                 nickname: stats.nickname || null,
@@ -366,6 +388,39 @@ async function setServerNickname(guildId, nickname) {
     } catch (error) {
         console.error('Erro ao atualizar nickname:', error);
         throw error;
+    }
+}
+
+// Update TikTok configuration
+async function updateTikTokConfig(guildId, tiktokConfig) {
+    try {
+        await pool.query(
+            'UPDATE servers SET tiktok_config = $1, updated_at = CURRENT_TIMESTAMP WHERE guild_id = $2',
+            [JSON.stringify(tiktokConfig), guildId]
+        );
+        return await getServerConfig(guildId);
+    } catch (error) {
+        console.error('Erro ao atualizar configuração TikTok:', error);
+        throw error;
+    }
+}
+
+// Get all servers with TikTok enabled
+async function getTikTokEnabledServers() {
+    try {
+        const result = await pool.query(
+            `SELECT guild_id, tiktok_config FROM servers 
+             WHERE tiktok_config->>'enabled' = 'true' 
+             AND tiktok_config->>'username' != '' 
+             AND tiktok_config->>'channelId' != ''`
+        );
+        return result.rows.map(row => ({
+            guildId: row.guild_id,
+            tiktok: row.tiktok_config
+        }));
+    } catch (error) {
+        console.error('Erro ao buscar servidores com TikTok habilitado:', error);
+        return [];
     }
 }
 
@@ -737,6 +792,8 @@ module.exports = {
     setServerPrefix,
     setServerNickname,
     updateServerConfig,
+    updateTikTokConfig,
+    getTikTokEnabledServers,
     setModuleStatus,
     trackCommand,
     getServerStats,

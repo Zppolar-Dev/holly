@@ -300,6 +300,79 @@
                     </div>
                 </div>
 
+                <!-- Integração TikTok -->
+                <div class="config-section">
+                    <h2><i class="fab fa-tiktok"></i> Integração TikTok</h2>
+                    <div class="form-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="tiktok-enabled">
+                            <span class="slider"></span>
+                            <span>Ativar notificações do TikTok</span>
+                        </label>
+                        <small>Receba notificações quando novos vídeos forem postados ou quando uma live for iniciada</small>
+                    </div>
+                    <div id="tiktok-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="tiktok-username">
+                                Username do TikTok
+                                <span class="required">*</span>
+                            </label>
+                            <input 
+                                type="text" 
+                                id="tiktok-username" 
+                                class="form-input"
+                                placeholder="exemplo: @usuario"
+                                maxlength="50"
+                            >
+                            <small>Digite o username do TikTok (com ou sem @)</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="tiktok-channel">
+                                Canal de Notificação
+                                <button type="button" class="btn-icon" id="refresh-channels-tiktok" title="Atualizar lista de canais">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </label>
+                            <select id="tiktok-channel" class="form-input">
+                                <option value="">Selecione um canal...</option>
+                            </select>
+                            <small>Canal onde as notificações serão enviadas</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tipos de Notificação</label>
+                            <div class="checkbox-group">
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="tiktok-notify-video" checked>
+                                    <span>
+                                        <i class="fas fa-video"></i>
+                                        <strong>Novos Vídeos</strong>
+                                        <small>Notificar quando um novo vídeo for postado</small>
+                                    </span>
+                                </label>
+                                <label class="checkbox-item">
+                                    <input type="checkbox" id="tiktok-notify-live" checked>
+                                    <span>
+                                        <i class="fas fa-broadcast-tower"></i>
+                                        <strong>Lives</strong>
+                                        <small>Notificar quando uma live for iniciada</small>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="info-box">
+                            <i class="fas fa-info-circle"></i>
+                            <div>
+                                <strong>Como funciona:</strong>
+                                <p>O bot verifica periodicamente o perfil do TikTok configurado. Quando detectar um novo vídeo ou live, enviará uma notificação no canal selecionado.</p>
+                                <p><strong>Frequência de verificação:</strong> A cada 5 minutos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Botões de ação -->
                 <div class="config-actions">
                     <button class="btn secondary-btn" id="cancel-btn">

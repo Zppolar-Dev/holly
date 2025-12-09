@@ -340,6 +340,45 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
 
         // Join notifications
+        // Populate TikTok configuration
+        const tiktokConfig = serverConfig.tiktok || {
+            enabled: false,
+            username: '',
+            channelId: '',
+            notifyVideo: true,
+            notifyLive: true
+        };
+        
+        const tiktokEnabled = document.getElementById('tiktok-enabled');
+        const tiktokConfigDiv = document.getElementById('tiktok-config');
+        const tiktokUsername = document.getElementById('tiktok-username');
+        const tiktokChannel = document.getElementById('tiktok-channel');
+        const tiktokNotifyVideo = document.getElementById('tiktok-notify-video');
+        const tiktokNotifyLive = document.getElementById('tiktok-notify-live');
+        
+        if (tiktokEnabled) {
+            tiktokEnabled.checked = tiktokConfig.enabled || false;
+            if (tiktokConfigDiv) {
+                tiktokConfigDiv.style.display = tiktokEnabled.checked ? 'block' : 'none';
+            }
+        }
+        
+        if (tiktokUsername) {
+            tiktokUsername.value = tiktokConfig.username || '';
+        }
+        
+        if (tiktokChannel) {
+            tiktokChannel.value = tiktokConfig.channelId || '';
+        }
+        
+        if (tiktokNotifyVideo) {
+            tiktokNotifyVideo.checked = tiktokConfig.notifyVideo !== false;
+        }
+        
+        if (tiktokNotifyLive) {
+            tiktokNotifyLive.checked = tiktokConfig.notifyLive !== false;
+        }
+
         if (UI.notifyJoinEnabled) {
             UI.notifyJoinEnabled.checked = notifications.memberJoin?.enabled || false;
             toggleNotificationConfig('join', UI.notifyJoinEnabled.checked);
@@ -388,6 +427,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 
     // Populate channels dropdown
+    // Populate TikTok channel select
+    function populateTiktokChannel(channels) {
+        const tiktokChannel = document.getElementById('tiktok-channel');
+        if (!tiktokChannel) return;
+        
+        const currentValue = tiktokChannel.value;
+        tiktokChannel.innerHTML = '<option value="">Selecione um canal...</option>';
+        
+        channels.forEach(channel => {
+            const option = document.createElement('option');
+            option.value = channel.id;
+            option.textContent = `# ${channel.name}`;
+            if (channel.id === currentValue) {
+                option.selected = true;
+            }
+            tiktokChannel.appendChild(option);
+        });
+    }
+
     function populateChannels(channels) {
         guildChannels = channels;
         
@@ -409,6 +467,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 select.appendChild(option);
             });
         });
+        
+        // Also populate TikTok channel
+        populateTiktokChannel(channels);
     }
 
     // Toggle notification config visibility
@@ -545,6 +606,30 @@ document.addEventListener('DOMContentLoaded', async function() {
             );
 
             await Promise.all(modulePromises);
+
+            // Save TikTok configuration
+            const tiktokEnabled = document.getElementById('tiktok-enabled')?.checked || false;
+            const tiktokUsername = document.getElementById('tiktok-username')?.value.trim() || '';
+            const tiktokChannel = document.getElementById('tiktok-channel')?.value || '';
+            const tiktokNotifyVideo = document.getElementById('tiktok-notify-video')?.checked !== false;
+            const tiktokNotifyLive = document.getElementById('tiktok-notify-live')?.checked !== false;
+
+            if (tiktokEnabled && (!tiktokUsername || !tiktokChannel)) {
+                showNotification('⚠️ Para ativar TikTok, preencha username e canal', 'warning');
+            } else {
+                await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/tiktok`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        enabled: tiktokEnabled,
+                        username: tiktokUsername,
+                        channelId: tiktokChannel,
+                        notifyVideo: tiktokNotifyVideo,
+                        notifyLive: tiktokNotifyLive
+                    })
+                });
+            }
 
             showNotification('✅ Configurações salvas com sucesso!', 'success');
             
@@ -714,6 +799,68 @@ document.addEventListener('DOMContentLoaded', async function() {
                 }, 2000);
             });
         }
+
+        // TikTok toggle
+        const tiktokEnabled = document.getElementById('tiktok-enabled');
+        const tiktokConfigDiv = document.getElementById('tiktok-config');
+        if (tiktokEnabled && tiktokConfigDiv) {
+            tiktokEnabled.addEventListener('change', (e) => {
+                tiktokConfigDiv.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // TikTok channel refresh
+        const refreshChannelsTiktok = document.getElementById('refresh-channels-tiktok');
+        if (refreshChannelsTiktok) {
+            refreshChannelsTiktok.addEventListener('click', async () => {
+                refreshChannelsTiktok.disabled = true;
+                refreshChannelsTiktok.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                try {
+                    await fetch(`${CONFIG.API_BASE_URL}/api/bot/sync`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ guildId })
+                    });
+                } catch (error) {
+                    console.error('Erro ao solicitar canais do bot:', error);
+                }
+                
+                setTimeout(async () => {
+                    await loadGuildChannels(true);
+                    refreshChannelsTiktok.disabled = false;
+                    refreshChannelsTiktok.innerHTML = '<i class="fas fa-sync-alt"></i>';
+                    showNotification('✅ Canais atualizados!', 'success');
+                }, 2000);
+            });
+        }
+
+        // Populate TikTok channel select
+        function populateTiktokChannel(channels) {
+            const tiktokChannel = document.getElementById('tiktok-channel');
+            if (!tiktokChannel) return;
+            
+            const currentValue = tiktokChannel.value;
+            tiktokChannel.innerHTML = '<option value="">Selecione um canal...</option>';
+            
+            channels.forEach(channel => {
+                const option = document.createElement('option');
+                option.value = channel.id;
+                option.textContent = `# ${channel.name}`;
+                if (channel.id === currentValue) {
+                    option.selected = true;
+                }
+                tiktokChannel.appendChild(option);
+            });
+        }
+
+        // Update populateChannels to also populate TikTok channel
+        const originalPopulateChannels = populateChannels;
+        populateChannels = function(channels) {
+            originalPopulateChannels(channels);
+            populateTiktokChannel(channels);
+        };
 
         // Save button
         if (UI.saveBtn) {

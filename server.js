@@ -86,6 +86,9 @@ app.post('/auth/logout', discordAuth.authenticateToken, discordAuth.logout);
 // Shared bot instance (will be set when bot starts)
 let botClient = null;
 
+// TikTok integration
+const tiktokIntegration = require('./server/tiktok');
+
 // Rotas API
 app.get('/api/user', discordAuth.authenticateToken, discordAuth.getUserData);
 app.get('/api/user/guilds', discordAuth.authenticateToken, discordAuth.getUserGuilds);
@@ -700,6 +703,35 @@ app.post('/api/server/:guildId/module', discordAuth.authenticateToken, checkServ
     }
 });
 
+// Update TikTok configuration
+app.post('/api/server/:guildId/tiktok', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
+    const { guildId } = req.params;
+    const { enabled, username, channelId, notifyVideo, notifyLive } = req.body;
+    
+    try {
+        if (useDatabase && db && db.updateTikTokConfig) {
+            const tiktokConfig = {
+                enabled: enabled || false,
+                username: (username || '').replace('@', '').trim(),
+                channelId: channelId || '',
+                notifyVideo: notifyVideo !== false,
+                notifyLive: notifyLive !== false,
+                lastVideoId: null,
+                lastLiveStatus: false
+            };
+            
+            await db.updateTikTokConfig(guildId, tiktokConfig);
+            const config = await dataStore.getServerConfig(guildId);
+            res.json({ success: true, tiktok: config.tiktok || tiktokConfig });
+        } else {
+            res.status(500).json({ error: 'Banco de dados não disponível' });
+        }
+    } catch (error) {
+        console.error('Erro ao atualizar configuração TikTok:', error);
+        res.status(500).json({ error: 'Erro ao atualizar configuração TikTok' });
+    }
+});
+
 // Check if user is admin
 app.get('/api/user/is-admin', discordAuth.authenticateToken, async (req, res) => {
     const userId = req.user?.user_id;
@@ -750,10 +782,22 @@ app.get('/api/user/servers/stats', discordAuth.authenticateToken, async (req, re
     }
 });
 
+// TikTok integration
+const tiktokIntegration = require('./server/tiktok');
+
 // Function to register bot instance
 app.setBotClient = (client) => {
     botClient = client;
     console.log('✅ Bot client registrado no servidor web');
+    
+    // Initialize TikTok polling if database is available
+    if (useDatabase && db) {
+        try {
+            tiktokIntegration.initTikTokPolling(db, botClient);
+        } catch (error) {
+            console.error('❌ Erro ao inicializar polling TikTok:', error.message);
+        }
+    }
     
     // Start periodic data sync from bot to site
     if (client && typeof client.getStats === 'function') {
