@@ -323,6 +323,54 @@ async function getTikTokUserInfo(username) {
                     // Verificar se está em live
                     isLive = userInfoPath.user?.isLive || userInfoPath.user?.roomId ? true : false;
                     console.log(`   - Live status: ${isLive}`);
+                    
+                    // Tentar extrair secUid para usar na API alternativa
+                    const secUid = userInfoPath.user?.secUid;
+                    if (secUid && !latestVideo) {
+                        console.log(`   - secUid encontrado no userInfo, tentando buscar vídeos via API...`);
+                        try {
+                            const videoUrl = `https://www.tiktok.com/api/post/item_list/?secUid=${secUid}&count=1&cursor=0`;
+                            const videoResponse = await axios.get(videoUrl, {
+                                headers: {
+                                    'User-Agent': USER_AGENT,
+                                    'Referer': `https://www.tiktok.com/@${cleanUsername}`,
+                                    'Accept': 'application/json, text/plain, */*'
+                                },
+                                timeout: 10000,
+                                validateStatus: function (status) {
+                                    return status < 500;
+                                }
+                            });
+                            
+                            if (videoResponse.status === 200 && videoResponse.data) {
+                                let itemList = null;
+                                if (videoResponse.data.itemList) {
+                                    itemList = videoResponse.data.itemList;
+                                } else if (videoResponse.data.items) {
+                                    itemList = videoResponse.data.items;
+                                } else if (videoResponse.data.data && videoResponse.data.data.itemList) {
+                                    itemList = videoResponse.data.data.itemList;
+                                } else if (Array.isArray(videoResponse.data)) {
+                                    itemList = videoResponse.data;
+                                }
+                                
+                                if (itemList && Array.isArray(itemList) && itemList.length > 0) {
+                                    const video = itemList[0];
+                                    latestVideo = {
+                                        id: video.id || video.itemId || video.awemeId || String(video.createTime || Date.now()),
+                                        title: video.desc || video.description || '',
+                                        description: video.desc || video.description || '',
+                                        url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.itemId || video.awemeId}`,
+                                        thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                        createdAt: video.createTime || video.create_time || Date.now()
+                                    };
+                                    console.log(`✅ Vídeo encontrado via secUid do userInfo: ${latestVideo.id}`);
+                                }
+                            }
+                        } catch (apiError) {
+                            console.warn(`   ⚠️ Erro ao buscar vídeos via secUid:`, apiError.message);
+                        }
+                    }
                 } else {
                     console.warn(`⚠️ userInfo não encontrado na estrutura esperada`);
                 }
@@ -693,10 +741,26 @@ async function getLatestVideoAlternative(username) {
         });
         
         console.log(`   - Status da API user detail: ${response.status}`);
+        console.log(`   - Chaves na resposta: ${response.data ? Object.keys(response.data).join(', ') : 'Nenhuma'}`);
         
-        if (response.status === 200 && response.data && response.data.userInfo && response.data.userInfo.user) {
-            const secUid = response.data.userInfo.user.secUid;
-            console.log(`   - secUid obtido: ${secUid ? 'Sim' : 'Não'}`);
+        if (response.status === 200 && response.data) {
+            // Tentar diferentes estruturas de resposta
+            let userInfo = null;
+            let secUid = null;
+            
+            if (response.data.userInfo && response.data.userInfo.user) {
+                userInfo = response.data.userInfo;
+                secUid = response.data.userInfo.user.secUid;
+            } else if (response.data.user && response.data.user.secUid) {
+                userInfo = { user: response.data.user };
+                secUid = response.data.user.secUid;
+            } else if (response.data.data && response.data.data.userInfo) {
+                userInfo = response.data.data.userInfo;
+                secUid = response.data.data.userInfo.user?.secUid;
+            }
+            
+            console.log(`   - userInfo encontrado: ${userInfo ? 'Sim' : 'Não'}`);
+            console.log(`   - secUid obtido: ${secUid ? secUid.substring(0, 20) + '...' : 'Não'}`);
             
             if (secUid) {
                 // Buscar vídeos do usuário usando secUid
