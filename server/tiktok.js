@@ -93,7 +93,14 @@ async function checkServerTikTok(server) {
             if (latestVideoId && latestVideoId !== tiktok.lastVideoId) {
                 // New video detected!
                 console.log(`🎥 Novo vídeo detectado para @${username}: ${latestVideoId}`);
-                await sendTikTokNotification(guildId, tiktok, 'video', userInfo.latestVideo);
+                await sendTikTokNotification(guildId, tiktok, 'video', {
+                    ...userInfo.latestVideo,
+                    username: userInfo.username || username,
+                    displayName: userInfo.displayName || username,
+                    avatar: userInfo.avatar || '',
+                    followerCount: userInfo.followerCount || 0,
+                    videoCount: userInfo.videoCount || 0
+                });
                 
                 // Update last video ID
                 await db.updateTikTokConfig(guildId, {
@@ -111,8 +118,13 @@ async function checkServerTikTok(server) {
                 // Live started!
                 console.log(`🔴 Live detectada para @${username}`);
                 await sendTikTokNotification(guildId, tiktok, 'live', {
-                    username: username,
-                    title: userInfo.liveTitle || 'Live em andamento'
+                    username: userInfo.username || username,
+                    displayName: userInfo.displayName || username,
+                    avatar: userInfo.avatar || '',
+                    followerCount: userInfo.followerCount || 0,
+                    videoCount: userInfo.videoCount || 0,
+                    title: userInfo.liveTitle || 'Live em andamento',
+                    url: `https://www.tiktok.com/@${username}/live`
                 });
                 
                 // Update live status
@@ -363,14 +375,47 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
         
         const { EmbedBuilder } = require('discord.js');
         
-        // Replace placeholders in messages
+        // Helper function to format numbers (e.g., 1200000 -> 1.2M)
+        const formatNumber = (num) => {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        };
+        
+        // Replace placeholders in messages - different for video and live
         const replacePlaceholders = (text) => {
             if (!text) return '';
-            return text
-                .replace(/\{username\}/g, tiktokConfig.username)
-                .replace(/\{video\.title\}/g, data.title || 'Novo Vídeo')
-                .replace(/\{video\.url\}/g, data.url || `https://www.tiktok.com/@${tiktokConfig.username}`)
-                .replace(/\{video\.thumbnail\}/g, data.thumbnail || '');
+            
+            // Base replacements (always available)
+            let processedText = text
+                .replace(/\{username\}/g, data.username || tiktokConfig.username)
+                .replace(/\{profile\.name\}/g, data.displayName || data.username || tiktokConfig.username)
+                .replace(/\{profile\.url\}/g, `https://www.tiktok.com/@${tiktokConfig.username}`)
+                .replace(/\{profile\.avatar\}/g, data.avatar || '')
+                .replace(/\{profile\.followers\}/g, formatNumber(data.followerCount || 0))
+                .replace(/\{profile\.videos\}/g, formatNumber(data.videoCount || 0));
+            
+            // Type-specific replacements
+            if (type === 'video') {
+                // Video placeholders only
+                processedText = processedText
+                    .replace(/\{video\.title\}/g, data.title || 'Novo Vídeo')
+                    .replace(/\{video\.url\}/g, data.url || `https://www.tiktok.com/@${tiktokConfig.username}`)
+                    .replace(/\{video\.thumbnail\}/g, data.thumbnail || '')
+                    .replace(/\{video\.id\}/g, data.id || '')
+                    .replace(/\{video\.description\}/g, data.description || data.title || '');
+            } else if (type === 'live') {
+                // Live placeholders only
+                processedText = processedText
+                    .replace(/\{live\.title\}/g, data.title || 'Live em andamento')
+                    .replace(/\{live\.url\}/g, data.url || `https://www.tiktok.com/@${tiktokConfig.username}/live`)
+                    .replace(/\{live\.viewers\}/g, formatNumber(data.viewers || 0));
+            }
+            
+            return processedText;
         };
         
         if (type === 'video') {
@@ -401,13 +446,22 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
                 }
                 
                 if (customEmbed.thumbnail && customEmbed.thumbnail.url) {
-                    embed.setThumbnail(replacePlaceholders(customEmbed.thumbnail.url));
-                } else if (data.thumbnail) {
+                    const thumbnailUrl = replacePlaceholders(customEmbed.thumbnail.url);
+                    if (thumbnailUrl) {
+                        embed.setThumbnail(thumbnailUrl);
+                    }
+                } else if (data.thumbnail && type === 'video') {
                     embed.setThumbnail(data.thumbnail);
                 }
                 
                 if (customEmbed.image && customEmbed.image.url) {
-                    embed.setImage(replacePlaceholders(customEmbed.image.url));
+                    const imageUrl = replacePlaceholders(customEmbed.image.url);
+                    if (imageUrl) {
+                        embed.setImage(imageUrl);
+                    }
+                } else if (data.thumbnail && type === 'video') {
+                    // Use video thumbnail as image if no custom image
+                    embed.setImage(data.thumbnail);
                 }
                 
                 if (customEmbed.footer && customEmbed.footer.text) {
@@ -456,10 +510,10 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
             const sentMessage = await channel.send(messageOptions);
             
             // Delete after specified time
-            if (tiktokConfig.deleteAfter && tiktokConfig.deleteAfter > 0) {
+            if (tiktokConfig.videoDeleteAfter && tiktokConfig.videoDeleteAfter > 0) {
                 setTimeout(() => {
                     sentMessage.delete().catch(() => {});
-                }, tiktokConfig.deleteAfter * 1000);
+                }, tiktokConfig.videoDeleteAfter * 1000);
             }
             
         } else if (type === 'live') {
@@ -490,11 +544,20 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
                 }
                 
                 if (customEmbed.thumbnail && customEmbed.thumbnail.url) {
-                    embed.setThumbnail(replacePlaceholders(customEmbed.thumbnail.url));
+                    const thumbnailUrl = replacePlaceholders(customEmbed.thumbnail.url);
+                    if (thumbnailUrl) {
+                        embed.setThumbnail(thumbnailUrl);
+                    }
+                } else if (data.avatar && type === 'live') {
+                    // Use profile avatar as thumbnail for live if available
+                    embed.setThumbnail(data.avatar);
                 }
                 
                 if (customEmbed.image && customEmbed.image.url) {
-                    embed.setImage(replacePlaceholders(customEmbed.image.url));
+                    const imageUrl = replacePlaceholders(customEmbed.image.url);
+                    if (imageUrl) {
+                        embed.setImage(imageUrl);
+                    }
                 }
                 
                 if (customEmbed.footer && customEmbed.footer.text) {
@@ -538,10 +601,10 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
             const sentMessage = await channel.send(messageOptions);
             
             // Delete after specified time
-            if (tiktokConfig.deleteAfter && tiktokConfig.deleteAfter > 0) {
+            if (tiktokConfig.liveDeleteAfter && tiktokConfig.liveDeleteAfter > 0) {
                 setTimeout(() => {
                     sentMessage.delete().catch(() => {});
-                }, tiktokConfig.deleteAfter * 1000);
+                }, tiktokConfig.liveDeleteAfter * 1000);
             }
         }
         

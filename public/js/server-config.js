@@ -1915,7 +1915,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             ? document.getElementById('tiktok-video-preview-text')
             : document.getElementById('tiktok-live-preview-text');
         
-        // Replace variables helper
+        // Replace variables helper - different placeholders for video and live
         const replaceVars = (text) => {
             if (!text) return '';
             const serverName = UI.serverName?.textContent || 'Server';
@@ -1931,11 +1931,16 @@ document.addEventListener('DOMContentLoaded', async function() {
             
             const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
             const tiktokUsername = tiktokConfig.username || 'usuario';
+            const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
             
+            // Base replacements (always available)
             let processedText = text
                 .replace(/\{username\}/g, tiktokUsername)
-                .replace(/\{video\.title\}/g, 'Novo Vídeo')
-                .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}`)
+                .replace(/\{profile\.name\}/g, tiktokUsername)
+                .replace(/\{profile\.url\}/g, tiktokProfileUrl)
+                .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png')
+                .replace(/\{profile\.followers\}/g, '1.2M')
+                .replace(/\{profile\.videos\}/g, '150')
                 .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
                 .replace(/\{user\.avatar\}/g, userAvatar)
                 .replace(/\{user\.id\}/g, userId)
@@ -1945,6 +1950,23 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .replace(/\{server\}/g, serverName)
                 .replace(/\{members\}/g, '100');
             
+            // Type-specific replacements
+            if (type === 'tiktok-video') {
+                // Video placeholders only
+                processedText = processedText
+                    .replace(/\{video\.title\}/g, 'Novo Vídeo do TikTok')
+                    .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
+                    .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA')
+                    .replace(/\{video\.id\}/g, '1234567890')
+                    .replace(/\{video\.description\}/g, 'Descrição do vídeo');
+            } else if (type === 'tiktok-live') {
+                // Live placeholders only
+                processedText = processedText
+                    .replace(/\{live\.title\}/g, 'Live em andamento')
+                    .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`)
+                    .replace(/\{live\.viewers\}/g, '1.5K');
+            }
+            
             // Parse markdown
             processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong class="discord-bold">$1</strong>');
             processedText = processedText.replace(/\*([^*]+)\*/g, '<em class="discord-italic">$1</em>');
@@ -1952,6 +1974,29 @@ document.addEventListener('DOMContentLoaded', async function() {
             processedText = processedText.replace(/\n/g, '<br>');
             
             return processedText;
+        };
+        
+        // Replace variables in URLs
+        const replaceVarsInUrl = (url) => {
+            if (!url) return '';
+            const tiktokUsername = tiktokConfig.username || 'usuario';
+            const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
+            
+            let processedUrl = url
+                .replace(/\{username\}/g, tiktokUsername)
+                .replace(/\{profile\.url\}/g, tiktokProfileUrl)
+                .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png');
+            
+            if (type === 'tiktok-video') {
+                processedUrl = processedUrl
+                    .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
+                    .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA');
+            } else if (type === 'tiktok-live') {
+                processedUrl = processedUrl
+                    .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`);
+            }
+            
+            return processedUrl;
         };
         
         if (previewText) {
@@ -1964,19 +2009,73 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (previewEmbed && embed) {
             // Build embed HTML
-            let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${embed.color || '#000000'};"></div>`;
+            let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${embed.color || (type === 'tiktok-live' ? '#FF0050' : '#000000')};"></div>`;
             embedHTML += '<div class="discord-embed-content">';
             
-            if (embed.title) {
-                embedHTML += `<div class="discord-embed-title">${replaceVars(embed.title)}</div>`;
+            // Author
+            if (embed.author && embed.author.name) {
+                embedHTML += '<div class="discord-embed-author">';
+                if (embed.author.icon_url) {
+                    const authorIconUrl = replaceVarsInUrl(embed.author.icon_url);
+                    embedHTML += `<img src="${authorIconUrl}" alt="Author" class="discord-embed-author-icon" onerror="this.style.display='none'">`;
+                }
+                if (embed.author.url) {
+                    embedHTML += `<a href="${replaceVarsInUrl(embed.author.url)}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.author.name)}</a>`;
+                } else {
+                    embedHTML += replaceVars(embed.author.name);
+                }
+                embedHTML += '</div>';
             }
             
+            // Title
+            if (embed.title) {
+                if (embed.titleUrl) {
+                    embedHTML += `<div class="discord-embed-title"><a href="${replaceVarsInUrl(embed.titleUrl)}" target="_blank" style="color: inherit; text-decoration: none;">${replaceVars(embed.title)}</a></div>`;
+                } else {
+                    embedHTML += `<div class="discord-embed-title">${replaceVars(embed.title)}</div>`;
+                }
+            }
+            
+            // Description
             if (embed.description) {
                 embedHTML += `<div class="discord-embed-description">${replaceVars(embed.description)}</div>`;
             }
             
+            // Fields
+            if (embed.fields && Array.isArray(embed.fields) && embed.fields.length > 0) {
+                embedHTML += '<div class="discord-embed-fields">';
+                embed.fields.forEach(field => {
+                    if (field.name || field.value) {
+                        embedHTML += `<div class="discord-embed-field" style="display: ${field.inline ? 'inline-block' : 'block'}; width: ${field.inline ? '48%' : '100%'}; margin-right: ${field.inline ? '2%' : '0'};">
+                            <div class="discord-embed-field-name">${replaceVars(field.name || '\u200b')}</div>
+                            <div class="discord-embed-field-value">${replaceVars(field.value || '\u200b')}</div>
+                        </div>`;
+                    }
+                });
+                embedHTML += '</div>';
+            }
+            
+            // Thumbnail
             if (embed.thumbnail && embed.thumbnail.url) {
-                embedHTML += `<div class="discord-embed-thumbnail"><img src="${embed.thumbnail.url}" alt="Thumbnail"></div>`;
+                const thumbnailUrl = replaceVarsInUrl(embed.thumbnail.url);
+                embedHTML += `<div class="discord-embed-thumbnail"><img src="${thumbnailUrl}" alt="Thumbnail" onerror="this.parentElement.style.display='none'"></div>`;
+            }
+            
+            // Image
+            if (embed.image && embed.image.url) {
+                const imageUrl = replaceVarsInUrl(embed.image.url);
+                embedHTML += `<div class="discord-embed-image"><img src="${imageUrl}" alt="Embed Image" onerror="this.parentElement.style.display='none'"></div>`;
+            }
+            
+            // Footer
+            if (embed.footer && embed.footer.text) {
+                embedHTML += '<div class="discord-embed-footer">';
+                if (embed.footer.icon_url) {
+                    const footerIconUrl = replaceVarsInUrl(embed.footer.icon_url);
+                    embedHTML += `<img src="${footerIconUrl}" alt="Footer" class="discord-embed-footer-icon" onerror="this.style.display='none'">`;
+                }
+                embedHTML += `<span>${replaceVars(embed.footer.text)}</span>`;
+                embedHTML += '</div>';
             }
             
             embedHTML += '</div>';
