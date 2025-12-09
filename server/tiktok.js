@@ -277,6 +277,10 @@ async function getTikTokUserInfo(username) {
         // Parse HTML com cheerio
         const $ = cheerio.load(response.data);
         
+        // Debug: verificar se a página foi carregada corretamente
+        const pageTitle = $('title').text();
+        console.log(`   - Título da página: ${pageTitle.substring(0, 50)}...`);
+        
         // Tentar extrair dados do JSON embutido na página
         let userData = null;
         let latestVideo = null;
@@ -284,70 +288,244 @@ async function getTikTokUserInfo(username) {
         
         // TikTok geralmente coloca dados em um script tag com id="__UNIVERSAL_DATA_FOR_REHYDRATION__"
         const scriptTags = $('script#__UNIVERSAL_DATA_FOR_REHYDRATION__');
+        console.log(`   - Script tags encontrados: ${scriptTags.length}`);
         
         if (scriptTags.length > 0) {
             try {
-                const jsonData = JSON.parse(scriptTags.html());
+                const scriptContent = scriptTags.html();
+                console.log(`📄 Script tag encontrado, tamanho: ${scriptContent.length} caracteres`);
                 
-                // Navegar pela estrutura de dados do TikTok
-                if (jsonData['__DEFAULT_SCOPE__'] && 
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail'] &&
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo']) {
-                    
-                    const userInfo = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo'];
-                    userData = {
-                        username: userInfo.user?.uniqueId || cleanUsername,
-                        displayName: userInfo.user?.nickname || cleanUsername,
-                        avatar: userInfo.user?.avatarMedium || '',
-                        followerCount: userInfo.stats?.followerCount || 0,
-                        videoCount: userInfo.stats?.videoCount || 0
-                    };
+                const jsonData = JSON.parse(scriptContent);
+                console.log(`✅ JSON parseado com sucesso`);
+                console.log(`   - Chaves principais: ${Object.keys(jsonData).join(', ')}`);
+                
+                // Navegar pela estrutura de dados do TikTok - tentar múltiplas estruturas
+                let userInfoPath = null;
+                let itemListPath = null;
+                
+                // Tentar diferentes caminhos para userInfo
+                if (jsonData['__DEFAULT_SCOPE__']?.['webapp.user-detail']?.['userInfo']) {
+                    userInfoPath = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo'];
+                } else if (jsonData['__UNIVERSAL_DATA_FOR_REHYDRATION__']?.['__DEFAULT_SCOPE__']?.['webapp.user-detail']?.['userInfo']) {
+                    userInfoPath = jsonData['__UNIVERSAL_DATA_FOR_REHYDRATION__']['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo'];
                 }
                 
-                // Buscar vídeos
-                if (jsonData['__DEFAULT_SCOPE__'] && 
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail'] &&
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['itemList']) {
+                if (userInfoPath) {
+                    console.log(`✅ userInfo encontrado`);
+                    userData = {
+                        username: userInfoPath.user?.uniqueId || cleanUsername,
+                        displayName: userInfoPath.user?.nickname || cleanUsername,
+                        avatar: userInfoPath.user?.avatarMedium || '',
+                        followerCount: userInfoPath.stats?.followerCount || 0,
+                        videoCount: userInfoPath.stats?.videoCount || 0
+                    };
                     
-                    const videos = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['itemList'];
-                    if (videos && videos.length > 0) {
-                        const video = videos[0];
-                        latestVideo = {
-                            id: video.id || video.itemId || null,
-                            title: video.desc || '',
-                            description: video.desc || '',
-                            url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.itemId}`,
-                            thumbnail: video.video?.cover || video.video?.dynamicCover || '',
-                            createdAt: video.createTime || Date.now()
-                        };
+                    // Verificar se está em live
+                    isLive = userInfoPath.user?.isLive || userInfoPath.user?.roomId ? true : false;
+                    console.log(`   - Live status: ${isLive}`);
+                } else {
+                    console.warn(`⚠️ userInfo não encontrado na estrutura esperada`);
+                }
+                
+                // Tentar diferentes caminhos para itemList (vídeos)
+                const defaultScope = jsonData['__DEFAULT_SCOPE__'];
+                if (defaultScope) {
+                    const userDetail = defaultScope['webapp.user-detail'];
+                    if (userDetail) {
+                        console.log(`   - Chaves em webapp.user-detail: ${Object.keys(userDetail).join(', ')}`);
+                        
+                        // Tentar itemList primeiro
+                        if (userDetail['itemList']) {
+                            itemListPath = userDetail['itemList'];
+                            console.log(`   - itemList encontrado em __DEFAULT_SCOPE__`);
+                        }
+                        
+                        // Tentar itemModule
+                        if (!itemListPath && userDetail['itemModule']) {
+                            const itemModule = userDetail['itemModule'];
+                            const videoIds = Object.keys(itemModule);
+                            console.log(`   - itemModule encontrado com ${videoIds.length} vídeos`);
+                            if (videoIds.length > 0) {
+                                const firstVideoId = videoIds[0];
+                                const video = itemModule[firstVideoId];
+                                latestVideo = {
+                                    id: video.id || video.awemeId || firstVideoId || String(video.createTime || video.create_time || Date.now()),
+                                    title: video.desc || video.description || '',
+                                    description: video.desc || video.description || '',
+                                    url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.awemeId || firstVideoId}`,
+                                    thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                    createdAt: video.createTime || video.create_time || Date.now()
+                                };
+                                console.log(`✅ Vídeo encontrado via itemModule: ${latestVideo.id}`);
+                            }
+                        }
+                        
+                        // Tentar outras estruturas possíveis
+                        if (!latestVideo) {
+                            // Tentar buscar em todas as chaves que podem conter vídeos
+                            for (const key of Object.keys(userDetail)) {
+                                if (key.includes('item') || key.includes('video') || key.includes('post')) {
+                                    const value = userDetail[key];
+                                    if (Array.isArray(value) && value.length > 0) {
+                                        console.log(`   - Tentando extrair de ${key} (array com ${value.length} itens)`);
+                                        const video = value[0];
+                                        if (video.id || video.itemId || video.awemeId) {
+                                            latestVideo = {
+                                                id: video.id || video.itemId || video.awemeId,
+                                                title: video.desc || video.description || '',
+                                                description: video.desc || video.description || '',
+                                                url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.itemId || video.awemeId}`,
+                                                thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                                createdAt: video.createTime || video.create_time || Date.now()
+                                            };
+                                            console.log(`✅ Vídeo encontrado via ${key}: ${latestVideo.id}`);
+                                            break;
+                                        }
+                                    } else if (typeof value === 'object' && value !== null) {
+                                        const videoIds = Object.keys(value);
+                                        if (videoIds.length > 0) {
+                                            console.log(`   - Tentando extrair de ${key} (objeto com ${videoIds.length} chaves)`);
+                                            const firstVideoId = videoIds[0];
+                                            const video = value[firstVideoId];
+                                            if (video && (video.id || video.itemId || video.awemeId)) {
+                                                latestVideo = {
+                                                    id: video.id || video.awemeId || firstVideoId,
+                                                    title: video.desc || video.description || '',
+                                                    description: video.desc || video.description || '',
+                                                    url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.awemeId || firstVideoId}`,
+                                                    thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                                    createdAt: video.createTime || video.create_time || Date.now()
+                                                };
+                                                console.log(`✅ Vídeo encontrado via ${key}: ${latestVideo.id}`);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 
-                // Verificar se está em live
-                if (jsonData['__DEFAULT_SCOPE__'] && 
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail'] &&
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo'] &&
-                    jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo']['user']) {
-                    
-                    isLive = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo']['user']['isLive'] || false;
+                if (itemListPath && Array.isArray(itemListPath) && itemListPath.length > 0) {
+                    console.log(`✅ itemList encontrado com ${itemListPath.length} itens`);
+                    const video = itemListPath[0];
+                    latestVideo = {
+                        id: video.id || video.itemId || video.awemeId || String(video.createTime || video.create_time || Date.now()),
+                        title: video.desc || video.description || '',
+                        description: video.desc || video.description || '',
+                        url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.itemId || video.awemeId}`,
+                        thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                        createdAt: video.createTime || video.create_time || Date.now()
+                    };
+                    console.log(`   - Vídeo ID: ${latestVideo.id}`);
+                    console.log(`   - Título: ${latestVideo.title ? latestVideo.title.substring(0, 50) + '...' : 'Sem título'}`);
                 }
             } catch (parseError) {
                 console.warn(`⚠️ Erro ao parsear JSON do TikTok:`, parseError.message);
+                console.warn(`   Stack: ${parseError.stack}`);
             }
-        }
-        
-        // Fallback: tentar extrair de outros scripts
-        if (!userData || !latestVideo) {
-            // Buscar em todos os scripts
-            $('script').each((i, elem) => {
+        } else {
+            console.warn(`⚠️ Script tag #__UNIVERSAL_DATA_FOR_REHYDRATION__ não encontrado`);
+            // Tentar buscar em outros scripts
+            const allScripts = $('script');
+            console.log(`   - Total de scripts encontrados: ${allScripts.length}`);
+            
+            allScripts.each((i, elem) => {
                 const scriptContent = $(elem).html();
-                if (scriptContent && scriptContent.includes('"userInfo"')) {
+                if (scriptContent && scriptContent.includes('"userInfo"') && scriptContent.includes('"itemList"')) {
                     try {
                         // Tentar encontrar JSON válido
                         const jsonMatch = scriptContent.match(/window\.__UNIVERSAL_DATA_FOR_REHYDRATION__\s*=\s*({.+?});/s);
                         if (jsonMatch) {
                             const jsonData = JSON.parse(jsonMatch[1]);
-                            // Processar dados similar ao acima
+                            console.log(`✅ JSON encontrado em script alternativo`);
+                            // Processar similar ao acima
+                        }
+                    } catch (e) {
+                        // Ignorar erros de parse
+                    }
+                }
+            });
+        }
+        
+        // Fallback: tentar extrair de outros scripts
+        if (!userData || !latestVideo) {
+            console.log(`🔄 Tentando métodos alternativos de extração...`);
+            // Buscar em todos os scripts
+            $('script').each((i, elem) => {
+                const scriptContent = $(elem).html();
+                if (scriptContent && (scriptContent.includes('"userInfo"') || scriptContent.includes('"itemList"') || scriptContent.includes('"itemModule"'))) {
+                    try {
+                        // Tentar encontrar JSON válido de diferentes formas
+                        let jsonData = null;
+                        
+                        // Forma 1: window.__UNIVERSAL_DATA_FOR_REHYDRATION__ = {...};
+                        let jsonMatch = scriptContent.match(/window\.__UNIVERSAL_DATA_FOR_REHYDRATION__\s*=\s*({[\s\S]+?});/);
+                        if (jsonMatch) {
+                            jsonData = JSON.parse(jsonMatch[1]);
+                        }
+                        
+                        // Forma 2: <script id="__UNIVERSAL_DATA_FOR_REHYDRATION__">{...}</script>
+                        if (!jsonData) {
+                            jsonMatch = scriptContent.match(/^({[\s\S]+})$/);
+                            if (jsonMatch) {
+                                try {
+                                    jsonData = JSON.parse(jsonMatch[1]);
+                                } catch (e) {
+                                    // Ignorar
+                                }
+                            }
+                        }
+                        
+                        if (jsonData) {
+                            console.log(`✅ JSON encontrado em script alternativo ${i}`);
+                            // Tentar extrair dados
+                            if (!userData && jsonData['__DEFAULT_SCOPE__']?.['webapp.user-detail']?.['userInfo']) {
+                                const userInfo = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['userInfo'];
+                                userData = {
+                                    username: userInfo.user?.uniqueId || cleanUsername,
+                                    displayName: userInfo.user?.nickname || cleanUsername,
+                                    avatar: userInfo.user?.avatarMedium || '',
+                                    followerCount: userInfo.stats?.followerCount || 0,
+                                    videoCount: userInfo.stats?.videoCount || 0
+                                };
+                                isLive = userInfo.user?.isLive || userInfo.user?.roomId ? true : false;
+                            }
+                            
+                            if (!latestVideo) {
+                                // Tentar itemList
+                                const itemList = jsonData['__DEFAULT_SCOPE__']?.['webapp.user-detail']?.['itemList'];
+                                if (itemList && Array.isArray(itemList) && itemList.length > 0) {
+                                    const video = itemList[0];
+                                    latestVideo = {
+                                        id: video.id || video.itemId || video.awemeId || null,
+                                        title: video.desc || video.description || '',
+                                        description: video.desc || video.description || '',
+                                        url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.itemId || video.awemeId}`,
+                                        thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                        createdAt: video.createTime || video.create_time || Date.now()
+                                    };
+                                }
+                                
+                                // Tentar itemModule
+                                if (!latestVideo && jsonData['__DEFAULT_SCOPE__']?.['webapp.user-detail']?.['itemModule']) {
+                                    const itemModule = jsonData['__DEFAULT_SCOPE__']['webapp.user-detail']['itemModule'];
+                                    const videoIds = Object.keys(itemModule);
+                                    if (videoIds.length > 0) {
+                                        const firstVideoId = videoIds[0];
+                                        const video = itemModule[firstVideoId];
+                                        latestVideo = {
+                                            id: video.id || video.awemeId || firstVideoId,
+                                            title: video.desc || video.description || '',
+                                            description: video.desc || video.description || '',
+                                            url: `https://www.tiktok.com/@${cleanUsername}/video/${video.id || video.awemeId || firstVideoId}`,
+                                            thumbnail: video.video?.cover || video.video?.dynamicCover || video.video?.originCover || '',
+                                            createdAt: video.createTime || video.create_time || Date.now()
+                                        };
+                                    }
+                                }
+                            }
                         }
                     } catch (e) {
                         // Ignorar erros de parse
@@ -358,7 +536,70 @@ async function getTikTokUserInfo(username) {
         
         // Se ainda não encontrou, tentar método alternativo: buscar via API não oficial
         if (!latestVideo) {
+            console.log(`🔄 Tentando método alternativo de API...`);
             latestVideo = await getLatestVideoAlternative(cleanUsername);
+        }
+        
+        // Último fallback: tentar extrair da URL do primeiro vídeo na página
+        if (!latestVideo) {
+            console.log(`🔄 Tentando extrair vídeo da estrutura HTML...`);
+            // Buscar links de vídeo na página
+            const videoLinks = $('a[href*="/video/"]');
+            console.log(`   - Links de vídeo encontrados: ${videoLinks.length}`);
+            if (videoLinks.length > 0) {
+                const firstLink = videoLinks.first();
+                const href = firstLink.attr('href');
+                console.log(`   - Primeiro link: ${href}`);
+                const videoIdMatch = href.match(/\/video\/(\d+)/);
+                if (videoIdMatch) {
+                    const videoId = videoIdMatch[1];
+                    latestVideo = {
+                        id: videoId,
+                        title: firstLink.attr('title') || firstLink.text() || '',
+                        description: firstLink.attr('title') || firstLink.text() || '',
+                        url: href.startsWith('http') ? href : `https://www.tiktok.com${href}`,
+                        thumbnail: '',
+                        createdAt: Date.now()
+                    };
+                    console.log(`✅ Vídeo encontrado via HTML: ${videoId}`);
+                }
+            }
+            
+            // Também tentar buscar em data attributes
+            if (!latestVideo) {
+                const videoElements = $('[data-e2e="user-post-item"]');
+                console.log(`   - Elementos de vídeo encontrados: ${videoElements.length}`);
+                if (videoElements.length > 0) {
+                    const firstElement = videoElements.first();
+                    const videoLink = firstElement.find('a[href*="/video/"]');
+                    if (videoLink.length > 0) {
+                        const href = videoLink.attr('href');
+                        const videoIdMatch = href.match(/\/video\/(\d+)/);
+                        if (videoIdMatch) {
+                            const videoId = videoIdMatch[1];
+                            latestVideo = {
+                                id: videoId,
+                                title: '',
+                                description: '',
+                                url: href.startsWith('http') ? href : `https://www.tiktok.com${href}`,
+                                thumbnail: '',
+                                createdAt: Date.now()
+                            };
+                            console.log(`✅ Vídeo encontrado via data-e2e: ${videoId}`);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Verificar live status também no HTML se não foi encontrado no JSON
+        if (!isLive) {
+            // Buscar indicadores de live no HTML
+            const liveIndicators = $('[data-e2e="live-badge"], .live-indicator, [class*="live"]');
+            if (liveIndicators.length > 0) {
+                isLive = true;
+                console.log(`✅ Live detectado via HTML (${liveIndicators.length} indicadores encontrados)`);
+            }
         }
         
         if (!userData) {
