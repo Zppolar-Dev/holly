@@ -782,9 +782,6 @@ app.get('/api/user/servers/stats', discordAuth.authenticateToken, async (req, re
     }
 });
 
-// TikTok integration
-const tiktokIntegration = require('./server/tiktok');
-
 // Function to register bot instance
 app.setBotClient = (client) => {
     botClient = client;
