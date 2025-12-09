@@ -706,7 +706,7 @@ app.post('/api/server/:guildId/module', discordAuth.authenticateToken, checkServ
 // Update TikTok configuration
 app.post('/api/server/:guildId/tiktok', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
-    const { enabled, username, channelId, notifyVideo, notifyLive, videoMessage, videoEmbed, liveMessage, liveEmbed, deleteAfter } = req.body;
+    const { enabled, username, channelId, notifyVideo, notifyLive, videoMessage, videoEmbed, liveMessage, liveEmbed, videoDeleteAfter, liveDeleteAfter } = req.body;
     
     try {
         if (useDatabase && db && db.updateTikTokConfig) {
@@ -723,7 +723,8 @@ app.post('/api/server/:guildId/tiktok', discordAuth.authenticateToken, checkServ
                 videoEmbed: videoEmbed !== undefined ? videoEmbed : (currentTiktok.videoEmbed || null),
                 liveMessage: liveMessage !== undefined ? liveMessage : (currentTiktok.liveMessage || ''),
                 liveEmbed: liveEmbed !== undefined ? liveEmbed : (currentTiktok.liveEmbed || null),
-                deleteAfter: deleteAfter !== undefined ? parseInt(deleteAfter) || 0 : (currentTiktok.deleteAfter || 0),
+                videoDeleteAfter: videoDeleteAfter !== undefined ? parseInt(videoDeleteAfter) || 0 : (currentTiktok.videoDeleteAfter || 0),
+                liveDeleteAfter: liveDeleteAfter !== undefined ? parseInt(liveDeleteAfter) || 0 : (currentTiktok.liveDeleteAfter || 0),
                 lastVideoId: currentTiktok.lastVideoId || null,
                 lastLiveStatus: currentTiktok.lastLiveStatus || false
             };
@@ -737,6 +738,23 @@ app.post('/api/server/:guildId/tiktok', discordAuth.authenticateToken, checkServ
     } catch (error) {
         console.error('Erro ao atualizar configuração TikTok:', error);
         res.status(500).json({ error: 'Erro ao atualizar configuração TikTok' });
+    }
+});
+
+// Force check TikTok updates (manual trigger)
+app.post('/api/server/:guildId/tiktok/check', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
+    try {
+        if (!tiktokIntegration || !tiktokIntegration.forceCheckTikTokUpdates) {
+            return res.status(500).json({ error: 'Sistema TikTok não disponível' });
+        }
+        
+        console.log('🔄 Verificação manual do TikTok solicitada via API');
+        await tiktokIntegration.forceCheckTikTokUpdates();
+        
+        res.json({ success: true, message: 'Verificação do TikTok executada' });
+    } catch (error) {
+        console.error('Erro ao forçar verificação TikTok:', error);
+        res.status(500).json({ error: 'Erro ao verificar TikTok' });
     }
 });
 

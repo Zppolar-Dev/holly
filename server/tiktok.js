@@ -7,8 +7,8 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
 
-// Polling interval (5 minutes)
-const POLLING_INTERVAL = 5 * 60 * 1000;
+// Polling interval (2 minutes for faster detection, can be changed back to 5 minutes)
+const POLLING_INTERVAL = 2 * 60 * 1000;
 
 // Store for tracking last checked videos/lives
 let pollingInterval = null;
@@ -25,16 +25,34 @@ function initTikTokPolling(database, bot) {
     db = database;
     botClient = bot;
     
-    if (!db || !botClient) {
-        console.warn('⚠️ TikTok polling não iniciado: banco de dados ou bot não disponível');
+    if (!db) {
+        console.warn('⚠️ TikTok polling não iniciado: banco de dados não disponível');
+        return;
+    }
+    
+    if (!botClient) {
+        console.warn('⚠️ TikTok polling não iniciado: bot client não disponível');
         return;
     }
     
     console.log('🎵 Sistema de polling TikTok inicializado (método alternativo)');
+    console.log(`   - Intervalo de polling: ${POLLING_INTERVAL / 1000 / 60} minutos`);
+    console.log(`   - Banco de dados: ${db ? '✅' : '❌'}`);
+    console.log(`   - Bot client: ${botClient ? '✅' : '❌'}`);
     
-    // Start polling immediately, then every 5 minutes
-    checkTikTokUpdates();
-    pollingInterval = setInterval(checkTikTokUpdates, POLLING_INTERVAL);
+    // Start polling immediately, then every 2 minutes
+    console.log('🔄 Executando primeira verificação do TikTok...');
+    checkTikTokUpdates().catch(err => {
+        console.error('❌ Erro na primeira verificação do TikTok:', err.message);
+    });
+    
+    pollingInterval = setInterval(() => {
+        checkTikTokUpdates().catch(err => {
+            console.error('❌ Erro no polling do TikTok:', err.message);
+        });
+    }, POLLING_INTERVAL);
+    
+    console.log(`✅ Polling TikTok configurado para executar a cada ${POLLING_INTERVAL / 1000 / 60} minutos`);
 }
 
 /**
@@ -43,12 +61,14 @@ function initTikTokPolling(database, bot) {
 async function checkTikTokUpdates() {
     try {
         if (!db || !db.getTikTokEnabledServers) {
+            console.warn('⚠️ TikTok polling: banco de dados não disponível');
             return;
         }
         
         const servers = await db.getTikTokEnabledServers();
         
         if (servers.length === 0) {
+            console.log('ℹ️ Nenhum servidor com TikTok habilitado encontrado');
             return;
         }
         
@@ -56,15 +76,20 @@ async function checkTikTokUpdates() {
         
         for (const server of servers) {
             try {
+                console.log(`📡 Verificando servidor ${server.guildId} - @${server.tiktok?.username || 'N/A'}`);
                 await checkServerTikTok(server);
                 // Pequeno delay entre requisições para evitar rate limit
                 await new Promise(resolve => setTimeout(resolve, 2000));
             } catch (error) {
                 console.error(`❌ Erro ao verificar TikTok para servidor ${server.guildId}:`, error.message);
+                console.error(error.stack);
             }
         }
+        
+        console.log('✅ Verificação TikTok concluída');
     } catch (error) {
         console.error('❌ Erro ao verificar atualizações do TikTok:', error.message);
+        console.error(error.stack);
     }
 }
 
@@ -89,25 +114,46 @@ async function checkServerTikTok(server) {
         // Check for new videos
         if (tiktok.notifyVideo && userInfo.latestVideo) {
             const latestVideoId = userInfo.latestVideo.id;
+            const currentLastVideoId = tiktok.lastVideoId || null;
             
-            if (latestVideoId && latestVideoId !== tiktok.lastVideoId) {
+            console.log(`📹 Verificando vídeo para @${username}:`);
+            console.log(`   - Último vídeo salvo: ${currentLastVideoId || 'Nenhum'}`);
+            console.log(`   - Último vídeo encontrado: ${latestVideoId || 'Nenhum'}`);
+            
+            if (latestVideoId && latestVideoId !== currentLastVideoId) {
                 // New video detected!
-                console.log(`🎥 Novo vídeo detectado para @${username}: ${latestVideoId}`);
-                await sendTikTokNotification(guildId, tiktok, 'video', {
-                    ...userInfo.latestVideo,
-                    username: userInfo.username || username,
-                    displayName: userInfo.displayName || username,
-                    avatar: userInfo.avatar || '',
-                    followerCount: userInfo.followerCount || 0,
-                    videoCount: userInfo.videoCount || 0
-                });
+                console.log(`🎥 ✅ NOVO VÍDEO DETECTADO para @${username}: ${latestVideoId}`);
+                console.log(`   - Título: ${userInfo.latestVideo.title || 'Sem título'}`);
+                console.log(`   - URL: ${userInfo.latestVideo.url || 'N/A'}`);
                 
-                // Update last video ID
-                await db.updateTikTokConfig(guildId, {
-                    ...tiktok,
-                    lastVideoId: latestVideoId
-                });
+                try {
+                    await sendTikTokNotification(guildId, tiktok, 'video', {
+                        ...userInfo.latestVideo,
+                        username: userInfo.username || username,
+                        displayName: userInfo.displayName || username,
+                        avatar: userInfo.avatar || '',
+                        followerCount: userInfo.followerCount || 0,
+                        videoCount: userInfo.videoCount || 0
+                    });
+                    
+                    // Update last video ID
+                    await db.updateTikTokConfig(guildId, {
+                        ...tiktok,
+                        lastVideoId: latestVideoId
+                    });
+                    
+                    console.log(`✅ Notificação enviada e lastVideoId atualizado para ${latestVideoId}`);
+                } catch (notifError) {
+                    console.error(`❌ Erro ao enviar notificação:`, notifError.message);
+                    console.error(notifError.stack);
+                }
+            } else if (latestVideoId === currentLastVideoId) {
+                console.log(`ℹ️ Nenhum novo vídeo para @${username} (último vídeo já processado)`);
+            } else if (!latestVideoId) {
+                console.warn(`⚠️ Nenhum vídeo encontrado para @${username}`);
             }
+        } else if (tiktok.notifyVideo && !userInfo.latestVideo) {
+            console.warn(`⚠️ notifyVideo está habilitado mas nenhum vídeo foi encontrado para @${username}`);
         }
         
         // Check for live status
@@ -285,7 +331,13 @@ async function getTikTokUserInfo(username) {
             };
         }
         
-        console.log(`✅ Informações obtidas para @${cleanUsername}${latestVideo ? ` - Último vídeo: ${latestVideo.id}` : ''}`);
+        console.log(`✅ Informações obtidas para @${cleanUsername}:`);
+        console.log(`   - Username: ${userData.username}`);
+        console.log(`   - Display Name: ${userData.displayName}`);
+        console.log(`   - Seguidores: ${userData.followerCount}`);
+        console.log(`   - Vídeos: ${userData.videoCount}`);
+        console.log(`   - Último vídeo: ${latestVideo ? `${latestVideo.id} - ${latestVideo.title || 'Sem título'}` : 'Nenhum'}`);
+        console.log(`   - Em live: ${isLive ? 'Sim' : 'Não'}`);
         
         return {
             ...userData,
@@ -625,8 +677,17 @@ function stopTikTokPolling() {
     }
 }
 
+/**
+ * Force check TikTok updates (manual trigger)
+ */
+async function forceCheckTikTokUpdates() {
+    console.log('🔄 Verificação manual do TikTok solicitada...');
+    await checkTikTokUpdates();
+}
+
 module.exports = {
     initTikTokPolling,
+    forceCheckTikTokUpdates,
     stopTikTokPolling,
     checkTikTokUpdates,
     checkServerTikTok
