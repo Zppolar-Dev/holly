@@ -804,8 +804,31 @@ document.addEventListener('DOMContentLoaded', async function() {
         const tiktokEnabled = document.getElementById('tiktok-enabled');
         const tiktokConfigDiv = document.getElementById('tiktok-config');
         if (tiktokEnabled && tiktokConfigDiv) {
+            // Set initial state
+            tiktokConfigDiv.style.display = tiktokEnabled.checked ? 'block' : 'none';
+            
             tiktokEnabled.addEventListener('change', (e) => {
                 tiktokConfigDiv.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+
+        // TikTok notification type toggles
+        const tiktokNotifyVideo = document.getElementById('tiktok-notify-video');
+        const tiktokNotifyLive = document.getElementById('tiktok-notify-live');
+        const tiktokVideoPreview = document.getElementById('tiktok-video-preview-container');
+        const tiktokLivePreview = document.getElementById('tiktok-live-preview-container');
+        
+        if (tiktokNotifyVideo && tiktokVideoPreview) {
+            tiktokVideoPreview.style.display = tiktokNotifyVideo.checked ? 'block' : 'none';
+            tiktokNotifyVideo.addEventListener('change', (e) => {
+                tiktokVideoPreview.style.display = e.target.checked ? 'block' : 'none';
+            });
+        }
+        
+        if (tiktokNotifyLive && tiktokLivePreview) {
+            tiktokLivePreview.style.display = tiktokNotifyLive.checked ? 'block' : 'none';
+            tiktokNotifyLive.addEventListener('change', (e) => {
+                tiktokLivePreview.style.display = e.target.checked ? 'block' : 'none';
             });
         }
 
@@ -998,7 +1021,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         
         console.log('✅ Modal encontrado, configurando...');
-        modalTitle.textContent = type === 'join' ? 'Editar Mensagem de Entrada' : 'Editar Mensagem de Saída';
+        const titles = {
+            'join': 'Editar Mensagem de Entrada',
+            'leave': 'Editar Mensagem de Saída',
+            'tiktok-video': 'Editar Mensagem - Novo Vídeo TikTok',
+            'tiktok-live': 'Editar Mensagem - Live TikTok'
+        };
+        modalTitle.textContent = titles[type] || 'Editar Mensagem';
         
         // Load current configuration
         const notifications = serverConfig?.notifications || {
@@ -1006,7 +1035,28 @@ document.addEventListener('DOMContentLoaded', async function() {
             memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
         };
         
-        const notification = type === 'join' ? notifications.memberJoin : notifications.memberLeave;
+        let notification;
+        if (type === 'join') {
+            notification = notifications.memberJoin;
+        } else if (type === 'leave') {
+            notification = notifications.memberLeave;
+        } else if (type === 'tiktok-video') {
+            const tiktokConfig = serverConfig?.tiktok || {};
+            notification = {
+                message: tiktokConfig.videoMessage || '',
+                embed: tiktokConfig.videoEmbed || null,
+                deleteAfter: tiktokConfig.deleteAfter || 0
+            };
+        } else if (type === 'tiktok-live') {
+            const tiktokConfig = serverConfig?.tiktok || {};
+            notification = {
+                message: tiktokConfig.liveMessage || '',
+                embed: tiktokConfig.liveEmbed || null,
+                deleteAfter: tiktokConfig.deleteAfter || 0
+            };
+        } else {
+            notification = notifications.memberJoin;
+        }
         
         // Determine message type
         const hasText = notification.message && notification.message.trim();
@@ -1528,44 +1578,80 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
         }
         
-        // Save to temporary storage (will be saved when user clicks main save button)
-        if (!serverConfig.notifications) {
-            serverConfig.notifications = {
-                memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
-                memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
-            };
-        }
-        
-        const notification = currentEditType === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
         const finalMessage = (messageType === 'text' || messageType === 'both') ? messageText : '';
         const finalEmbed = (messageType === 'embed' || messageType === 'both') ? embed : null;
         
-        // Update notification object
-        notification.message = finalMessage;
-        notification.embed = finalEmbed;
-        
         // Save directly to server
         try {
-            const deleteAfter = currentEditType === 'join' 
-                ? document.getElementById('notify-join-delete-after')?.value || 0
-                : document.getElementById('notify-leave-delete-after')?.value || 0;
-            
-            await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                credentials: 'include',
-                body: JSON.stringify({
-                    type: currentEditType === 'join' ? 'memberJoin' : 'memberLeave',
-                    enabled: notification.enabled || false,
-                    channelId: notification.channelId || null,
-                    message: finalMessage,
-                    embed: finalEmbed,
-                    deleteAfter: parseInt(deleteAfter) || 0
-                })
-            });
-            
-            // Update preview on main page
-            updateMainPreview(currentEditType);
+            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+                // Save TikTok message
+                const deleteAfter = document.getElementById('tiktok-delete-after')?.value || 0;
+                const tiktokConfig = serverConfig.tiktok || {};
+                
+                if (currentEditType === 'tiktok-video') {
+                    tiktokConfig.videoMessage = finalMessage;
+                    tiktokConfig.videoEmbed = finalEmbed;
+                } else {
+                    tiktokConfig.liveMessage = finalMessage;
+                    tiktokConfig.liveEmbed = finalEmbed;
+                }
+                
+                tiktokConfig.deleteAfter = parseInt(deleteAfter) || 0;
+                
+                await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/tiktok`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        enabled: tiktokConfig.enabled || false,
+                        username: tiktokConfig.username || '',
+                        channelId: tiktokConfig.channelId || '',
+                        notifyVideo: tiktokConfig.notifyVideo !== false,
+                        notifyLive: tiktokConfig.notifyLive !== false,
+                        videoMessage: tiktokConfig.videoMessage || '',
+                        videoEmbed: tiktokConfig.videoEmbed || null,
+                        liveMessage: tiktokConfig.liveMessage || '',
+                        liveEmbed: tiktokConfig.liveEmbed || null,
+                        deleteAfter: tiktokConfig.deleteAfter || 0
+                    })
+                });
+                
+                // Update preview
+                updateTikTokPreview(currentEditType);
+            } else {
+                // Save join/leave notification
+                if (!serverConfig.notifications) {
+                    serverConfig.notifications = {
+                        memberJoin: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 },
+                        memberLeave: { enabled: false, channelId: null, message: '', embed: null, deleteAfter: 0 }
+                    };
+                }
+                
+                const notification = currentEditType === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
+                notification.message = finalMessage;
+                notification.embed = finalEmbed;
+                
+                const deleteAfter = currentEditType === 'join' 
+                    ? document.getElementById('notify-join-delete-after')?.value || 0
+                    : document.getElementById('notify-leave-delete-after')?.value || 0;
+                
+                await fetch(`${CONFIG.API_BASE_URL}/api/server/${guildId}/notifications`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        type: currentEditType === 'join' ? 'memberJoin' : 'memberLeave',
+                        enabled: notification.enabled || false,
+                        channelId: notification.channelId || null,
+                        message: finalMessage,
+                        embed: finalEmbed,
+                        deleteAfter: parseInt(deleteAfter) || 0
+                    })
+                });
+                
+                // Update preview on main page
+                updateMainPreview(currentEditType);
+            }
             
             // Close modal
             closeMessageEditModal();
@@ -1577,7 +1663,108 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
     
-    // Update main preview (outside modal)
+    // Update TikTok preview
+    function updateTikTokPreview(type) {
+        const tiktokConfig = serverConfig?.tiktok || {};
+        let message = '';
+        let embed = null;
+        
+        if (type === 'tiktok-video') {
+            message = tiktokConfig.videoMessage || '';
+            embed = tiktokConfig.videoEmbed || null;
+        } else if (type === 'tiktok-live') {
+            message = tiktokConfig.liveMessage || '';
+            embed = tiktokConfig.liveEmbed || null;
+        }
+        
+        const previewContainer = type === 'tiktok-video' 
+            ? document.getElementById('tiktok-video-preview-container')
+            : document.getElementById('tiktok-live-preview-container');
+        
+        if (!previewContainer) return;
+        
+        const previewSimple = type === 'tiktok-video'
+            ? document.getElementById('tiktok-video-preview-simple')
+            : document.getElementById('tiktok-live-preview-simple');
+        const previewEmbed = type === 'tiktok-video'
+            ? document.getElementById('tiktok-video-preview-embed')
+            : document.getElementById('tiktok-live-preview-embed');
+        const previewText = type === 'tiktok-video'
+            ? document.getElementById('tiktok-video-preview-text')
+            : document.getElementById('tiktok-live-preview-text');
+        
+        // Replace variables helper
+        const replaceVars = (text) => {
+            if (!text) return '';
+            const serverName = UI.serverName?.textContent || 'Server';
+            const now = new Date();
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            
+            const userName = currentUser?.username || 'Usuario';
+            const userId = currentUser?.id || '000000000000000000';
+            const userAvatar = currentUser?.avatar 
+                ? `https://cdn.discordapp.com/avatars/${currentUser.id}/${currentUser.avatar}.png?size=64`
+                : '/images/holly.gif';
+            
+            const serverIcon = UI.serverIcon?.src || 'https://cdn.discordapp.com/embed/avatars/0.png';
+            const tiktokUsername = tiktokConfig.username || 'usuario';
+            
+            let processedText = text
+                .replace(/\{username\}/g, tiktokUsername)
+                .replace(/\{video\.title\}/g, 'Novo Vídeo')
+                .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}`)
+                .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
+                .replace(/\{user\.avatar\}/g, userAvatar)
+                .replace(/\{user\.id\}/g, userId)
+                .replace(/\{server\.icon\}/g, serverIcon)
+                .replace(/\{time\}/g, time)
+                .replace(/\{date\}/g, date)
+                .replace(/\{server\}/g, serverName)
+                .replace(/\{members\}/g, '100');
+            
+            // Parse markdown
+            processedText = processedText.replace(/\*\*([^*]+)\*\*/g, '<strong class="discord-bold">$1</strong>');
+            processedText = processedText.replace(/\*([^*]+)\*/g, '<em class="discord-italic">$1</em>');
+            processedText = processedText.replace(/`([^`]+)`/g, '<code class="discord-inline-code">$1</code>');
+            processedText = processedText.replace(/\n/g, '<br>');
+            
+            return processedText;
+        };
+        
+        if (previewText) {
+            previewText.innerHTML = replaceVars(message || '🎥 Novo vídeo do TikTok!');
+        }
+        
+        if (previewSimple) {
+            previewSimple.style.display = (message || !embed) ? 'flex' : 'none';
+        }
+        
+        if (previewEmbed && embed) {
+            // Build embed HTML
+            let embedHTML = `<div class="discord-embed-color-bar" style="background-color: ${embed.color || '#000000'};"></div>`;
+            embedHTML += '<div class="discord-embed-content">';
+            
+            if (embed.title) {
+                embedHTML += `<div class="discord-embed-title">${replaceVars(embed.title)}</div>`;
+            }
+            
+            if (embed.description) {
+                embedHTML += `<div class="discord-embed-description">${replaceVars(embed.description)}</div>`;
+            }
+            
+            if (embed.thumbnail && embed.thumbnail.url) {
+                embedHTML += `<div class="discord-embed-thumbnail"><img src="${embed.thumbnail.url}" alt="Thumbnail"></div>`;
+            }
+            
+            embedHTML += '</div>';
+            previewEmbed.innerHTML = embedHTML;
+            previewEmbed.style.display = 'block';
+        } else if (previewEmbed) {
+            previewEmbed.style.display = 'none';
+        }
+    }
+    
     function updateMainPreview(type) {
         const notification = type === 'join' ? serverConfig.notifications.memberJoin : serverConfig.notifications.memberLeave;
         const previewSimple = document.getElementById(`${type}-preview-simple`);
@@ -1857,6 +2044,20 @@ document.addEventListener('DOMContentLoaded', async function() {
                 e.stopPropagation();
                 console.log('🖱️ Clique no botão edit-leave-message');
                 openMessageEditModal('leave');
+            });
+        }
+
+        if (editTiktokVideoBtn) {
+            editTiktokVideoBtn.addEventListener('click', () => {
+                console.log('🖱️ Clique no botão edit-tiktok-video-message');
+                openMessageEditModal('tiktok-video');
+            });
+        }
+
+        if (editTiktokLiveBtn) {
+            editTiktokLiveBtn.addEventListener('click', () => {
+                console.log('🖱️ Clique no botão edit-tiktok-live-message');
+                openMessageEditModal('tiktok-live');
             });
         }
         

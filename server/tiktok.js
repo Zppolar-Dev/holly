@@ -363,42 +363,186 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
         
         const { EmbedBuilder } = require('discord.js');
         
+        // Replace placeholders in messages
+        const replacePlaceholders = (text) => {
+            if (!text) return '';
+            return text
+                .replace(/\{username\}/g, tiktokConfig.username)
+                .replace(/\{video\.title\}/g, data.title || 'Novo Vídeo')
+                .replace(/\{video\.url\}/g, data.url || `https://www.tiktok.com/@${tiktokConfig.username}`)
+                .replace(/\{video\.thumbnail\}/g, data.thumbnail || '');
+        };
+        
         if (type === 'video') {
-            const embed = new EmbedBuilder()
-                .setTitle('🎥 Novo Vídeo do TikTok!')
-                .setDescription(`**@${tiktokConfig.username}** acabou de postar um novo vídeo!`)
-                .setURL(data.url || `https://www.tiktok.com/@${tiktokConfig.username}`)
-                .setColor(0x000000) // TikTok black
-                .setTimestamp();
+            const message = tiktokConfig.videoMessage || `🎥 **Novo vídeo do TikTok!**\n\n@${tiktokConfig.username} acabou de postar um novo vídeo!`;
+            const customEmbed = tiktokConfig.videoEmbed;
             
-            if (data.title) {
-                embed.addFields({ name: 'Título', value: data.title.substring(0, 256) || 'Sem título' });
+            let embed = null;
+            
+            if (customEmbed && (customEmbed.title || customEmbed.description)) {
+                // Use custom embed
+                embed = new EmbedBuilder();
+                
+                if (customEmbed.title) {
+                    embed.setTitle(replacePlaceholders(customEmbed.title));
+                    if (customEmbed.titleUrl) {
+                        embed.setURL(replacePlaceholders(customEmbed.titleUrl));
+                    }
+                }
+                
+                if (customEmbed.description) {
+                    embed.setDescription(replacePlaceholders(customEmbed.description));
+                }
+                
+                if (customEmbed.color) {
+                    embed.setColor(parseInt(customEmbed.color.replace('#', ''), 16));
+                } else {
+                    embed.setColor(0x000000); // TikTok black
+                }
+                
+                if (customEmbed.thumbnail && customEmbed.thumbnail.url) {
+                    embed.setThumbnail(replacePlaceholders(customEmbed.thumbnail.url));
+                } else if (data.thumbnail) {
+                    embed.setThumbnail(data.thumbnail);
+                }
+                
+                if (customEmbed.image && customEmbed.image.url) {
+                    embed.setImage(replacePlaceholders(customEmbed.image.url));
+                }
+                
+                if (customEmbed.footer && customEmbed.footer.text) {
+                    embed.setFooter({ 
+                        text: replacePlaceholders(customEmbed.footer.text),
+                        iconURL: customEmbed.footer.icon_url ? replacePlaceholders(customEmbed.footer.icon_url) : undefined
+                    });
+                } else {
+                    embed.setFooter({ text: `TikTok • @${tiktokConfig.username}` });
+                }
+                
+                if (customEmbed.fields && Array.isArray(customEmbed.fields)) {
+                    customEmbed.fields.forEach(field => {
+                        if (field.name && field.value) {
+                            embed.addFields({ 
+                                name: replacePlaceholders(field.name), 
+                                value: replacePlaceholders(field.value),
+                                inline: field.inline || false
+                            });
+                        }
+                    });
+                }
+                
+                embed.setTimestamp();
+            } else {
+                // Default embed
+                embed = new EmbedBuilder()
+                    .setTitle('🎥 Novo Vídeo do TikTok!')
+                    .setDescription(`**@${tiktokConfig.username}** acabou de postar um novo vídeo!`)
+                    .setURL(data.url || `https://www.tiktok.com/@${tiktokConfig.username}`)
+                    .setColor(0x000000)
+                    .setTimestamp();
+                
+                if (data.thumbnail) {
+                    embed.setThumbnail(data.thumbnail);
+                }
+                
+                embed.setFooter({ text: `TikTok • @${tiktokConfig.username}` });
             }
             
-            if (data.thumbnail) {
-                embed.setThumbnail(data.thumbnail);
+            const messageOptions = {
+                content: replacePlaceholders(message),
+                embeds: embed ? [embed] : []
+            };
+            
+            const sentMessage = await channel.send(messageOptions);
+            
+            // Delete after specified time
+            if (tiktokConfig.deleteAfter && tiktokConfig.deleteAfter > 0) {
+                setTimeout(() => {
+                    sentMessage.delete().catch(() => {});
+                }, tiktokConfig.deleteAfter * 1000);
             }
-            
-            embed.setFooter({ text: `TikTok • @${tiktokConfig.username}` });
-            
-            await channel.send({
-                content: `🎥 **Novo vídeo do TikTok!**\n\n@${tiktokConfig.username} acabou de postar um novo vídeo!`,
-                embeds: [embed]
-            });
             
         } else if (type === 'live') {
-            const embed = new EmbedBuilder()
-                .setTitle('🔴 Live Iniciada!')
-                .setDescription(`**@${tiktokConfig.username}** está ao vivo agora!\n\n[Assistir Live](https://www.tiktok.com/@${tiktokConfig.username}/live)`)
-                .setURL(`https://www.tiktok.com/@${tiktokConfig.username}/live`)
-                .setColor(0xFF0050) // TikTok red
-                .setTimestamp()
-                .setFooter({ text: `TikTok Live • @${tiktokConfig.username}` });
+            const message = tiktokConfig.liveMessage || `🔴 **Live iniciada!**\n\n@${tiktokConfig.username} está ao vivo agora!`;
+            const customEmbed = tiktokConfig.liveEmbed;
             
-            await channel.send({
-                content: `🔴 **Live iniciada!**\n\n@${tiktokConfig.username} está ao vivo agora!`,
-                embeds: [embed]
-            });
+            let embed = null;
+            
+            if (customEmbed && (customEmbed.title || customEmbed.description)) {
+                // Use custom embed
+                embed = new EmbedBuilder();
+                
+                if (customEmbed.title) {
+                    embed.setTitle(replacePlaceholders(customEmbed.title));
+                    if (customEmbed.titleUrl) {
+                        embed.setURL(replacePlaceholders(customEmbed.titleUrl));
+                    }
+                }
+                
+                if (customEmbed.description) {
+                    embed.setDescription(replacePlaceholders(customEmbed.description));
+                }
+                
+                if (customEmbed.color) {
+                    embed.setColor(parseInt(customEmbed.color.replace('#', ''), 16));
+                } else {
+                    embed.setColor(0xFF0050); // TikTok red
+                }
+                
+                if (customEmbed.thumbnail && customEmbed.thumbnail.url) {
+                    embed.setThumbnail(replacePlaceholders(customEmbed.thumbnail.url));
+                }
+                
+                if (customEmbed.image && customEmbed.image.url) {
+                    embed.setImage(replacePlaceholders(customEmbed.image.url));
+                }
+                
+                if (customEmbed.footer && customEmbed.footer.text) {
+                    embed.setFooter({ 
+                        text: replacePlaceholders(customEmbed.footer.text),
+                        iconURL: customEmbed.footer.icon_url ? replacePlaceholders(customEmbed.footer.icon_url) : undefined
+                    });
+                } else {
+                    embed.setFooter({ text: `TikTok Live • @${tiktokConfig.username}` });
+                }
+                
+                if (customEmbed.fields && Array.isArray(customEmbed.fields)) {
+                    customEmbed.fields.forEach(field => {
+                        if (field.name && field.value) {
+                            embed.addFields({ 
+                                name: replacePlaceholders(field.name), 
+                                value: replacePlaceholders(field.value),
+                                inline: field.inline || false
+                            });
+                        }
+                    });
+                }
+                
+                embed.setTimestamp();
+            } else {
+                // Default embed
+                embed = new EmbedBuilder()
+                    .setTitle('🔴 Live Iniciada!')
+                    .setDescription(`**@${tiktokConfig.username}** está ao vivo agora!\n\n[Assistir Live](https://www.tiktok.com/@${tiktokConfig.username}/live)`)
+                    .setURL(`https://www.tiktok.com/@${tiktokConfig.username}/live`)
+                    .setColor(0xFF0050)
+                    .setTimestamp()
+                    .setFooter({ text: `TikTok Live • @${tiktokConfig.username}` });
+            }
+            
+            const messageOptions = {
+                content: replacePlaceholders(message),
+                embeds: embed ? [embed] : []
+            };
+            
+            const sentMessage = await channel.send(messageOptions);
+            
+            // Delete after specified time
+            if (tiktokConfig.deleteAfter && tiktokConfig.deleteAfter > 0) {
+                setTimeout(() => {
+                    sentMessage.delete().catch(() => {});
+                }, tiktokConfig.deleteAfter * 1000);
+            }
         }
         
         console.log(`✅ Notificação TikTok enviada para servidor ${guildId} (${type})`);

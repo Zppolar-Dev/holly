@@ -706,18 +706,26 @@ app.post('/api/server/:guildId/module', discordAuth.authenticateToken, checkServ
 // Update TikTok configuration
 app.post('/api/server/:guildId/tiktok', discordAuth.authenticateToken, checkServerPermission, async (req, res) => {
     const { guildId } = req.params;
-    const { enabled, username, channelId, notifyVideo, notifyLive } = req.body;
+    const { enabled, username, channelId, notifyVideo, notifyLive, videoMessage, videoEmbed, liveMessage, liveEmbed, deleteAfter } = req.body;
     
     try {
         if (useDatabase && db && db.updateTikTokConfig) {
+            const currentConfig = await dataStore.getServerConfig(guildId);
+            const currentTiktok = currentConfig.tiktok || {};
+            
             const tiktokConfig = {
                 enabled: enabled || false,
                 username: (username || '').replace('@', '').trim(),
                 channelId: channelId || '',
                 notifyVideo: notifyVideo !== false,
                 notifyLive: notifyLive !== false,
-                lastVideoId: null,
-                lastLiveStatus: false
+                videoMessage: videoMessage !== undefined ? videoMessage : (currentTiktok.videoMessage || ''),
+                videoEmbed: videoEmbed !== undefined ? videoEmbed : (currentTiktok.videoEmbed || null),
+                liveMessage: liveMessage !== undefined ? liveMessage : (currentTiktok.liveMessage || ''),
+                liveEmbed: liveEmbed !== undefined ? liveEmbed : (currentTiktok.liveEmbed || null),
+                deleteAfter: deleteAfter !== undefined ? parseInt(deleteAfter) || 0 : (currentTiktok.deleteAfter || 0),
+                lastVideoId: currentTiktok.lastVideoId || null,
+                lastLiveStatus: currentTiktok.lastLiveStatus || false
             };
             
             await db.updateTikTokConfig(guildId, tiktokConfig);
