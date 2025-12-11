@@ -62,9 +62,13 @@
         </div>
     </nav>
 
-    <main class="dashboard-container" style="padding: 2rem;">
+    <main class="dashboard-container" style="padding: 0;">
         <div class="server-config-page" id="serverConfigPage">
+            <!-- Header -->
             <div class="config-header">
+                <button class="menu-toggle-btn" id="menuToggle" title="Abrir menu">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <a href="/dashboard" class="back-btn">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </a>
@@ -86,11 +90,54 @@
                 </div>
             </div>
 
-            <div class="config-content">
-                <!-- Prefixo -->
-                <div class="config-section">
-                    <h2><i class="fas fa-terminal"></i> Prefixo dos Comandos</h2>
-                    <div class="form-group">
+            <!-- Sidebar Navigation -->
+            <div class="config-sidebar" id="configSidebar">
+                <div class="sidebar-header">
+                    <h3>Configurações</h3>
+                    <button class="sidebar-close" id="sidebarClose" title="Fechar menu">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item" data-section="general">
+                        <i class="fas fa-cog"></i>
+                        <span>Geral</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="welcome">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Sistema de Entrada</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="leave">
+                        <i class="fas fa-user-minus"></i>
+                        <span>Sistema de Saída</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="tiktok">
+                        <i class="fab fa-tiktok"></i>
+                        <span>Integração TikTok</span>
+                    </a>
+                    <a href="#" class="nav-item" data-section="modules">
+                        <i class="fas fa-puzzle-piece"></i>
+                        <span>Módulos</span>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Sidebar Overlay -->
+            <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+            <!-- Main Content Area -->
+            <div class="config-content-wrapper">
+                <div class="config-content" id="configContent">
+                    <!-- Seção Geral -->
+                    <div class="config-section" data-section="general" style="display: none;">
+                        <div class="section-header">
+                            <h2><i class="fas fa-cog"></i> Configurações Gerais</h2>
+                        </div>
+                        
+                        <!-- Prefixo -->
+                        <div class="config-subsection">
+                            <h3><i class="fas fa-terminal"></i> Prefixo dos Comandos</h3>
+                            <div class="form-group">
                         <label for="server-prefix">Prefixo</label>
                         <input 
                             type="text" 
@@ -115,13 +162,15 @@
                             placeholder="Deixe vazio para usar nome padrão"
                             class="form-input"
                         >
-                        <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                            <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Notificações de Entrada -->
-                <div class="config-section">
-                    <h2><i class="fas fa-user-plus"></i> Notificação de Entrada de Membros</h2>
+                    <!-- Seção Sistema de Entrada -->
+                    <div class="config-section" data-section="welcome" style="display: none;">
+                        <div class="section-header">
+                            <h2><i class="fas fa-user-plus"></i> Sistema de Entrada de Membros</h2>
+                        </div>
                     <div class="form-group">
                         <label class="toggle-switch">
                             <input type="checkbox" id="notify-join-enabled">
@@ -188,11 +237,12 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Notificações de Saída -->
-                <div class="config-section">
-                    <h2><i class="fas fa-user-minus"></i> Notificação de Saída de Membros</h2>
+                    <!-- Seção Sistema de Saída -->
+                    <div class="config-section" data-section="leave" style="display: none;">
+                        <div class="section-header">
+                            <h2><i class="fas fa-user-minus"></i> Sistema de Saída de Membros</h2>
+                        </div>
                     <div class="form-group">
                         <label class="toggle-switch">
                             <input type="checkbox" id="notify-leave-enabled">
@@ -259,11 +309,12 @@
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Módulos -->
-                <div class="config-section">
-                    <h2><i class="fas fa-puzzle-piece"></i> Módulos</h2>
+                    <!-- Seção Módulos -->
+                    <div class="config-section" data-section="modules" style="display: none;">
+                        <div class="section-header">
+                            <h2><i class="fas fa-puzzle-piece"></i> Módulos</h2>
+                        </div>
                     <div class="module-toggle">
                         <label class="toggle-item">
                             <input type="checkbox" data-module="moderation">
@@ -297,11 +348,15 @@
                                 <small>Comandos de música e áudio</small>
                             </span>
                         </label>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Integração TikTok -->
-                <div class="config-section">
+                    <!-- Seção TikTok -->
+                    <div class="config-section" data-section="tiktok" style="display: none;">
+                        <div class="section-header">
+                            <h2><i class="fab fa-tiktok"></i> Integração TikTok</h2>
+                        </div>
+                        <div class="config-subsection">
                     <h2><i class="fab fa-tiktok"></i> Integração TikTok</h2>
                     <div class="form-group">
                         <label class="toggle-switch">

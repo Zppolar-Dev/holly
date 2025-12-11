@@ -1113,6 +1113,86 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
+    // Sidebar Navigation
+    let currentSection = 'general';
+    
+    function initSidebarNavigation() {
+        const menuToggle = document.getElementById('menuToggle');
+        const sidebar = document.getElementById('configSidebar');
+        const sidebarClose = document.getElementById('sidebarClose');
+        const sidebarOverlay = document.getElementById('sidebarOverlay');
+        const navItems = document.querySelectorAll('.nav-item');
+        
+        // Toggle sidebar
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            sidebarOverlay.classList.toggle('active');
+            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
+        }
+        
+        // Close sidebar
+        function closeSidebar() {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Show section
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.config-section[data-section]').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show selected section
+            const targetSection = document.querySelector(`.config-section[data-section="${sectionName}"]`);
+            if (targetSection) {
+                targetSection.style.display = 'block';
+                currentSection = sectionName;
+                
+                // Update active nav item
+                navItems.forEach(item => {
+                    item.classList.remove('active');
+                    if (item.dataset.section === sectionName) {
+                        item.classList.add('active');
+                    }
+                });
+                
+                // Close sidebar on mobile
+                if (window.innerWidth <= 768) {
+                    closeSidebar();
+                }
+            }
+        }
+        
+        // Event listeners
+        if (menuToggle) {
+            menuToggle.addEventListener('click', toggleSidebar);
+        }
+        
+        if (sidebarClose) {
+            sidebarClose.addEventListener('click', closeSidebar);
+        }
+        
+        if (sidebarOverlay) {
+            sidebarOverlay.addEventListener('click', closeSidebar);
+        }
+        
+        // Nav item clicks
+        navItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                const section = item.dataset.section;
+                if (section) {
+                    showSection(section);
+                }
+            });
+        });
+        
+        // Show default section
+        showSection('general');
+    }
+    
     // Initialize
     async function init() {
         // Safety timeout - always hide loading after 30 seconds
@@ -1202,6 +1282,12 @@ document.addEventListener('DOMContentLoaded', async function() {
             } catch (error) {
                 console.error('Erro ao configurar event listeners:', error);
                 // Continue mesmo se falhar
+            }
+            
+            try {
+                initSidebarNavigation();
+            } catch (error) {
+                console.error('Erro ao inicializar navegação da sidebar:', error);
             }
 
             try {
