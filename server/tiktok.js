@@ -1261,6 +1261,10 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
         const botHttpUrl = process.env.BOT_HTTP_URL || 'http://localhost:3001';
         const syncSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
         
+        console.log(`\n${'='.repeat(60)}`);
+        console.log(`📤 ENVIANDO NOTIFICAÇÃO TIKTOK VIA HTTP`);
+        console.log(`${'='.repeat(60)}`);
+        
         const http = require('http');
         const https = require('https');
         const httpModule = botHttpUrl.startsWith('https') ? https : http;
@@ -1279,10 +1283,11 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
         const postData = JSON.stringify(notificationData);
         
         console.log(`📤 Enviando notificação TikTok para bot HTTP server:`);
-        console.log(`   - URL: ${botHttpUrl}`);
+        console.log(`   - URL completa: ${botHttpUrl}/api/tiktok/notify`);
         console.log(`   - Hostname: ${url.hostname}`);
         console.log(`   - Port: ${url.port || (url.protocol === 'https:' ? 443 : 80)}`);
         console.log(`   - Path: ${url.pathname}`);
+        console.log(`   - BOT_HTTP_URL configurado: ${process.env.BOT_HTTP_URL ? 'Sim' : 'Não (usando localhost:3001)'}`);
         
         const options = {
             hostname: url.hostname,
@@ -1312,16 +1317,34 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
             });
             
             req.on('error', (error) => {
-                console.error(`❌ Erro ao enviar notificação TikTok via HTTP: ${error.message}`);
-                console.error(`   - URL tentada: ${botHttpUrl}`);
-                console.error(`   - Verifique se o bot HTTP server está rodando`);
-                console.error(`   - Verifique a variável de ambiente BOT_HTTP_URL`);
-                console.error(`   - Se bot e servidor web estão em serviços separados, use a URL pública do bot`);
+                console.error(`\n${'='.repeat(60)}`);
+                console.error(`❌ ERRO AO ENVIAR NOTIFICAÇÃO TIKTOK VIA HTTP`);
+                console.error(`${'='.repeat(60)}`);
+                console.error(`   Erro: ${error.message}`);
+                console.error(`   URL tentada: ${botHttpUrl}`);
+                console.error(`\n💡 SOLUÇÕES:`);
                 if (error.code === 'ECONNREFUSED') {
-                    console.error(`   - Erro: Conexão recusada - servidor não está acessível em ${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`);
+                    console.error(`   ⚠️ Conexão recusada - servidor não está acessível`);
+                    console.error(`   📍 O servidor web está tentando acessar: ${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`);
+                    console.error(`\n   🔧 OPÇÕES:`);
+                    console.error(`   1. Se o bot está rodando LOCALMENTE:`);
+                    console.error(`      - Use um túnel (ngrok, localtunnel, etc.) para expor o bot HTTP server`);
+                    console.error(`      - Configure BOT_HTTP_URL no servidor web com a URL do túnel`);
+                    console.error(`      - Exemplo: BOT_HTTP_URL=https://seu-bot.ngrok.io`);
+                    console.error(`\n   2. Se o bot está no RENDER (serviço separado):`);
+                    console.error(`      - Configure BOT_HTTP_URL com a URL pública do serviço do bot`);
+                    console.error(`      - Exemplo: BOT_HTTP_URL=https://seu-bot-service.onrender.com:3001`);
+                    console.error(`      - Ou use a porta padrão do Render se configurada`);
                 } else if (error.code === 'ENOTFOUND') {
-                    console.error(`   - Erro: Hostname não encontrado - verifique se a URL está correta`);
+                    console.error(`   ⚠️ Hostname não encontrado`);
+                    console.error(`   - Verifique se a URL em BOT_HTTP_URL está correta`);
+                    console.error(`   - Verifique se o hostname está acessível`);
+                } else {
+                    console.error(`   - Verifique se o bot HTTP server está rodando`);
+                    console.error(`   - Verifique a variável de ambiente BOT_HTTP_URL`);
+                    console.error(`   - Se bot e servidor web estão em serviços separados, use a URL pública do bot`);
                 }
+                console.error(`${'='.repeat(60)}\n`);
                 reject(error);
             });
             
