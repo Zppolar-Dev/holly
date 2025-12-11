@@ -161,11 +161,18 @@ async function checkServerTikTok(server) {
             console.log(`   - Último vídeo encontrado: ${latestVideoId || 'Nenhum'}`);
             
             if (latestVideoId && latestVideoId !== currentLastVideoId) {
-                // New video detected!
+                // New video detected! Update lastVideoId FIRST to prevent duplicate notifications
                 console.log(`🎥 ✅ NOVO VÍDEO DETECTADO para @${username}: ${latestVideoId}`);
                 console.log(`   - Título: ${userInfo.latestVideo.title || 'Sem título'}`);
                 console.log(`   - URL: ${userInfo.latestVideo.url || 'N/A'}`);
                 
+                // Update last video ID IMMEDIATELY to prevent race conditions
+                await db.updateTikTokConfig(guildId, {
+                    ...tiktok,
+                    lastVideoId: latestVideoId
+                });
+                
+                // Now send notification
                 try {
                     await sendTikTokNotification(guildId, tiktok, 'video', {
                         ...userInfo.latestVideo,
@@ -175,17 +182,12 @@ async function checkServerTikTok(server) {
                         followerCount: userInfo.followerCount || 0,
                         videoCount: userInfo.videoCount || 0
                     });
-                    
-                    // Update last video ID
-                    await db.updateTikTokConfig(guildId, {
-                        ...tiktok,
-                        lastVideoId: latestVideoId
-                    });
-                    
                     console.log(`✅ Notificação enviada e lastVideoId atualizado para ${latestVideoId}`);
                 } catch (notifError) {
                     console.error(`❌ Erro ao enviar notificação:`, notifError.message);
                     console.error(notifError.stack);
+                    // If notification fails, we might want to reset lastVideoId
+                    // But for now, we'll keep it to avoid spam
                 }
             } else if (latestVideoId === currentLastVideoId) {
                 console.log(`ℹ️ Nenhum novo vídeo para @${username} (último vídeo já processado)`);
@@ -201,29 +203,41 @@ async function checkServerTikTok(server) {
             const isLive = userInfo.isLive || false;
             
             if (isLive && !tiktok.lastLiveStatus) {
-                // Live started!
+                // Live started! Update status FIRST to prevent duplicate notifications
                 console.log(`🔴 Live detectada para @${username}`);
-                await sendTikTokNotification(guildId, tiktok, 'live', {
-                    username: userInfo.username || username,
-                    displayName: userInfo.displayName || username,
-                    avatar: userInfo.avatar || '',
-                    followerCount: userInfo.followerCount || 0,
-                    videoCount: userInfo.videoCount || 0,
-                    title: userInfo.liveTitle || 'Live em andamento',
-                    url: `https://www.tiktok.com/@${username}/live`
-                });
                 
-                // Update live status
+                // Update live status IMMEDIATELY to prevent race conditions
                 await db.updateTikTokConfig(guildId, {
                     ...tiktok,
                     lastLiveStatus: true
                 });
+                
+                // Now send notification
+                try {
+                    await sendTikTokNotification(guildId, tiktok, 'live', {
+                        username: userInfo.username || username,
+                        displayName: userInfo.displayName || username,
+                        avatar: userInfo.avatar || '',
+                        followerCount: userInfo.followerCount || 0,
+                        videoCount: userInfo.videoCount || 0,
+                        title: userInfo.liveTitle || 'Live em andamento',
+                        url: `https://www.tiktok.com/@${username}/live`
+                    });
+                    console.log(`✅ Notificação de live enviada e lastLiveStatus atualizado`);
+                } catch (notifError) {
+                    console.error(`❌ Erro ao enviar notificação de live:`, notifError.message);
+                    // If notification fails, we might want to reset lastLiveStatus
+                    // But for now, we'll keep it as true to avoid spam
+                }
             } else if (!isLive && tiktok.lastLiveStatus) {
                 // Live ended (update status but don't notify)
                 await db.updateTikTokConfig(guildId, {
                     ...tiktok,
                     lastLiveStatus: false
                 });
+                console.log(`ℹ️ Live finalizada para @${username}, status atualizado`);
+            } else if (isLive && tiktok.lastLiveStatus) {
+                console.log(`ℹ️ Live ainda em andamento para @${username} (já notificado)`);
             }
         }
     } catch (error) {
