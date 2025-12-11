@@ -151,52 +151,11 @@ async function checkServerTikTok(server) {
             return;
         }
         
-        // Check for new videos
-        if (tiktok.notifyVideo && userInfo.latestVideo) {
-            const latestVideoId = userInfo.latestVideo.id;
-            const currentLastVideoId = tiktok.lastVideoId || null;
-            
-            console.log(`📹 Verificando vídeo para @${username}:`);
-            console.log(`   - Último vídeo salvo: ${currentLastVideoId || 'Nenhum'}`);
-            console.log(`   - Último vídeo encontrado: ${latestVideoId || 'Nenhum'}`);
-            
-            if (latestVideoId && latestVideoId !== currentLastVideoId) {
-                // New video detected! Update lastVideoId FIRST to prevent duplicate notifications
-                console.log(`🎥 ✅ NOVO VÍDEO DETECTADO para @${username}: ${latestVideoId}`);
-                console.log(`   - Título: ${userInfo.latestVideo.title || 'Sem título'}`);
-                console.log(`   - URL: ${userInfo.latestVideo.url || 'N/A'}`);
-                
-                // Update last video ID IMMEDIATELY to prevent race conditions
-                await db.updateTikTokConfig(guildId, {
-                    ...tiktok,
-                    lastVideoId: latestVideoId
-                });
-                
-                // Now send notification
-                try {
-                    await sendTikTokNotification(guildId, tiktok, 'video', {
-                        ...userInfo.latestVideo,
-                        username: userInfo.username || username,
-                        displayName: userInfo.displayName || username,
-                        avatar: userInfo.avatar || '',
-                        followerCount: userInfo.followerCount || 0,
-                        videoCount: userInfo.videoCount || 0
-                    });
-                    console.log(`✅ Notificação enviada e lastVideoId atualizado para ${latestVideoId}`);
-                } catch (notifError) {
-                    console.error(`❌ Erro ao enviar notificação:`, notifError.message);
-                    console.error(notifError.stack);
-                    // If notification fails, we might want to reset lastVideoId
-                    // But for now, we'll keep it to avoid spam
-                }
-            } else if (latestVideoId === currentLastVideoId) {
-                console.log(`ℹ️ Nenhum novo vídeo para @${username} (último vídeo já processado)`);
-            } else if (!latestVideoId) {
-                console.warn(`⚠️ Nenhum vídeo encontrado para @${username}`);
-            }
-        } else if (tiktok.notifyVideo && !userInfo.latestVideo) {
-            console.warn(`⚠️ notifyVideo está habilitado mas nenhum vídeo foi encontrado para @${username}`);
-        }
+        // Video notifications disabled - only live notifications are active
+        // Check for new videos - DISABLED
+        // if (tiktok.notifyVideo && userInfo.latestVideo) {
+        //     ... código comentado ...
+        // }
         
         // Check for live status
         if (tiktok.notifyLive) {

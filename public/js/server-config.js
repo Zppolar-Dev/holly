@@ -457,6 +457,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (tiktokNotifyLive) {
             tiktokNotifyLive.checked = tiktokConfig.notifyLive !== false;
         }
+        
+        // Update TikTok previews after form is populated
+        setTimeout(() => {
+            if (tiktokConfig.enabled) {
+                // Update live preview
+                if (tiktokNotifyLive && tiktokNotifyLive.checked) {
+                    updateTikTokPreview('tiktok-live');
+                }
+            }
+        }, 200);
 
         if (UI.notifyJoinEnabled) {
             UI.notifyJoinEnabled.checked = notifications.memberJoin?.enabled || false;
@@ -1947,6 +1957,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Update TikTok preview
     function updateTikTokPreview(type) {
+        console.log(`🔄 Atualizando preview TikTok: ${type}`);
         const tiktokConfig = serverConfig?.tiktok || {};
         let message = '';
         let embed = null;
@@ -1957,13 +1968,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         } else if (type === 'tiktok-live') {
             message = tiktokConfig.liveMessage || '';
             embed = tiktokConfig.liveEmbed || null;
+            console.log(`   - Live message: ${message ? message.substring(0, 50) + '...' : 'vazia'}`);
+            console.log(`   - Live embed: ${embed ? 'configurado' : 'não configurado'}`);
         }
         
         const previewContainer = type === 'tiktok-video' 
             ? document.getElementById('tiktok-video-preview-container')
             : document.getElementById('tiktok-live-preview-container');
         
-        if (!previewContainer) return;
+        if (!previewContainer) {
+            console.warn(`⚠️ Container de preview não encontrado para ${type}`);
+            return;
+        }
+        
+        console.log(`   - Container encontrado: ${previewContainer.id}`);
         
         const previewSimple = type === 'tiktok-video'
             ? document.getElementById('tiktok-video-preview-simple')
@@ -2060,7 +2078,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         };
         
         if (previewText) {
-            previewText.innerHTML = replaceVars(message || '🎥 Novo vídeo do TikTok!');
+            // Use appropriate default message based on type
+            const defaultMessage = type === 'tiktok-live' 
+                ? '🔴 Live iniciada!'
+                : '🎥 Novo vídeo do TikTok!';
+            previewText.innerHTML = replaceVars(message || defaultMessage);
         }
         
         if (previewSimple) {
