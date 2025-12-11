@@ -1006,16 +1006,25 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
         console.log(`   - Path: ${url.pathname}`);
         console.log(`   - BOT_HTTP_URL configurado: ${process.env.BOT_HTTP_URL ? 'Sim' : 'Não (usando localhost:3001)'}`);
         
+        // Add headers to bypass ngrok warning page if using ngrok
+        const headers = {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData),
+            'User-Agent': 'Mozilla/5.0 (compatible; TikTokBot/1.0)'
+        };
+        
+        // Add ngrok bypass header if using ngrok
+        if (url.hostname.includes('ngrok')) {
+            headers['ngrok-skip-browser-warning'] = 'any';
+        }
+        
         const options = {
             hostname: url.hostname,
             port: url.port || (url.protocol === 'https:' ? 443 : 80),
             path: url.pathname,
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData)
-            },
-            timeout: 10000
+            headers: headers,
+            timeout: 30000 // Increased timeout to 30 seconds
         };
         
         await new Promise((resolve, reject) => {
