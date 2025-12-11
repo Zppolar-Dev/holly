@@ -2020,8 +2020,32 @@ document.addEventListener('DOMContentLoaded', async function() {
             const tiktokUsername = tiktokConfig.username || 'usuario';
             const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
             
+            // Replace channel mentions (<#channelId>) with channel names
+            let processedText = text.replace(/<#(\d+)>/g, (match, channelId) => {
+                const channel = (typeof guildChannels !== 'undefined' && guildChannels && guildChannels.length > 0) 
+                    ? guildChannels.find(c => c.id === channelId) 
+                    : null;
+                const channelName = channel ? channel.name : 'canal-desconhecido';
+                return `<span class="discord-mention">#${channelName}</span>`;
+            });
+            
+            // Replace role mentions (<@&roleId>) with role names
+            processedText = processedText.replace(/<@&(\d+)>/g, (match, roleId) => {
+                const role = (typeof guildRoles !== 'undefined' && guildRoles && guildRoles.length > 0) 
+                    ? guildRoles.find(r => r.id === roleId) 
+                    : null;
+                const roleName = role ? role.name : 'cargo-desconhecido';
+                return `<span class="discord-mention">@${roleName}</span>`;
+            });
+            
+            // Replace emoji mentions (<:name:id> or <a:name:id>)
+            processedText = processedText.replace(/<(a?):([^:]+):(\d+)>/g, (match, animated, emojiName, emojiId) => {
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${animated ? 'gif' : 'png'}?size=32`;
+                return `<img src="${emojiUrl}" alt="${emojiName}" class="discord-emoji" style="width: 22px; height: 22px; vertical-align: middle; display: inline-block;">`;
+            });
+            
             // Base replacements (always available)
-            let processedText = text
+            processedText = processedText
                 .replace(/\{username\}/g, tiktokUsername)
                 .replace(/\{profile\.name\}/g, tiktokUsername)
                 .replace(/\{profile\.url\}/g, tiktokProfileUrl)
