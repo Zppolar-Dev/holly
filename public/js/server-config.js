@@ -1189,8 +1189,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         });
         
-        // Show default section
-        showSection('general');
+        // Show default section on load
+        // Wait a bit to ensure DOM is ready
+        setTimeout(() => {
+            showSection('general');
+        }, 100);
     }
     
     // Initialize

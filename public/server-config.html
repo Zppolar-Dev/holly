@@ -138,47 +138,48 @@
                         <div class="config-subsection">
                             <h3><i class="fas fa-terminal"></i> Prefixo dos Comandos</h3>
                             <div class="form-group">
-                        <label for="server-prefix">Prefixo</label>
-                        <input 
-                            type="text" 
-                            id="server-prefix" 
-                            maxlength="5" 
-                            placeholder="!"
-                            class="form-input"
-                        >
-                        <small>O prefixo usado para comandos de texto (ex: !help, $help)</small>
-                    </div>
-                </div>
-
-                <!-- Apelido do Bot -->
-                <div class="config-section">
-                    <h2><i class="fas fa-user-tag"></i> Apelido do Bot</h2>
-                    <div class="form-group">
-                        <label for="server-nickname">Apelido</label>
-                        <input 
-                            type="text" 
-                            id="server-nickname" 
-                            maxlength="32" 
-                            placeholder="Deixe vazio para usar nome padrão"
-                            class="form-input"
-                        >
-                            <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                                <label for="server-prefix">Prefixo</label>
+                                <input 
+                                    type="text" 
+                                    id="server-prefix" 
+                                    maxlength="5" 
+                                    placeholder="!"
+                                    class="form-input"
+                                >
+                                <small>O prefixo usado para comandos de texto (ex: !help, $help)</small>
+                            </div>
                         </div>
-                    </div>
+                        
+                        <!-- Apelido do Bot -->
+                        <div class="config-subsection">
+                            <h3><i class="fas fa-user-tag"></i> Apelido do Bot</h3>
+                            <div class="form-group">
+                                <label for="server-nickname">Apelido</label>
+                                <input 
+                                    type="text" 
+                                    id="server-nickname" 
+                                    maxlength="32" 
+                                    placeholder="Deixe vazio para usar nome padrão"
+                                    class="form-input"
+                                >
+                                <small>O apelido que o bot terá neste servidor (máx. 32 caracteres)</small>
+                            </div>
+                        </div>
 
                     <!-- Seção Sistema de Entrada -->
                     <div class="config-section" data-section="welcome" style="display: none;">
                         <div class="section-header">
                             <h2><i class="fas fa-user-plus"></i> Sistema de Entrada de Membros</h2>
                         </div>
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notify-join-enabled">
-                            <span class="slider"></span>
-                            <span>Ativar notificações quando um membro entrar</span>
-                        </label>
-                    </div>
-                    <div id="notify-join-config" style="display: none;">
+                        <div class="config-subsection">
+                            <div class="form-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notify-join-enabled">
+                                    <span class="slider"></span>
+                                    <span>Ativar notificações quando um membro entrar</span>
+                                </label>
+                            </div>
+                            <div id="notify-join-config" style="display: none;">
                         <div class="form-group">
                             <label for="notify-join-channel">
                                 Canal de Notificação
@@ -236,6 +237,8 @@
                                 </div>
                             </div>
                         </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Seção Sistema de Saída -->
@@ -243,14 +246,15 @@
                         <div class="section-header">
                             <h2><i class="fas fa-user-minus"></i> Sistema de Saída de Membros</h2>
                         </div>
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="notify-leave-enabled">
-                            <span class="slider"></span>
-                            <span>Ativar notificações quando um membro sair</span>
-                        </label>
-                    </div>
-                    <div id="notify-leave-config" style="display: none;">
+                        <div class="config-subsection">
+                            <div class="form-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="notify-leave-enabled">
+                                    <span class="slider"></span>
+                                    <span>Ativar notificações quando um membro sair</span>
+                                </label>
+                            </div>
+                            <div id="notify-leave-config" style="display: none;">
                         <div class="form-group">
                             <label for="notify-leave-channel">
                                 Canal de Notificação
@@ -308,6 +312,8 @@
                                 </div>
                             </div>
                         </div>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Seção Módulos -->
@@ -315,7 +321,8 @@
                         <div class="section-header">
                             <h2><i class="fas fa-puzzle-piece"></i> Módulos</h2>
                         </div>
-                    <div class="module-toggle">
+                        <div class="config-subsection">
+                            <div class="module-toggle">
                         <label class="toggle-item">
                             <input type="checkbox" data-module="moderation">
                             <span>
@@ -348,6 +355,7 @@
                                 <small>Comandos de música e áudio</small>
                             </span>
                         </label>
+                            </div>
                         </div>
                     </div>
 
@@ -357,16 +365,15 @@
                             <h2><i class="fab fa-tiktok"></i> Integração TikTok</h2>
                         </div>
                         <div class="config-subsection">
-                    <h2><i class="fab fa-tiktok"></i> Integração TikTok</h2>
-                    <div class="form-group">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="tiktok-enabled">
-                            <span class="slider"></span>
-                            <span>Ativar notificações do TikTok</span>
-                        </label>
-                        <small>Receba notificações quando novos vídeos forem postados ou quando uma live for iniciada</small>
-                    </div>
-                    <div id="tiktok-config" style="display: none;">
+                            <div class="form-group">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="tiktok-enabled">
+                                    <span class="slider"></span>
+                                    <span>Ativar notificações do TikTok</span>
+                                </label>
+                                <small>Receba notificações quando novos vídeos forem postados ou quando uma live for iniciada</small>
+                            </div>
+                            <div id="tiktok-config" style="display: none;">
                         <div class="form-group">
                             <label for="tiktok-username">
                                 Username do TikTok
@@ -456,26 +463,21 @@
                             </div>
                         </div>
 
-                        <div class="info-box">
-                            <i class="fas fa-info-circle"></i>
-                            <div>
-                                <strong>Como funciona:</strong>
-                                <p>O bot verifica periodicamente o perfil do TikTok configurado. Quando detectar um novo vídeo ou live, enviará uma notificação no canal selecionado.</p>
-                                <p><strong>Frequência de verificação:</strong> A cada 5 minutos</p>
+                                <div class="info-box">
+                                    <i class="fas fa-info-circle"></i>
+                                    <div>
+                                        <strong>Como funciona:</strong>
+                                        <p>O bot verifica periodicamente o perfil do TikTok configurado. Quando detectar uma live, enviará uma notificação no canal selecionado.</p>
+                                        <p><strong>Frequência de verificação:</strong> A cada 2 minutos</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-
-                <!-- Botões de ação -->
-                <div class="config-actions">
-                    <button class="btn secondary-btn" id="cancel-btn">
-                        <i class="fas fa-times"></i> Cancelar
-                    </button>
-                    <button class="btn primary-btn" id="save-btn">
-                        <i class="fas fa-save"></i> Salvar Configurações
-                    </button>
-                </div>
+            </div>
+        </div>
+    </main>
             </div>
         </div>
     </main>
