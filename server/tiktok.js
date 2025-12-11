@@ -327,14 +327,18 @@ async function getTikTokUserInfo(username) {
                     // Tentar extrair secUid para usar na API alternativa
                     const secUid = userInfoPath.user?.secUid;
                     if (secUid && !latestVideo) {
-                        console.log(`   - secUid encontrado no userInfo, tentando buscar vídeos via API...`);
+                        console.log(`   - secUid encontrado no userInfo: ${secUid.substring(0, 20)}...`);
+                        console.log(`   - Tentando buscar vídeos via API usando secUid...`);
                         try {
                             const videoUrl = `https://www.tiktok.com/api/post/item_list/?secUid=${secUid}&count=1&cursor=0`;
+                            console.log(`   - URL da API: ${videoUrl.substring(0, 100)}...`);
+                            
                             const videoResponse = await axios.get(videoUrl, {
                                 headers: {
                                     'User-Agent': USER_AGENT,
                                     'Referer': `https://www.tiktok.com/@${cleanUsername}`,
-                                    'Accept': 'application/json, text/plain, */*'
+                                    'Accept': 'application/json, text/plain, */*',
+                                    'Accept-Language': 'en-US,en;q=0.9'
                                 },
                                 timeout: 10000,
                                 validateStatus: function (status) {
@@ -342,20 +346,43 @@ async function getTikTokUserInfo(username) {
                                 }
                             });
                             
+                            console.log(`   - Status da resposta: ${videoResponse.status}`);
+                            console.log(`   - Tipo da resposta: ${typeof videoResponse.data}`);
+                            console.log(`   - É array? ${Array.isArray(videoResponse.data)}`);
+                            
+                            if (videoResponse.data) {
+                                console.log(`   - Chaves na resposta: ${typeof videoResponse.data === 'object' && !Array.isArray(videoResponse.data) ? Object.keys(videoResponse.data).join(', ') : 'N/A'}`);
+                            }
+                            
                             if (videoResponse.status === 200 && videoResponse.data) {
                                 let itemList = null;
                                 if (videoResponse.data.itemList) {
                                     itemList = videoResponse.data.itemList;
+                                    console.log(`   - itemList encontrado: ${itemList.length} itens`);
                                 } else if (videoResponse.data.items) {
                                     itemList = videoResponse.data.items;
-                                } else if (videoResponse.data.data && videoResponse.data.data.itemList) {
-                                    itemList = videoResponse.data.data.itemList;
+                                    console.log(`   - items encontrado: ${itemList.length} itens`);
+                                } else if (videoResponse.data.data) {
+                                    if (videoResponse.data.data.itemList) {
+                                        itemList = videoResponse.data.data.itemList;
+                                        console.log(`   - data.itemList encontrado: ${itemList.length} itens`);
+                                    } else if (videoResponse.data.data.items) {
+                                        itemList = videoResponse.data.data.items;
+                                        console.log(`   - data.items encontrado: ${itemList.length} itens`);
+                                    }
                                 } else if (Array.isArray(videoResponse.data)) {
                                     itemList = videoResponse.data;
+                                    console.log(`   - Resposta é array direto: ${itemList.length} itens`);
                                 }
                                 
                                 if (itemList && Array.isArray(itemList) && itemList.length > 0) {
                                     const video = itemList[0];
+                                    console.log(`   - Primeiro vídeo encontrado:`, {
+                                        id: video.id || video.itemId || video.awemeId,
+                                        hasDesc: !!video.desc,
+                                        hasVideo: !!video.video
+                                    });
+                                    
                                     latestVideo = {
                                         id: video.id || video.itemId || video.awemeId || String(video.createTime || Date.now()),
                                         title: video.desc || video.description || '',
@@ -365,11 +392,24 @@ async function getTikTokUserInfo(username) {
                                         createdAt: video.createTime || video.create_time || Date.now()
                                     };
                                     console.log(`✅ Vídeo encontrado via secUid do userInfo: ${latestVideo.id}`);
+                                } else {
+                                    console.warn(`   ⚠️ itemList não encontrado ou vazio na resposta`);
+                                    if (videoResponse.data && typeof videoResponse.data === 'object') {
+                                        console.warn(`   - Primeiros 300 chars da resposta: ${JSON.stringify(videoResponse.data).substring(0, 300)}`);
+                                    }
                                 }
+                            } else {
+                                console.warn(`   ⚠️ Resposta inválida ou vazia`);
                             }
                         } catch (apiError) {
                             console.warn(`   ⚠️ Erro ao buscar vídeos via secUid:`, apiError.message);
+                            if (apiError.response) {
+                                console.warn(`   - Status: ${apiError.response.status}`);
+                                console.warn(`   - Data: ${JSON.stringify(apiError.response.data).substring(0, 200)}`);
+                            }
                         }
+                    } else if (!secUid) {
+                        console.warn(`   ⚠️ secUid não encontrado no userInfo`);
                     }
                 } else {
                     console.warn(`⚠️ userInfo não encontrado na estrutura esperada`);
@@ -624,7 +664,8 @@ async function getTikTokUserInfo(username) {
         // Último fallback: tentar extrair da URL do primeiro vídeo na página
         if (!latestVideo) {
             console.log(`🔄 Tentando extrair vídeo da estrutura HTML...`);
-            // Buscar links de vídeo na página
+            
+            // Método 1: Buscar links de vídeo na página
             const videoLinks = $('a[href*="/video/"]');
             console.log(`   - Links de vídeo encontrados: ${videoLinks.length}`);
             if (videoLinks.length > 0) {
@@ -646,10 +687,10 @@ async function getTikTokUserInfo(username) {
                 }
             }
             
-            // Também tentar buscar em data attributes
+            // Método 2: Buscar em data attributes
             if (!latestVideo) {
                 const videoElements = $('[data-e2e="user-post-item"]');
-                console.log(`   - Elementos de vídeo encontrados: ${videoElements.length}`);
+                console.log(`   - Elementos de vídeo encontrados (data-e2e): ${videoElements.length}`);
                 if (videoElements.length > 0) {
                     const firstElement = videoElements.first();
                     const videoLink = firstElement.find('a[href*="/video/"]');
@@ -669,6 +710,61 @@ async function getTikTokUserInfo(username) {
                             console.log(`✅ Vídeo encontrado via data-e2e: ${videoId}`);
                         }
                     }
+                }
+            }
+            
+            // Método 3: Buscar em diferentes seletores
+            if (!latestVideo) {
+                const selectors = [
+                    '[data-e2e="user-post-item-list"] a[href*="/video/"]',
+                    '.video-item a[href*="/video/"]',
+                    '[class*="video"] a[href*="/video/"]',
+                    'div[class*="Item"] a[href*="/video/"]'
+                ];
+                
+                for (const selector of selectors) {
+                    const elements = $(selector);
+                    console.log(`   - Tentando seletor "${selector}": ${elements.length} elementos`);
+                    if (elements.length > 0) {
+                        const firstElement = elements.first();
+                        const href = firstElement.attr('href');
+                        if (href) {
+                            const videoIdMatch = href.match(/\/video\/(\d+)/);
+                            if (videoIdMatch) {
+                                const videoId = videoIdMatch[1];
+                                latestVideo = {
+                                    id: videoId,
+                                    title: firstElement.attr('title') || firstElement.text() || '',
+                                    description: firstElement.attr('title') || firstElement.text() || '',
+                                    url: href.startsWith('http') ? href : `https://www.tiktok.com${href}`,
+                                    thumbnail: '',
+                                    createdAt: Date.now()
+                                };
+                                console.log(`✅ Vídeo encontrado via seletor "${selector}": ${videoId}`);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Método 4: Buscar vídeo IDs diretamente no HTML (regex)
+            if (!latestVideo) {
+                const htmlContent = $.html();
+                const videoIdMatches = htmlContent.match(/\/video\/(\d{15,})/g);
+                if (videoIdMatches && videoIdMatches.length > 0) {
+                    const firstMatch = videoIdMatches[0];
+                    const videoId = firstMatch.match(/\d{15,}/)[0];
+                    console.log(`   - Vídeo ID encontrado via regex: ${videoId}`);
+                    latestVideo = {
+                        id: videoId,
+                        title: '',
+                        description: '',
+                        url: `https://www.tiktok.com/@${cleanUsername}/video/${videoId}`,
+                        thumbnail: '',
+                        createdAt: Date.now()
+                    };
+                    console.log(`✅ Vídeo encontrado via regex no HTML: ${videoId}`);
                 }
             }
         }
@@ -741,7 +837,15 @@ async function getLatestVideoAlternative(username) {
         });
         
         console.log(`   - Status da API user detail: ${response.status}`);
-        console.log(`   - Chaves na resposta: ${response.data ? Object.keys(response.data).join(', ') : 'Nenhuma'}`);
+        console.log(`   - Tipo da resposta: ${typeof response.data}`);
+        console.log(`   - É array? ${Array.isArray(response.data)}`);
+        if (response.data && typeof response.data === 'object' && !Array.isArray(response.data)) {
+            console.log(`   - Chaves na resposta: ${Object.keys(response.data).join(', ')}`);
+        } else if (response.data) {
+            console.log(`   - Primeiros 200 chars da resposta: ${JSON.stringify(response.data).substring(0, 200)}`);
+        } else {
+            console.warn(`   - Resposta vazia ou inválida`);
+        }
         
         if (response.status === 200 && response.data) {
             // Tentar diferentes estruturas de resposta
@@ -835,7 +939,11 @@ async function sendTikTokNotification(guildId, tiktokConfig, type, data) {
     try {
         console.log(`📤 Enviando notificação TikTok (${type}) para servidor ${guildId}...`);
         
-        // Since bot and web server are separate processes, we need to make HTTP request to bot
+        // Since bot and web server are separate processes, always use HTTP to send to bot
+        // The bot HTTP server will handle sending to Discord
+        return await sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data);
+        
+        /* OLD CODE - Direct bot client access (not used when bot is separate process)
         // Check if bot is registered/active
         if (!botClient || !botClient.active) {
             console.warn('⚠️ Bot não está registrado/ativo. Tentando enviar via HTTP...');
@@ -1148,15 +1256,14 @@ async function forceCheckTikTokUpdates() {
  */
 async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) {
     try {
-        // Since bot and web server are separate, we need the bot to have an HTTP endpoint
-        // For now, we'll use the website URL and the bot should have a route to handle this
-        // The bot needs to implement: POST /api/tiktok/notify
-        const websiteUrl = process.env.WEBSITE_URL || 'https://dash-holly.com';
+        // Send directly to bot HTTP server
+        // Bot HTTP server runs on BOT_HTTP_URL or localhost:3001
+        const botHttpUrl = process.env.BOT_HTTP_URL || 'http://localhost:3001';
         const syncSecret = process.env.BOT_SYNC_SECRET || 'default_secret_change_me';
         
         const http = require('http');
         const https = require('https');
-        const httpModule = websiteUrl.startsWith('https') ? https : http;
+        const httpModule = botHttpUrl.startsWith('https') ? https : http;
         
         // Prepare notification data
         const notificationData = {
@@ -1167,10 +1274,15 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
             data: data
         };
         
-        // Try to send to bot endpoint (bot needs to implement this)
-        // For now, we'll try the website URL - the bot should proxy or handle this
-        const url = new URL(`${websiteUrl}/api/tiktok/notify`);
+        // Send to bot HTTP server
+        const url = new URL(`${botHttpUrl}/api/tiktok/notify`);
         const postData = JSON.stringify(notificationData);
+        
+        console.log(`📤 Enviando notificação TikTok para bot HTTP server:`);
+        console.log(`   - URL: ${botHttpUrl}`);
+        console.log(`   - Hostname: ${url.hostname}`);
+        console.log(`   - Port: ${url.port || (url.protocol === 'https:' ? 443 : 80)}`);
+        console.log(`   - Path: ${url.pathname}`);
         
         const options = {
             hostname: url.hostname,
@@ -1190,18 +1302,26 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
                 res.on('data', (chunk) => { responseData += chunk; });
                 res.on('end', () => {
                     if (res.statusCode === 200 || res.statusCode === 201) {
-                        console.log(`✅ Notificação TikTok enviada via HTTP`);
+                        console.log(`✅ Notificação TikTok enviada via HTTP para bot`);
                         resolve();
                     } else {
-                        console.warn(`⚠️ Resposta HTTP ${res.statusCode} ao enviar notificação TikTok`);
+                        console.warn(`⚠️ Resposta HTTP ${res.statusCode} ao enviar notificação TikTok: ${responseData.substring(0, 200)}`);
                         reject(new Error(`HTTP ${res.statusCode}: ${responseData.substring(0, 100)}`));
                     }
                 });
             });
             
             req.on('error', (error) => {
-                console.warn(`⚠️ Erro ao enviar notificação TikTok via HTTP: ${error.message}`);
-                console.warn(`   ⚠️ Bot precisa implementar endpoint /api/tiktok/notify`);
+                console.error(`❌ Erro ao enviar notificação TikTok via HTTP: ${error.message}`);
+                console.error(`   - URL tentada: ${botHttpUrl}`);
+                console.error(`   - Verifique se o bot HTTP server está rodando`);
+                console.error(`   - Verifique a variável de ambiente BOT_HTTP_URL`);
+                console.error(`   - Se bot e servidor web estão em serviços separados, use a URL pública do bot`);
+                if (error.code === 'ECONNREFUSED') {
+                    console.error(`   - Erro: Conexão recusada - servidor não está acessível em ${url.hostname}:${url.port || (url.protocol === 'https:' ? 443 : 80)}`);
+                } else if (error.code === 'ENOTFOUND') {
+                    console.error(`   - Erro: Hostname não encontrado - verifique se a URL está correta`);
+                }
                 reject(error);
             });
             
@@ -1217,7 +1337,6 @@ async function sendTikTokNotificationViaHTTP(guildId, tiktokConfig, type, data) 
         
     } catch (error) {
         console.error(`❌ Erro ao enviar notificação TikTok via HTTP:`, error.message);
-        console.error(`   ⚠️ NOTA: Bot precisa implementar endpoint POST /api/tiktok/notify para receber notificações`);
     }
 }
 
