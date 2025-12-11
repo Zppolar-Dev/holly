@@ -1120,21 +1120,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         const menuToggle = document.getElementById('menuToggle');
         const sidebar = document.getElementById('configSidebar');
         const sidebarClose = document.getElementById('sidebarClose');
-        const sidebarOverlay = document.getElementById('sidebarOverlay');
         const navItems = document.querySelectorAll('.nav-item');
         
         // Toggle sidebar
         function toggleSidebar() {
             sidebar.classList.toggle('active');
-            sidebarOverlay.classList.toggle('active');
-            document.body.style.overflow = sidebar.classList.contains('active') ? 'hidden' : '';
         }
         
         // Close sidebar
         function closeSidebar() {
             sidebar.classList.remove('active');
-            sidebarOverlay.classList.remove('active');
-            document.body.style.overflow = '';
         }
         
         // Show section
@@ -1172,10 +1167,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         if (sidebarClose) {
             sidebarClose.addEventListener('click', closeSidebar);
-        }
-        
-        if (sidebarOverlay) {
-            sidebarOverlay.addEventListener('click', closeSidebar);
         }
         
         // Nav item clicks
