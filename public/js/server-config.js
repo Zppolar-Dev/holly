@@ -745,7 +745,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             const tiktokEnabled = document.getElementById('tiktok-enabled')?.checked || false;
             const tiktokUsername = document.getElementById('tiktok-username')?.value.trim() || '';
             const tiktokChannel = document.getElementById('tiktok-channel')?.value || '';
-            const tiktokNotifyVideo = document.getElementById('tiktok-notify-video')?.checked !== false;
             const tiktokNotifyLive = document.getElementById('tiktok-notify-live')?.checked !== false;
 
             if (tiktokEnabled && (!tiktokUsername || !tiktokChannel)) {
@@ -759,7 +758,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         enabled: tiktokEnabled,
                         username: tiktokUsername,
                         channelId: tiktokChannel,
-                        notifyVideo: tiktokNotifyVideo,
                         notifyLive: tiktokNotifyLive
                     })
                 });
@@ -952,17 +950,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
 
         // TikTok notification type toggles
-        const tiktokNotifyVideo = document.getElementById('tiktok-notify-video');
         const tiktokNotifyLive = document.getElementById('tiktok-notify-live');
-        const tiktokVideoPreview = document.getElementById('tiktok-video-preview-container');
         const tiktokLivePreview = document.getElementById('tiktok-live-preview-container');
-        
-        if (tiktokNotifyVideo && tiktokVideoPreview) {
-            tiktokVideoPreview.style.display = tiktokNotifyVideo.checked ? 'block' : 'none';
-            tiktokNotifyVideo.addEventListener('change', (e) => {
-                tiktokVideoPreview.style.display = e.target.checked ? 'block' : 'none';
-            });
-        }
         
         if (tiktokNotifyLive && tiktokLivePreview) {
             tiktokLivePreview.style.display = tiktokNotifyLive.checked ? 'block' : 'none';
@@ -1240,6 +1229,64 @@ document.addEventListener('DOMContentLoaded', async function() {
     let currentEditType = null; // 'join' or 'leave'
     let embedFields = []; // Array to store embed fields
     
+    // Update placeholder tutorial based on message type
+    function updatePlaceholderTutorial(type) {
+        const tutorialContainer = document.querySelector('.placeholders-tutorial');
+        if (!tutorialContainer) return;
+        
+        // Clear existing placeholders
+        tutorialContainer.innerHTML = '';
+        
+        if (type === 'tiktok-live') {
+            // TikTok Live placeholders
+            const livePlaceholders = [
+                { name: '{username}', value: 'Nome de usuário do TikTok' },
+                { name: '{profile.name}', value: 'Nome de exibição do perfil' },
+                { name: '{profile.url}', value: 'URL do perfil do TikTok' },
+                { name: '{profile.avatar}', value: 'URL do avatar do perfil' },
+                { name: '{profile.followers}', value: 'Número de seguidores (formatado: 1.2M, 5.5K)' },
+                { name: '{profile.videos}', value: 'Número total de vídeos (formatado)' },
+                { name: '{live.title}', value: 'Título da live' },
+                { name: '{live.url}', value: 'URL da live' },
+                { name: '{live.viewers}', value: 'Número de visualizadores (formatado)' }
+            ];
+            
+            livePlaceholders.forEach(placeholder => {
+                const item = document.createElement('div');
+                item.className = 'placeholder-item';
+                item.innerHTML = `
+                    <div class="placeholder-name"><code>${placeholder.name}</code></div>
+                    <div class="placeholder-value">${placeholder.value}</div>
+                `;
+                tutorialContainer.appendChild(item);
+            });
+        } else {
+            // Default placeholders (join/leave)
+            const defaultPlaceholders = [
+                { name: '{user}', value: 'Menção do usuário (@Usuario)' },
+                { name: '{username}', value: 'Nome do usuário (sem menção)' },
+                { name: '{time}', value: 'Hora (HH:MM)' },
+                { name: '{date}', value: 'Data (DD/MM/YYYY)' },
+                { name: '{server}', value: 'Nome do servidor' },
+                { name: '{members}', value: 'Total de membros' },
+                { name: '{user.avatar}', value: 'URL do avatar do usuário' },
+                { name: '{user.id}', value: 'ID do usuário' },
+                { name: '{server.icon}', value: 'URL do ícone do servidor' },
+                { name: '@', value: 'Menção de cargo (digite @ para selecionar)' }
+            ];
+            
+            defaultPlaceholders.forEach(placeholder => {
+                const item = document.createElement('div');
+                item.className = 'placeholder-item';
+                item.innerHTML = `
+                    <div class="placeholder-name"><code>${placeholder.name}</code></div>
+                    <div class="placeholder-value">${placeholder.value}</div>
+                `;
+                tutorialContainer.appendChild(item);
+            });
+        }
+    }
+    
     // Open message edit modal
     function openMessageEditModal(type) {
         console.log('🔧 Abrindo modal para:', type);
@@ -1256,7 +1303,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         const titles = {
             'join': 'Editar Mensagem de Entrada',
             'leave': 'Editar Mensagem de Saída',
-            'tiktok-video': 'Editar Mensagem - Novo Vídeo TikTok',
             'tiktok-live': 'Editar Mensagem - Live TikTok'
         };
         modalTitle.textContent = titles[type] || 'Editar Mensagem';
@@ -1272,13 +1318,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             notification = notifications.memberJoin;
         } else if (type === 'leave') {
             notification = notifications.memberLeave;
-        } else if (type === 'tiktok-video') {
-            const tiktokConfig = serverConfig?.tiktok || {};
-            notification = {
-                message: tiktokConfig.videoMessage || '',
-                embed: tiktokConfig.videoEmbed || null,
-                deleteAfter: tiktokConfig.deleteAfter || 0
-            };
         } else if (type === 'tiktok-live') {
             const tiktokConfig = serverConfig?.tiktok || {};
             notification = {
@@ -1315,6 +1354,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Update preview
         updateModalPreview();
+        
+        // Update placeholder tutorial based on type
+        updatePlaceholderTutorial(type);
         
         // Show modal
         console.log('📂 Mostrando modal...');
@@ -1561,7 +1603,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Base replacements (always available)
             processedText = processedText
                 .replace(/\{user\}/g, `<span class="discord-mention">@${userName}</span>`)
-                .replace(/\{username\}/g, (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') ? tiktokUsername : userName)
+                .replace(/\{username\}/g, (currentEditType === 'tiktok-live') ? tiktokUsername : userName)
                 .replace(/\{user\.avatar\}/g, userAvatar)
                 .replace(/\{user\.id\}/g, userId)
                 .replace(/\{server\.icon\}/g, serverIcon)
@@ -1571,7 +1613,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .replace(/\{members\}/g, '100');
             
             // TikTok-specific replacements
-            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+            if (currentEditType === 'tiktok-live') {
                 // Profile placeholders (available for both video and live)
                 processedText = processedText
                     .replace(/\{profile\.name\}/g, tiktokUsername)
@@ -1579,16 +1621,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                     .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png')
                     .replace(/\{profile\.followers\}/g, '1.2M')
                     .replace(/\{profile\.videos\}/g, '150');
-                
-                // Video-specific placeholders (only for tiktok-video)
-                if (currentEditType === 'tiktok-video') {
-                    processedText = processedText
-                        .replace(/\{video\.title\}/g, 'Novo Vídeo do TikTok')
-                        .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
-                        .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA')
-                        .replace(/\{video\.id\}/g, '1234567890')
-                        .replace(/\{video\.description\}/g, 'Descrição do vídeo');
-                }
                 
                 // Live-specific placeholders (only for tiktok-live)
                 if (currentEditType === 'tiktok-live') {
@@ -1700,7 +1732,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .replace(/\{server\.icon\}/g, serverIcon);
             
             // TikTok-specific URL replacements
-            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+            if (currentEditType === 'tiktok-live') {
                 const tiktokConfig = serverConfig?.tiktok || {};
                 const tiktokUsername = tiktokConfig.username || 'usuario';
                 const tiktokProfileUrl = `https://www.tiktok.com/@${tiktokUsername}`;
@@ -1710,11 +1742,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     .replace(/\{profile\.url\}/g, tiktokProfileUrl)
                     .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png');
                 
-                if (currentEditType === 'tiktok-video') {
-                    processedUrl = processedUrl
-                        .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
-                        .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA');
-                } else if (currentEditType === 'tiktok-live') {
+                if (currentEditType === 'tiktok-live') {
                     processedUrl = processedUrl
                         .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`);
                 }
@@ -1875,18 +1903,13 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // Save directly to server
         try {
-            if (currentEditType === 'tiktok-video' || currentEditType === 'tiktok-live') {
+            if (currentEditType === 'tiktok-live') {
                 // Save TikTok message
                 const deleteAfter = document.getElementById('tiktok-delete-after')?.value || 0;
                 const tiktokConfig = serverConfig.tiktok || {};
                 
-                if (currentEditType === 'tiktok-video') {
-                    tiktokConfig.videoMessage = finalMessage;
-                    tiktokConfig.videoEmbed = finalEmbed;
-                } else {
-                    tiktokConfig.liveMessage = finalMessage;
-                    tiktokConfig.liveEmbed = finalEmbed;
-                }
+                tiktokConfig.liveMessage = finalMessage;
+                tiktokConfig.liveEmbed = finalEmbed;
                 
                 tiktokConfig.deleteAfter = parseInt(deleteAfter) || 0;
                 
@@ -1898,10 +1921,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                         enabled: tiktokConfig.enabled || false,
                         username: tiktokConfig.username || '',
                         channelId: tiktokConfig.channelId || '',
-                        notifyVideo: tiktokConfig.notifyVideo !== false,
                         notifyLive: tiktokConfig.notifyLive !== false,
-                        videoMessage: tiktokConfig.videoMessage || '',
-                        videoEmbed: tiktokConfig.videoEmbed || null,
                         liveMessage: tiktokConfig.liveMessage || '',
                         liveEmbed: tiktokConfig.liveEmbed || null,
                         deleteAfter: tiktokConfig.deleteAfter || 0
@@ -1962,19 +1982,14 @@ document.addEventListener('DOMContentLoaded', async function() {
         let message = '';
         let embed = null;
         
-        if (type === 'tiktok-video') {
-            message = tiktokConfig.videoMessage || '';
-            embed = tiktokConfig.videoEmbed || null;
-        } else if (type === 'tiktok-live') {
+        if (type === 'tiktok-live') {
             message = tiktokConfig.liveMessage || '';
             embed = tiktokConfig.liveEmbed || null;
             console.log(`   - Live message: ${message ? message.substring(0, 50) + '...' : 'vazia'}`);
             console.log(`   - Live embed: ${embed ? 'configurado' : 'não configurado'}`);
         }
         
-        const previewContainer = type === 'tiktok-video' 
-            ? document.getElementById('tiktok-video-preview-container')
-            : document.getElementById('tiktok-live-preview-container');
+        const previewContainer = document.getElementById('tiktok-live-preview-container');
         
         if (!previewContainer) {
             console.warn(`⚠️ Container de preview não encontrado para ${type}`);
@@ -1983,15 +1998,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log(`   - Container encontrado: ${previewContainer.id}`);
         
-        const previewSimple = type === 'tiktok-video'
-            ? document.getElementById('tiktok-video-preview-simple')
-            : document.getElementById('tiktok-live-preview-simple');
-        const previewEmbed = type === 'tiktok-video'
-            ? document.getElementById('tiktok-video-preview-embed')
-            : document.getElementById('tiktok-live-preview-embed');
-        const previewText = type === 'tiktok-video'
-            ? document.getElementById('tiktok-video-preview-text')
-            : document.getElementById('tiktok-live-preview-text');
+        const previewSimple = document.getElementById('tiktok-live-preview-simple');
+        const previewEmbed = document.getElementById('tiktok-live-preview-embed');
+        const previewText = document.getElementById('tiktok-live-preview-text');
         
         // Replace variables helper - different placeholders for video and live
         const replaceVars = (text) => {
@@ -2029,15 +2038,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .replace(/\{members\}/g, '100');
             
             // Type-specific replacements
-            if (type === 'tiktok-video') {
-                // Video placeholders only
-                processedText = processedText
-                    .replace(/\{video\.title\}/g, 'Novo Vídeo do TikTok')
-                    .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
-                    .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA')
-                    .replace(/\{video\.id\}/g, '1234567890')
-                    .replace(/\{video\.description\}/g, 'Descrição do vídeo');
-            } else if (type === 'tiktok-live') {
+            if (type === 'tiktok-live') {
                 // Live placeholders only
                 processedText = processedText
                     .replace(/\{live\.title\}/g, 'Live em andamento')
@@ -2065,11 +2066,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 .replace(/\{profile\.url\}/g, tiktokProfileUrl)
                 .replace(/\{profile\.avatar\}/g, 'https://p16-sign-va.tiktokcdn.com/tos-maliva-p-0068/avatar/default_avatar.png');
             
-            if (type === 'tiktok-video') {
-                processedUrl = processedUrl
-                    .replace(/\{video\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/video/1234567890`)
-                    .replace(/\{video\.thumbnail\}/g, 'https://p16-sign-va.tiktokcdn.com/obj/tos-maliva-p-0068/o0YJIAIQANBIAIQANBIAIQANBIAA');
-            } else if (type === 'tiktok-live') {
+            if (type === 'tiktok-live') {
                 processedUrl = processedUrl
                     .replace(/\{live\.url\}/g, `https://www.tiktok.com/@${tiktokUsername}/live`);
             }
@@ -2443,12 +2440,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Edit message buttons
         const editJoinBtn = document.getElementById('edit-join-message');
         const editLeaveBtn = document.getElementById('edit-leave-message');
-        const editTiktokVideoBtn = document.getElementById('edit-tiktok-video-message');
         const editTiktokLiveBtn = document.getElementById('edit-tiktok-live-message');
         
         console.log('📌 Botão join encontrado:', !!editJoinBtn);
         console.log('📌 Botão leave encontrado:', !!editLeaveBtn);
-        console.log('📌 Botão tiktok-video encontrado:', !!editTiktokVideoBtn);
         console.log('📌 Botão tiktok-live encontrado:', !!editTiktokLiveBtn);
         
         if (editJoinBtn) {
@@ -2466,15 +2461,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                 e.stopPropagation();
                 console.log('🖱️ Clique no botão edit-leave-message');
                 openMessageEditModal('leave');
-            });
-        }
-
-        if (editTiktokVideoBtn) {
-            editTiktokVideoBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log('🖱️ Clique no botão edit-tiktok-video-message');
-                openMessageEditModal('tiktok-video');
             });
         }
 

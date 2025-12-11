@@ -344,14 +344,6 @@
                             <label>Tipos de Notificação</label>
                             <div class="checkbox-group">
                                 <label class="checkbox-item">
-                                    <input type="checkbox" id="tiktok-notify-video" checked>
-                                    <span>
-                                        <i class="fas fa-video"></i>
-                                        <strong>Novos Vídeos</strong>
-                                        <small>Notificar quando um novo vídeo for postado</small>
-                                    </span>
-                                </label>
-                                <label class="checkbox-item">
                                     <input type="checkbox" id="tiktok-notify-live" checked>
                                     <span>
                                         <i class="fas fa-broadcast-tower"></i>
@@ -375,38 +367,6 @@
                             <small>Deixe em 0 para nunca deletar a mensagem</small>
                         </div>
 
-                        <!-- Preview para Vídeos -->
-                        <div class="message-preview-container" id="tiktok-video-preview-container" style="display: none;">
-                            <div class="preview-header">
-                                <h3>Pré-visualização - Novo Vídeo</h3>
-                                <button type="button" class="btn btn-secondary" id="edit-tiktok-video-message">
-                                    <i class="fas fa-edit"></i> Editar Mensagem
-                                </button>
-                            </div>
-                            <div class="message-preview-section">
-                                <div class="message-preview-wrapper">
-                                    <div class="message-preview">
-                                        <div class="discord-style">
-                                            <div class="discord-message" id="tiktok-video-preview-simple">
-                                                <div class="discord-message-sidebar">
-                                                    <img src="/images/holly.gif" class="discord-message-avatar" alt="Bot" onerror="this.src='/images/holly.gif'">
-                                                </div>
-                                                <div class="discord-message-content">
-                                                    <h2 class="discord-message-header">
-                                                        <span class="discord-message-username" style="color: #5865f2;">Holly</span>
-                                                        <span class="discord-message-bot-tag">APP</span>
-                                                        <span class="discord-message-timestamp"></span>
-                                                    </h2>
-                                                    <div id="tiktok-video-preview-text"></div>
-                                                    <div class="discord-message-accessories"></div>
-                                                </div>
-                                            </div>
-                                            <div class="discord-embed" id="tiktok-video-preview-embed" style="display: none;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
 
                         <!-- Preview para Lives -->
                         <div class="message-preview-container" id="tiktok-live-preview-container" style="display: none;">
